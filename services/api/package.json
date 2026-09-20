@@ -5,6 +5,11 @@
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
-    "test": "echo 'no tests yet'"
+    "d1:migrate:local": "wrangler d1 migrations apply yuke-local --local",
+    "d1:verify:local": "node scripts/verify-d1-migrations.mjs",
+    "test": "pnpm run d1:verify:local"
+  },
+  "devDependencies": {
+    "wrangler": "4.135.0"
   }
 }
