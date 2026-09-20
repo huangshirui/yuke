@@ -1,6 +1,5 @@
 import type { CreateSlotSeriesInput, Slot } from '@yuke/shared'
 import { AppError, ValidationError } from '../../../lib/errors'
-import { findSpaceById } from '../../tenant/space/repository'
 import {
   findResourceById,
   findSlotTypeById,
@@ -8,10 +7,11 @@ import {
 } from '../catalog/repository'
 import {
   findSeriesById,
+  findSpaceTimezone,
   insertSeries,
   insertSeriesOccurrence,
   listActiveSeriesForRange,
-  listConcreteSlots,
+  listConcreteSlotsByLocalDateRange,
   occurrenceExists,
   type SeriesDatabase,
   type SlotSeriesRecord
@@ -49,12 +49,12 @@ async function requireActiveCatalog(
   resourceId: string,
   slotTypeId: string
 ): Promise<{ timezone: string }> {
-  const [space, resource, slotType] = await Promise.all([
-    findSpaceById(db as never, spaceId),
+  const [timezone, resource, slotType] = await Promise.all([
+    findSpaceTimezone(db, spaceId),
     findResourceById(db, spaceId, resourceId),
     findSlotTypeById(db, spaceId, slotTypeId)
   ])
-  if (!space) throw new AppError('NOT_FOUND', 'Space not found')
+  if (!timezone) throw new AppError('NOT_FOUND', 'Space not found')
   if (!resource) throw new AppError('NOT_FOUND', 'Resource not found')
   if (!slotType) throw new AppError('NOT_FOUND', 'SlotType not found')
   if (resource.status !== 'active') {
@@ -63,7 +63,7 @@ async function requireActiveCatalog(
   if (slotType.status !== 'active') {
     throw new AppError('SLOT_NOT_BOOKABLE', '已停用的时段类型不能用于周期时段。')
   }
-  return { timezone: space.timezone }
+  return { timezone }
 }
 
 export async function createAdminSlotSeries(
@@ -159,14 +159,5 @@ export async function listMaterializedSlots(
   to: string
 ): Promise<Slot[]> {
   await ensureSeriesMaterialized(db, spaceId, resourceId, from, to)
-  const series = await listActiveSeriesForRange(db, spaceId, resourceId, from, to)
-  const timezone = series[0]?.timezone
-  const startAt = timezone
-    ? localDateTimeToEpochMs(from, '00:00', timezone)
-    : Date.parse(`${from}T00:00:00.000Z`)
-  const afterTo = addDays(to, 1)
-  const endAt = timezone
-    ? localDateTimeToEpochMs(afterTo, '00:00', timezone)
-    : Date.parse(`${afterTo}T00:00:00.000Z`)
-  return listConcreteSlots(db, spaceId, resourceId, startAt, endAt)
+  return listConcreteSlotsByLocalDateRange(db, spaceId, resourceId, from, to)
 }
