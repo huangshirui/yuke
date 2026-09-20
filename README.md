@@ -1,16 +1,37 @@
-# Yu言在线
+# Yu言在线 (YuYan Online)
 
-Yu言在线是微信小程序 + Web Admin + Cloudflare Backend 的预约服务平台。
+> 微信小程序 + Web Admin + Cloudflare Backend 的开源 Monorepo 项目。
 
-## Monorepo
+## 项目结构
 
-- `apps/miniprogram` 微信小程序
-- `apps/web-admin` Web 管理后台
-- `services/api` Cloudflare Workers API
-- `packages/shared` 前后端共享类型与工具
+```
+.
+├── apps/
+│   ├── miniprogram/      # 微信小程序
+│   └── admin/            # Web Admin 管理端
+├── services/
+│   └── api/              # Cloudflare Workers API 服务
+├── packages/
+│   ├── shared/           # 通用类型与工具
+│   └── config/           # 工程配置
+├── docs/                 # 项目文档
+└── .github/              # CI/CD 配置
+```
 
 ## 技术方向
 
-- Frontend: TypeScript
-- Backend: Cloudflare Workers / D1 / R2
-- Deployment: Cloudflare
+- 微信小程序：微信原生能力优先
+- Web Admin：现代 Web 技术栈
+- Backend：Cloudflare Workers / D1 / R2
+- Monorepo：pnpm workspace
+
+## 开发
+
+```bash
+pnpm install
+pnpm dev
+```
+
+## License
+
+MIT
