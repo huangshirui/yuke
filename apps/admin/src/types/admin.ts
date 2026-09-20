@@ -1,26 +1,19 @@
-import type { CutoffMinutes, SpaceAdminSummary, SpaceSettings, SpaceSummary } from '@yuke/shared'
+import type {
+  CreateInviteInput as SharedCreateInviteInput,
+  CutoffMinutes,
+  InviteMemberSummary as SharedInviteMemberSummary,
+  InviteSummary as SharedInviteSummary,
+  SpaceAdminSummary,
+  SpaceSettings,
+  SpaceSummary
+} from '@yuke/shared'
 
 export type AdminSpace = SpaceSummary
 
 export type AdminUserSummary = SpaceAdminSummary
 
-export type InviteSummary = {
-  id: string
-  spaceId: string
-  label: string | null
-  code: string
-  expiresAt: string
-  status: 'active' | 'revoked'
-  createdByAdminId: string
-  memberCount: number
-}
-
-export type InviteMemberSummary = {
-  membershipId: string
-  nickname: string
-  joinedAt: string
-  participantCount: number
-}
+export type InviteSummary = SharedInviteSummary
+export type InviteMemberSummary = SharedInviteMemberSummary
 
 export type CreateSpaceInput = {
   name: string
@@ -38,7 +31,4 @@ export type UpdateSpaceSettingsInput = {
   cancellationCutoffMinutes: CutoffMinutes
 }
 
-export type CreateInviteInput = {
-  label: string | null
-  expiresAt: string
-}
+export type CreateInviteInput = SharedCreateInviteInput
