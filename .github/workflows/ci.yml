@@ -25,6 +25,7 @@ jobs:
           required_files=(
             README.md
             AGENTS.md
+            DESIGN.md
             SECURITY.md
             CONTRIBUTING.md
             CODE_OF_CONDUCT.md

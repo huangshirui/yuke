@@ -9,7 +9,8 @@ Yu言在线是一个公开开源（Public Open-source）的微信小程序 + Web
 1. 本文件 `AGENTS.md`；
 2. 根目录 `README.md`；
 3. `docs/architecture.md`；
-4. 与修改目录相关的 README、Contract、Schema 与测试。
+4. 涉及 UI / UX、页面结构、视觉样式或组件设计时，阅读根目录 `DESIGN.md`；
+5. 与修改目录相关的 README、Contract、Schema 与测试。
 
 重要架构、产品和工程决策必须**追加**记录到 Notion 项目页的「99 · 架构演进与决策日志」。如该子页不存在，应先创建。
 
