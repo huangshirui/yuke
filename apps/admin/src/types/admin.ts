@@ -5,6 +5,7 @@ import type {
   InviteMemberSummary as SharedInviteMemberSummary,
   InviteSummary as SharedInviteSummary,
   Resource,
+  SeriesEditResult,
   SlotType,
   SpaceAdminSummary,
   SpaceSettings,
@@ -119,3 +120,5 @@ export type UpdateScheduleSlotInput = {
   localEndTime?: string
   endsOn?: string | null
 }
+
+export type AdminSeriesEditResult = SeriesEditResult
