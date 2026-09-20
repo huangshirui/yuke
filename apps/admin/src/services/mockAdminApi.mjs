@@ -87,6 +87,24 @@ const seed = {
     ],
     sp_demo_beta: [],
   },
+  slots: {
+    sp_demo_alpha: [
+      {
+        id: 'slot_demo_single', spaceId: 'sp_demo_alpha', resourceId: 'res_demo_aurora',
+        slotTypeId: 'sty_demo_standard', slotTypeName: '标准时段', seriesId: null,
+        startAt: '2026-09-22T01:00:00.000Z', endAt: '2026-09-22T04:00:00.000Z',
+        localDate: '2026-09-22', status: 'open', bookable: true,
+      },
+      {
+        id: 'slot_demo_series', spaceId: 'sp_demo_alpha', resourceId: 'res_demo_aurora',
+        slotTypeId: 'sty_demo_standard', slotTypeName: '标准时段', seriesId: 'series_demo',
+        startAt: '2026-09-24T01:00:00.000Z', endAt: '2026-09-24T04:00:00.000Z',
+        localDate: '2026-09-24', status: 'frozen', bookable: false,
+      },
+    ],
+    sp_demo_beta: [],
+  },
+  series: { sp_demo_alpha: [], sp_demo_beta: [] },
   members: {
     sp_demo_alpha: [
       {
@@ -202,6 +220,27 @@ export function createMockAdminApi(storage = globalThis.localStorage ?? memorySt
     return item
   }
 
+  const requireSlot = (spaceId, slotId) => {
+    requireSpace(spaceId)
+    const item = (state.slots[spaceId] ?? []).find((slot) => slot.id === slotId)
+    if (!item) throw new Error('找不到这个时段。')
+    return item
+  }
+
+  const assertNoOverlap = (spaceId, candidate, ignoreId = null) => {
+    const start = Date.parse(candidate.startAt)
+    const end = Date.parse(candidate.endAt)
+    if (!(end > start)) throw new Error('结束时间必须晚于开始时间。')
+    const overlap = (state.slots[spaceId] ?? []).some((slot) =>
+      slot.id !== ignoreId &&
+      slot.resourceId === candidate.resourceId &&
+      slot.status !== 'cancelled' &&
+      Date.parse(slot.startAt) < end &&
+      Date.parse(slot.endAt) > start
+    )
+    if (overlap) throw new Error('这个预约对象在该时间已经存在时段。')
+  }
+
   const requireMember = (spaceId, membershipId) => {
     requireSpace(spaceId)
     const item = (state.members[spaceId] ?? []).find((member) => member.membershipId === membershipId)
@@ -222,6 +261,8 @@ export function createMockAdminApi(storage = globalThis.localStorage ?? memorySt
       state.invites[space.id] = []
       state.resources[space.id] = []
       state.slotTypes[space.id] = []
+      state.slots[space.id] = []
+      state.series[space.id] = []
       state.members[space.id] = []
       save()
       return clone(space)
@@ -393,6 +434,82 @@ export function createMockAdminApi(storage = globalThis.localStorage ?? memorySt
       item.status = status
       save()
       return clone(item)
+    },
+
+    async listScheduleSlots(spaceId, resourceId, from, to) {
+      requireResource(spaceId, resourceId)
+      return clone((state.slots[spaceId] ?? []).filter((slot) =>
+        slot.resourceId === resourceId && slot.localDate >= from && slot.localDate <= to
+      ))
+    },
+
+    async createScheduleSlot(spaceId, input) {
+      requireResource(spaceId, input.resourceId)
+      requireSlotType(spaceId, input.slotTypeId)
+      const slot = {
+        id: makeId('slot'), spaceId, resourceId: input.resourceId, slotTypeId: input.slotTypeId,
+        seriesId: null, startAt: new Date(input.startAt).toISOString(), endAt: new Date(input.endAt).toISOString(),
+        localDate: new Date(input.startAt).toISOString().slice(0, 10), status: 'open', bookable: true,
+      }
+      assertNoOverlap(spaceId, slot)
+      ;(state.slots[spaceId] ?? (state.slots[spaceId] = [])).push(slot)
+      save()
+      return clone(slot)
+    },
+
+    async createSlotSeries(spaceId, input) {
+      requireResource(spaceId, input.resourceId)
+      requireSlotType(spaceId, input.slotTypeId)
+      const series = { id: makeId('series'), spaceId, ...clone(input) }
+      ;(state.series[spaceId] ?? (state.series[spaceId] = [])).push(series)
+      let date = input.startsOn
+      const hardEnd = input.endsOn || new Date(Date.parse(input.startsOn + 'T00:00:00Z') + 56 * 86400000).toISOString().slice(0, 10)
+      while (date <= hardEnd) {
+        const weekday = new Date(date + 'T12:00:00Z').getUTCDay() || 7
+        if (input.weekdays.includes(weekday)) {
+          const slot = {
+            id: makeId('slot'), spaceId, resourceId: input.resourceId, slotTypeId: input.slotTypeId,
+            seriesId: series.id, startAt: new Date(date + 'T' + input.localStartTime + ':00Z').toISOString(),
+            endAt: new Date(date + 'T' + input.localEndTime + ':00Z').toISOString(),
+            localDate: date, status: 'open', bookable: true,
+          }
+          assertNoOverlap(spaceId, slot)
+          ;(state.slots[spaceId] ?? (state.slots[spaceId] = [])).push(slot)
+        }
+        date = new Date(Date.parse(date + 'T00:00:00Z') + 86400000).toISOString().slice(0, 10)
+      }
+      save()
+      return clone(series)
+    },
+
+    async updateScheduleSlot(spaceId, slotId, input) {
+      const anchor = requireSlot(spaceId, slotId)
+      const targets = input.scope === 'single' || !anchor.seriesId
+        ? [anchor]
+        : (state.slots[spaceId] ?? []).filter((slot) =>
+            slot.seriesId === anchor.seriesId &&
+            (input.scope === 'entire_series' || slot.localDate >= anchor.localDate)
+          )
+      for (const slot of targets) {
+        const next = { ...slot }
+        if (input.slotTypeId) next.slotTypeId = input.slotTypeId
+        if (input.scope === 'single') {
+          if (input.startAt) next.startAt = new Date(input.startAt).toISOString()
+          if (input.endAt) next.endAt = new Date(input.endAt).toISOString()
+        }
+        assertNoOverlap(spaceId, next, slot.id)
+        Object.assign(slot, next)
+      }
+      save()
+      return clone(anchor)
+    },
+
+    async setScheduleSlotFrozen(spaceId, slotId, frozen) {
+      const slot = requireSlot(spaceId, slotId)
+      slot.status = frozen ? 'frozen' : 'open'
+      slot.bookable = !frozen
+      save()
+      return clone(slot)
     },
 
     async listMembers(spaceId, filters = {}) {
