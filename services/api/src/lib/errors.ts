@@ -23,11 +23,11 @@ export class AppError extends Error {
   readonly status: number
   readonly details?: unknown
 
-  constructor(code: ApiErrorCode, message: string, details?: unknown, status = ERROR_STATUS_BY_CODE[code]) {
+  constructor(code: ApiErrorCode, message: string, details?: unknown) {
     super(message)
     this.name = 'AppError'
     this.code = code
-    this.status = status
+    this.status = ERROR_STATUS_BY_CODE[code]
     this.details = details
   }
 }
