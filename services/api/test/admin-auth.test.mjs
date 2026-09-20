@@ -20,7 +20,7 @@ import {
 
 const TEAM_DOMAIN = 'https://synthetic-team.cloudflareaccess.com'
 const AUDIENCE = 'synthetic-access-audience'
-const NOW_SECONDS = 1_800_000_000
+const NOW_SECONDS = Math.floor(Date.now() / 1000)
 const NOW_MS = NOW_SECONDS * 1000
 
 async function insertAdmin({
