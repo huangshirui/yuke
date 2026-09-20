@@ -1,0 +1,49 @@
+.profile-card {
+  padding-top: 40rpx;
+}
+
+.avatar-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.avatar-button {
+  width: 152rpx;
+  height: 152rpx;
+  padding: 0;
+  border: 0;
+  border-radius: 76rpx;
+  background: #e8f4f1;
+  overflow: hidden;
+}
+
+.avatar-button::after {
+  border: 0;
+}
+
+.avatar-image {
+  width: 152rpx;
+  height: 152rpx;
+}
+
+.avatar-placeholder {
+  width: 152rpx;
+  height: 152rpx;
+  color: #126e62;
+  font-size: 24rpx;
+  line-height: 152rpx;
+  text-align: center;
+}
+
+.avatar-section .caption {
+  margin-top: 16rpx;
+}
+
+.nickname-field {
+  margin-top: 40rpx;
+}
+
+.submit-button {
+  margin-top: 32rpx;
+}

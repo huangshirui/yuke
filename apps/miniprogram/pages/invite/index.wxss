@@ -1,0 +1,12 @@
+.invite-input {
+  letter-spacing: 2rpx;
+}
+
+.submit-button {
+  margin-top: 32rpx;
+}
+
+.gate-note {
+  margin-top: 24rpx;
+  text-align: center;
+}

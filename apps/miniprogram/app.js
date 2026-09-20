@@ -1,5 +1,11 @@
+const { getApi } = require('./lib/runtime')
+
 App({
+  globalData: {
+    api: null
+  },
+
   onLaunch() {
-    // Yu言在线小程序入口
+    this.globalData.api = getApi(wx)
   }
 })

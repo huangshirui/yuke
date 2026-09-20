@@ -1,0 +1,33 @@
+<view class="page">
+  <view class="page-header">
+    <text class="page-title">{{addMode ? '加入其他空间' : '加入空间'}}</text>
+    <text class="page-description">{{addMode ? '输入新的邀请码即可加入另一个空间。' : 'Yu言在线通过邀请码加入空间，请向空间管理员获取。'}}</text>
+  </view>
+
+  <view class="card">
+    <view class="field">
+      <text class="field-label">邀请码</text>
+      <input
+        class="field-input invite-input"
+        value="{{inviteCode}}"
+        maxlength="64"
+        placeholder="请输入邀请码"
+        confirm-type="done"
+        bindinput="onCodeInput"
+        bindconfirm="submit"
+      />
+    </view>
+  </view>
+
+  <button
+    class="primary-button submit-button"
+    loading="{{submitting}}"
+    disabled="{{submitting}}"
+    bindtap="submit"
+  >加入空间</button>
+
+  <view class="gate-note" wx:if="{{!addMode}}">
+    <text class="caption">加入空间后才能使用预约功能。</text>
+  </view>
+  <view class="safe-bottom"></view>
+</view>

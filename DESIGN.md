@@ -276,13 +276,43 @@ Admin 为桌面优先。
 
 ### Mini Program
 
-小程序采用移动端原生交互，重点：
+小程序采用移动端原生交互，正式视觉基线为 **轻量、原生感的通用工具风格**：
 
-- 单手操作
-- 清晰的点击目标
-- 预约路径短
-- 状态和时间信息优先
-- 不照搬 Web Admin 的 Sidebar / Table 模式
+- 页面背景使用浅灰 `#F6F7F9`，主要内容使用白色 Surface；
+- 主操作复用品牌深墨绿 `#126E62`，不新增独立蓝色品牌体系；
+- 黄绿色品牌强调点只作小面积点缀，不用于大面积按钮或背景；
+- Card 默认 16rpx 圆角，使用弱边框区分层级，默认不依赖阴影；
+- 页面保持大面积留白、低视觉噪音，不使用大面积渐变、装饰插画或教育场景化视觉；
+- 表单优先微信原生交互，Label 始终可见；
+- 每个页面原则上只有一个 Primary CTA；
+- 单手操作、点击目标清晰、预约路径短；
+- 状态和时间信息优先；
+- 不照搬 Web Admin 的 Sidebar / Table 模式。
+
+小程序基础层级：
+
+- Page title：约 40rpx / semibold；
+- Section title：30–32rpx / semibold；
+- Body：28rpx；
+- Secondary / Caption：22–26rpx；
+- Card / Input / Button 间距遵循 8rpx 基础网格。
+
+首次进入固定流程：
+
+```text
+微信登录
+→ 完善资料
+→ 加入空间
+→ 进入当前空间
+```
+
+门禁规则：
+
+- Profile 未完成时进入资料页；
+- Profile 完成但没有 active Space Membership 时，只能进入邀请码页；
+- 有 active Membership 时恢复上一次可用 Space；
+- 上一次 Space 不可用时要求用户选择其他可用 Space；
+- “我的”承载资料编辑、当前 Space、Space 切换和加入其他 Space。
 
 Web 与小程序共享**品牌、术语、状态语义和交互原则**，不强求共享同一页面布局。
 
@@ -361,7 +391,7 @@ Web 与小程序共享**品牌、术语、状态语义和交互原则**，不强
 
 - Web Admin 视觉方向已确认。
 - Space / Settings / Admin / Invite 页面成为首批基准实现。
-- 小程序产品交互已定义，但完整视觉系统尚未冻结。
+- 小程序轻量原生工具风格已冻结，并与现有深墨绿品牌体系对齐。
 - 当前不引入第三方 UI Component Library。
 - 后续页面优先复用已有 Shell、Button、Panel、Table、Field、Status、Tab 等模式。
 
