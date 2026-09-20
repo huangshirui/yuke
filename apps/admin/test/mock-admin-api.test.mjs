@@ -120,3 +120,26 @@ test('weekly scheduling mock enforces overlap and frozen visibility', async () =
   assert.equal(frozen.status, 'frozen')
   assert.equal(frozen.bookable, false)
 })
+
+
+test('booking management mock filters, moves, cancels and completes bookings', async () => {
+  const api = createMockAdminApi(memoryStorage())
+
+  const initial = await api.listBookings('sp_demo_alpha', { status: 'booked' })
+  assert.equal(initial.length, 1)
+  assert.equal(initial[0].membershipId, 'mem_demo_01')
+
+  const moved = await api.updateBooking('sp_demo_alpha', initial[0].id, {
+    slotId: 'slot_demo_alt',
+    participantId: 'par_demo_01',
+  })
+  assert.equal(moved.slotId, 'slot_demo_alt')
+
+  const completed = await api.completeBooking('sp_demo_alpha', moved.id)
+  assert.equal(completed.status, 'completed')
+  assert.equal((await api.listBookings('sp_demo_alpha', { status: 'completed' })).length, 1)
+
+  const freshApi = createMockAdminApi(memoryStorage())
+  const fresh = (await freshApi.listBookings('sp_demo_alpha', { status: 'booked' }))[0]
+  assert.equal((await freshApi.cancelBooking('sp_demo_alpha', fresh.id)).status, 'cancelled')
+})

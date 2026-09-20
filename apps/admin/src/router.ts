@@ -3,12 +3,14 @@ import SpacesView from './views/SpacesView.vue'
 import SpaceDetailView from './views/SpaceDetailView.vue'
 import SpaceOperationsView from './views/SpaceOperationsView.vue'
 import ScheduleView from './views/ScheduleView.vue'
+import BookingsView from './views/BookingsView.vue'
 
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: '/', redirect: '/spaces' },
     { path: '/spaces', name: 'spaces', component: SpacesView },
+    { path: '/bookings', name: 'bookings', component: BookingsView },
     {
       path: '/spaces/:spaceId/:section(settings|admins|invites)?',
       name: 'space-detail',

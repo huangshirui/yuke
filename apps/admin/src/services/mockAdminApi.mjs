@@ -93,7 +93,13 @@ const seed = {
         id: 'slot_demo_single', spaceId: 'sp_demo_alpha', resourceId: 'res_demo_aurora',
         slotTypeId: 'sty_demo_standard', slotTypeName: '标准时段', seriesId: null,
         startAt: '2026-09-22T01:00:00.000Z', endAt: '2026-09-22T04:00:00.000Z',
-        localDate: '2026-09-22', status: 'open', bookable: true,
+        localDate: '2026-09-22', status: 'open', bookable: false,
+      },
+      {
+        id: 'slot_demo_alt', spaceId: 'sp_demo_alpha', resourceId: 'res_demo_aurora',
+        slotTypeId: 'sty_demo_standard', slotTypeName: '标准时段', seriesId: null,
+        startAt: '2026-09-26T01:00:00.000Z', endAt: '2026-09-26T03:00:00.000Z',
+        localDate: '2026-09-26', status: 'open', bookable: true,
       },
       {
         id: 'slot_demo_series', spaceId: 'sp_demo_alpha', resourceId: 'res_demo_aurora',
@@ -105,6 +111,44 @@ const seed = {
     sp_demo_beta: [],
   },
   series: { sp_demo_alpha: [], sp_demo_beta: [] },
+  bookings: {
+    sp_demo_alpha: [
+      {
+        id: 'bkg_demo_01',
+        spaceId: 'sp_demo_alpha',
+        membershipId: 'mem_demo_01',
+        slotId: 'slot_demo_single',
+        participantId: 'par_demo_01',
+        status: 'booked',
+        createdAt: '2026-09-18T03:30:00.000Z',
+        updatedAt: '2026-09-18T03:30:00.000Z',
+        participant: {
+          id: 'par_demo_01',
+          name: '参与人甲',
+          birthMonth: '2014-03',
+          status: 'active',
+        },
+        resource: {
+          id: 'res_demo_aurora',
+          name: '预约对象 A',
+          status: 'active',
+        },
+        slotType: {
+          id: 'sty_demo_standard',
+          name: '标准时段',
+          status: 'active',
+        },
+        slot: {
+          id: 'slot_demo_single',
+          startAt: '2026-09-22T01:00:00.000Z',
+          endAt: '2026-09-22T04:00:00.000Z',
+          localDate: '2026-09-22',
+          status: 'open',
+        },
+      },
+    ],
+    sp_demo_beta: [],
+  },
   members: {
     sp_demo_alpha: [
       {
@@ -246,6 +290,53 @@ export function createMockAdminApi(storage = globalThis.localStorage ?? memorySt
     const item = (state.members[spaceId] ?? []).find((member) => member.membershipId === membershipId)
     if (!item) throw new Error('找不到这个用户。')
     return item
+  }
+
+  const requireBooking = (spaceId, bookingId) => {
+    requireSpace(spaceId)
+    const item = (state.bookings[spaceId] ?? []).find((booking) => booking.id === bookingId)
+    if (!item) throw new Error('找不到这个预约。')
+    return item
+  }
+
+  const bookingError = (code, message) => {
+    const error = new Error(message)
+    error.code = code
+    return error
+  }
+
+  const hydrateBooking = (spaceId, booking) => {
+    const slot = requireSlot(spaceId, booking.slotId)
+    const resource = requireResource(spaceId, slot.resourceId)
+    const slotType = requireSlotType(spaceId, slot.slotTypeId)
+    const member = requireMember(spaceId, booking.membershipId)
+    const participant = member.participants.find((item) => item.id === booking.participantId)
+    if (!participant) throw new Error('找不到这个参与人。')
+
+    booking.resource = {
+      id: resource.id,
+      name: resource.name,
+      status: resource.status,
+    }
+    booking.slotType = {
+      id: slotType.id,
+      name: slotType.name,
+      status: slotType.status,
+    }
+    booking.participant = {
+      id: participant.id,
+      name: participant.name,
+      birthMonth: participant.birthMonth,
+      status: participant.status,
+    }
+    booking.slot = {
+      id: slot.id,
+      startAt: slot.startAt,
+      endAt: slot.endAt,
+      localDate: slot.localDate,
+      status: slot.status,
+    }
+    return booking
   }
 
   save()
@@ -510,6 +601,86 @@ export function createMockAdminApi(storage = globalThis.localStorage ?? memorySt
       slot.bookable = !frozen
       save()
       return clone(slot)
+    },
+
+    async listBookings(spaceId, filters = {}) {
+      requireSpace(spaceId)
+      const list = (state.bookings[spaceId] ?? []).filter((item) => {
+        const booking = hydrateBooking(spaceId, item)
+        if (filters.from && booking.slot.localDate < filters.from) return false
+        if (filters.to && booking.slot.localDate > filters.to) return false
+        if (filters.status && booking.status !== filters.status) return false
+        if (filters.resourceId && booking.resource.id !== filters.resourceId) return false
+        if (filters.participantId && booking.participant.id !== filters.participantId) return false
+        if (filters.slotTypeId && booking.slotType.id !== filters.slotTypeId) return false
+        return true
+      })
+      return clone(list)
+    },
+
+    async getBooking(spaceId, bookingId) {
+      return clone(hydrateBooking(spaceId, requireBooking(spaceId, bookingId)))
+    },
+
+    async updateBooking(spaceId, bookingId, input) {
+      const booking = requireBooking(spaceId, bookingId)
+      if (booking.status !== 'booked') throw new Error('只有已预约状态可以修改。')
+
+      if (input.participantId && input.participantId !== booking.participantId) {
+        const member = requireMember(spaceId, booking.membershipId)
+        const participant = member.participants.find(
+          (item) => item.id === input.participantId && item.status === 'active',
+        )
+        if (!participant) throw new Error('参与人不可用于这个预约。')
+        booking.participantId = participant.id
+      }
+
+      if (input.slotId && input.slotId !== booking.slotId) {
+        const slot = requireSlot(spaceId, input.slotId)
+        if (slot.status === 'frozen') {
+          throw bookingError('SLOT_FROZEN', '这个时段已冻结，请选择其他时间。')
+        }
+        if (slot.status !== 'open') {
+          throw bookingError('SLOT_NOT_BOOKABLE', '这个时段当前不可预约。')
+        }
+        const occupied = (state.bookings[spaceId] ?? []).some(
+          (item) =>
+            item.id !== booking.id &&
+            item.slotId === slot.id &&
+            ['booked', 'completed'].includes(item.status),
+        )
+        if (occupied) {
+          throw bookingError('SLOT_ALREADY_BOOKED', '这个时间刚刚被预约了，请选择其他时间。')
+        }
+        booking.slotId = slot.id
+      }
+
+      booking.updatedAt = new Date().toISOString()
+      hydrateBooking(spaceId, booking)
+      save()
+      return clone(booking)
+    },
+
+    async cancelBooking(spaceId, bookingId) {
+      const booking = requireBooking(spaceId, bookingId)
+      if (booking.status === 'completed') throw new Error('已完成预约不能取消。')
+      if (booking.status === 'booked') {
+        booking.status = 'cancelled'
+        booking.updatedAt = new Date().toISOString()
+      }
+      save()
+      return clone(hydrateBooking(spaceId, booking))
+    },
+
+    async completeBooking(spaceId, bookingId) {
+      const booking = requireBooking(spaceId, bookingId)
+      if (booking.status === 'cancelled') throw new Error('已取消预约不能完成。')
+      if (booking.status === 'booked') {
+        booking.status = 'completed'
+        booking.updatedAt = new Date().toISOString()
+      }
+      save()
+      return clone(hydrateBooking(spaceId, booking))
     },
 
     async listMembers(spaceId, filters = {}) {

@@ -1,4 +1,5 @@
 import type {
+  AdminBookingDetail,
   Booking,
   BookingDetail,
   BookingStatus,
@@ -121,6 +122,13 @@ function mapBookingDetail(row: BookingDetailRow): BookingDetail {
       localDate: row.local_date,
       status: row.slot_status
     }
+  }
+}
+
+function mapAdminBookingDetail(row: BookingDetailRow): AdminBookingDetail {
+  return {
+    ...mapBookingDetail(row),
+    membershipId: row.membership_id
   }
 }
 
@@ -471,6 +479,21 @@ export async function findBookingDetailById(
   return row ? mapBookingDetail(row) : null
 }
 
+export async function findAdminBookingDetailById(
+  db: BookingDatabase,
+  spaceId: string,
+  bookingId: string
+): Promise<AdminBookingDetail | null> {
+  const row = await db.prepare(`
+    ${BOOKING_DETAIL_SELECT}
+    WHERE bookings.id = ?
+      AND bookings.space_id = ?
+    LIMIT 1
+  `).bind(bookingId, spaceId).first<BookingDetailRow>()
+
+  return row ? mapAdminBookingDetail(row) : null
+}
+
 export async function listBookingsForMembership(
   db: BookingDatabase,
   spaceId: string,
@@ -489,13 +512,13 @@ export async function listBookingsForAdmin(
   db: BookingDatabase,
   spaceId: string,
   filters: BookingListFilters
-): Promise<BookingDetail[]> {
+): Promise<AdminBookingDetail[]> {
   const query = buildListQuery(filters, false)
   const result = await db.prepare(query.sql)
     .bind(...listValues(spaceId, filters))
     .all<BookingDetailRow>()
 
-  return (result.results ?? []).map(mapBookingDetail)
+  return (result.results ?? []).map(mapAdminBookingDetail)
 }
 
 function historyStatement(
