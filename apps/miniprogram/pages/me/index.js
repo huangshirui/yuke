@@ -13,6 +13,7 @@ Page({
     user: null,
     spaces: [],
     currentSpace: null,
+    currentSpaceId: '',
     avatarDisplayUrl: '',
     switchingSpaceId: '',
     selectSpaceRequired: false
@@ -46,6 +47,7 @@ Page({
         user,
         spaces: view.spaces,
         currentSpace: view.currentSpace,
+        currentSpaceId: view.currentSpace?.id || '',
         avatarDisplayUrl
       })
     } catch {
@@ -84,6 +86,7 @@ Page({
         user,
         spaces: view.spaces,
         currentSpace: view.currentSpace,
+        currentSpaceId: view.currentSpace?.id || '',
         selectSpaceRequired: false
       })
       wx.showToast({ title: '已切换空间', icon: 'success' })
