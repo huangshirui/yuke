@@ -77,6 +77,9 @@ Issue #14 使用以下运行时 binding / secret：
 - `WECHAT_APP_ID`
 - `WECHAT_APP_SECRET`
 - `USER_TOKEN_SECRET` — 至少 32 bytes 的随机值
+- `CF_ACCESS_TEAM_DOMAIN`
+- `CF_ACCESS_AUD`
+- `SUPER_ADMIN_EMAIL` — 只存在运行时受控配置
 
 公开 `wrangler.toml` 里的 R2 bucket name 仅为 local/CI 合成占位符。生产环境必须使用受控部署配置与 Secret。
 
@@ -87,3 +90,13 @@ Issue #14 使用以下运行时 binding / secret：
 - `PATCH /v1/me/profile`
 - `POST /v1/me/avatar`
 - `GET /v1/me/avatar`
+
+
+## Admin provisioning
+
+管理员身份 migration：
+
+- `0001_initial.sql`：基础领域表；
+- `0002_admin_identity_binding.sql`：增加 `pending | bound` 管理员身份绑定状态。
+
+Super Admin 首次 Access 登录由 `SUPER_ADMIN_EMAIL` bootstrap。普通 Admin 必须由 Super Admin 通过 `/v1/admin/admin-users` 按邮箱预置，随后在首次 Access 登录绑定稳定 `sub`。
