@@ -2,9 +2,13 @@
   "name": "@yuke/api",
   "private": true,
   "version": "0.1.0",
+  "type": "module",
   "scripts": {
     "dev": "wrangler dev",
     "deploy": "wrangler deploy",
     "test": "echo 'no tests yet'"
+  },
+  "dependencies": {
+    "@yuke/shared": "workspace:*"
   }
 }
