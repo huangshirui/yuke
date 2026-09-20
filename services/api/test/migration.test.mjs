@@ -35,6 +35,16 @@ describe('D1 migration gate', () => {
     ).first()
 
     expect(migration?.name).toBe('0001_initial.sql')
+
+    const adminIdentityMigration = await env.DB.prepare(
+      "SELECT name FROM d1_migrations WHERE name = '0002_admin_identity_binding.sql'"
+    ).first()
+    expect(adminIdentityMigration?.name).toBe('0002_admin_identity_binding.sql')
+
+    const adminColumns = await env.DB.prepare(
+      "SELECT name FROM pragma_table_info('admin_users') WHERE name = 'identity_status'"
+    ).all()
+    expect(adminColumns.results).toEqual([{ name: 'identity_status' }])
   })
 
   it('creates the critical capacity index and overlap trigger', async () => {
