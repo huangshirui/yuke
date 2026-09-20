@@ -28,7 +28,7 @@
 - Runtime：Node.js 22
 - License：AGPL-3.0-or-later
 
-本项目**不使用微信云开发平台**。小程序和 Web 统一通过 HTTPS API 使用部署在 Cloudflare 上的后端能力。
+本项目**不使用微信云开发平台**。小程序通过公开 HTTPS API 使用 Cloudflare 后端；Web Admin 通过同源 `yuke-admin` Worker Gateway + Service Binding 内部调用 `yuke-api`，浏览器不跨域直连 Admin API。
 
 ## 开发
 
