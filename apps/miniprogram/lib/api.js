@@ -134,6 +134,16 @@ function createApiClient(options) {
     switchSpace(spaceId) {
       return call('PUT', '/v1/me/current-space', { spaceId })
     },
+    listResources(spaceId) {
+      return call('GET', `/v1/spaces/${encodeURIComponent(spaceId)}/resources`)
+    },
+    listResourceSlots(spaceId, resourceId, from, to) {
+      const query = `from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`
+      return call(
+        'GET',
+        `/v1/spaces/${encodeURIComponent(spaceId)}/resources/${encodeURIComponent(resourceId)}/slots?${query}`
+      )
+    },
     listParticipants(spaceId) {
       return call('GET', `/v1/spaces/${encodeURIComponent(spaceId)}/participants`)
     },
