@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 
 function mockWeChatCodeSession({
   openId = 'synthetic-openid-user-001',
-  unionId = 'synthetic-unionid-user-001'
+  unionId = `synthetic-unionid-for-${openId}`
 } = {}) {
   return vi.spyOn(globalThis, 'fetch').mockImplementation(async (input, init) => {
     const request = new Request(input, init)
@@ -83,7 +83,7 @@ describe('WeChat user identity', () => {
 
     expect(row).toEqual({
       wechat_openid: 'synthetic-openid-user-001',
-      wechat_unionid: 'synthetic-unionid-user-001',
+      wechat_unionid: 'synthetic-unionid-for-synthetic-openid-user-001',
       nickname: '',
       avatar_object_key: null
     })
@@ -208,7 +208,7 @@ describe('WeChat user identity', () => {
   })
 
   it('maps an invalid WeChat login code to UNAUTHENTICATED', async () => {
-    vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async () =>
       Response.json({ errcode: 40029, errmsg: 'synthetic invalid code' })
     )
 
