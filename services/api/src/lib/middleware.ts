@@ -24,7 +24,8 @@ export const requestIdMiddleware: Middleware<unknown> = async (context, next) =>
 
 
 const ADMIN_API_PREFIX = '/v1/admin/'
-const ADMIN_CORS_METHODS = 'GET, POST, PATCH, PUT, DELETE, OPTIONS'
+const ADMIN_CORS_METHOD_VALUES = ['GET', 'POST', 'PATCH', 'PUT', 'DELETE', 'OPTIONS'] as const
+const ADMIN_CORS_METHODS = ADMIN_CORS_METHOD_VALUES.join(', ')
 const ADMIN_CORS_HEADERS = 'content-type'
 
 export type AdminCorsEnv = {
@@ -70,7 +71,12 @@ export function createAdminCorsMiddleware<Env extends AdminCorsEnv>(): Middlewar
 
       const requestedMethod =
         context.request.headers.get('access-control-request-method')?.toUpperCase()
-      if (!requestedMethod || !ADMIN_CORS_METHODS.includes(requestedMethod)) {
+      if (
+        !requestedMethod ||
+        !ADMIN_CORS_METHOD_VALUES.includes(
+          requestedMethod as (typeof ADMIN_CORS_METHOD_VALUES)[number]
+        )
+      ) {
         return new Response(null, { status: 405 })
       }
 
@@ -82,8 +88,8 @@ export function createAdminCorsMiddleware<Env extends AdminCorsEnv>(): Middlewar
         'access-control-max-age': '600'
       })
       appendVary(headers, 'Origin')
-      headers.append('vary', 'Access-Control-Request-Method')
-      headers.append('vary', 'Access-Control-Request-Headers')
+      appendVary(headers, 'Access-Control-Request-Method')
+      appendVary(headers, 'Access-Control-Request-Headers')
       return new Response(null, { status: 204, headers })
     }
 
