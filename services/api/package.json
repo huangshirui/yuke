@@ -8,7 +8,12 @@
     "d1:migrate:local": "wrangler d1 migrations apply yuke-local --local",
     "d1:verify:local": "node scripts/verify-d1-migrations.mjs",
     "test:worker": "vitest run",
-    "test": "pnpm run test:worker && pnpm run d1:verify:local"
+    "test": "pnpm run test:worker && pnpm run d1:verify:local && pnpm run production:verify",
+    "production:config": "node scripts/render-production-config.mjs",
+    "production:verify": "node scripts/verify-production-config.mjs",
+    "d1:migrate:remote": "pnpm run production:config && wrangler d1 migrations apply DB --remote --config .wrangler/production.toml",
+    "deploy:production": "pnpm run production:config && wrangler deploy --config .wrangler/production.toml",
+    "smoke:production": "node scripts/smoke-production.mjs"
   },
   "devDependencies": {
     "@cloudflare/vitest-plugin": "^1.0.0",
