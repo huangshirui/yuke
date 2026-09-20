@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "description": "Yu言在线 Monorepo",
-  "packageManager": "pnpm@10",
+  "packageManager": "pnpm@10.34.5",
   "scripts": {
     "dev": "pnpm -r dev",
     "build": "pnpm -r build",

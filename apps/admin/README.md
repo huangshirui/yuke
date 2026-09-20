@@ -27,12 +27,14 @@ VITE_ADMIN_DATA_MODE=mock
 
 Mock 仅包含仓库内 Synthetic Data，不访问真实后端。
 
-后端 #15～#17 就绪后可切换：
+线上构建使用：
 
 ```text
 VITE_ADMIN_DATA_MODE=api
-VITE_API_BASE_URL=https://<public-api-host>
+VITE_API_BASE_URL=https://api.yuke.verinasci.com
 ```
+
+生产 Pages 必须使用 `pnpm --filter @yuke/admin build:production`，该命令会在 Vite build 前校验生产数据模式和 HTTPS API origin。
 
 不要把真实基础设施地址、Token、用户数据写入仓库或示例。
 
@@ -52,3 +54,10 @@ pnpm --filter @yuke/admin test
 ```
 
 Cloudflare Access 负责 Web 登录；Admin 前端不实现自己的密码登录页。
+
+
+## Online deployment
+
+首次 Pages + Cloudflare Access 联调见 [docs/deployment-admin.md](../../docs/deployment-admin.md)。
+
+Admin 与 `api.yuke.verinasci.com/v1/admin/*` 使用同一个 multi-domain Access Application，并开启 Eager redirect cookie。API preflight OPTIONS 由 Access bypass 到 Worker，再由 Worker 精确 CORS 校验。

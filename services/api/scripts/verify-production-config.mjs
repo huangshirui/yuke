@@ -17,6 +17,7 @@ try {
       YUKE_D1_DATABASE_ID: '11111111-1111-4111-8111-111111111111',
       YUKE_R2_BUCKET_NAME: 'synthetic-yuke-avatars',
       YUKE_API_CUSTOM_DOMAIN: 'api.example.invalid',
+      YUKE_ADMIN_ORIGIN: 'https://admin.example.invalid',
       YUKE_PRODUCTION_CONFIG_PATH: output
     }
   })
@@ -33,6 +34,7 @@ try {
   for (const expected of [
     'name = "yuke-api"',
     'main = "../src/index.ts"',
+    'ADMIN_ORIGIN = "https://admin.example.invalid"',
     'pattern = "api.example.invalid"',
     'database_name = "synthetic-yuke-db"',
     'database_id = "11111111-1111-4111-8111-111111111111"',

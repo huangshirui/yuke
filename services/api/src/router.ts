@@ -11,14 +11,20 @@ import { registerMembershipRoutes } from './domains/tenant/membership/routes'
 import { registerSpaceRoutes } from './domains/tenant/space/routes'
 import type { SpaceEnv } from './domains/tenant/space/routes'
 import { ok } from './lib/http'
-import { errorBoundaryMiddleware, requestIdMiddleware } from './lib/middleware'
+import {
+  createAdminCorsMiddleware,
+  errorBoundaryMiddleware,
+  requestIdMiddleware,
+  type AdminCorsEnv
+} from './lib/middleware'
 import { Router, type RouteContext as RuntimeRouteContext } from './lib/router'
 
-export type WorkerEnv = IdentityEnv & SpaceEnv
+export type WorkerEnv = IdentityEnv & SpaceEnv & AdminCorsEnv
 export type RouteContext = Pick<RuntimeRouteContext<WorkerEnv>, 'request' | 'env' | 'executionCtx'>
 
 const app = new Router<WorkerEnv>()
 app.use(requestIdMiddleware)
+app.use(createAdminCorsMiddleware<WorkerEnv>())
 app.use(errorBoundaryMiddleware)
 
 app.get('/health', () =>
