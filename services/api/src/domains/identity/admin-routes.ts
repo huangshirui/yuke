@@ -1,6 +1,7 @@
 import type {
   CreateAdminUserInput
 } from '@yuke/shared'
+import type { IdentityEnv } from './env'
 import {
   requireAdminAccess,
   requireSuperAdmin,
@@ -30,8 +31,10 @@ function parseEmail(value: unknown): CreateAdminUserInput {
   return { email }
 }
 
+export type AdminProvisioningEnv = IdentityEnv & AdminAuthEnv
+
 export function registerAdminProvisioningRoutes(
-  app: Router<AdminAuthEnv>
+  app: Router<AdminProvisioningEnv>
 ): void {
   app.get(
     '/v1/admin/admin-users',
