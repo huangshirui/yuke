@@ -1,0 +1,17 @@
+{
+  "name": "yuke",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Yu言在线 Monorepo",
+  "packageManager": "pnpm@10",
+  "scripts": {
+    "dev": "pnpm -r dev",
+    "build": "pnpm -r build",
+    "test": "pnpm -r test"
+  },
+  "workspaces": [
+    "apps/*",
+    "services/*",
+    "packages/*"
+  ]
+}
