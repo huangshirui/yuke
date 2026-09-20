@@ -6,9 +6,10 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "test": "echo 'no tests yet'"
+    "test": "node --test test/*.test.mjs"
   },
   "dependencies": {
+    "@yuke/shared": "workspace:*",
     "vue": "latest",
     "vue-router": "latest"
   },
