@@ -62,6 +62,17 @@ const SLOT_SELECT = `
   FROM slots
 `
 
+export async function findSpaceTimezone(
+  db: SlotDatabase,
+  spaceId: string
+): Promise<string | null> {
+  const row = await db
+    .prepare('SELECT timezone FROM spaces WHERE id = ? LIMIT 1')
+    .bind(spaceId)
+    .first<{ timezone: string }>()
+  return row?.timezone ?? null
+}
+
 export async function findSlotById(
   db: SlotDatabase,
   spaceId: string,
@@ -182,4 +193,24 @@ export async function updateSlot(
       input.spaceId
     )
     .run()
+}
+
+export async function listSlotsByLocalDateRange(
+  db: SlotDatabase,
+  spaceId: string,
+  resourceId: string,
+  from: string,
+  to: string
+): Promise<SlotRecord[]> {
+  const result = await db
+    .prepare(`${SLOT_SELECT}
+      WHERE slots.space_id = ?
+        AND slots.resource_id = ?
+        AND slots.local_date >= ?
+        AND slots.local_date <= ?
+      ORDER BY slots.start_at ASC, slots.id ASC
+    `)
+    .bind(spaceId, resourceId, from, to)
+    .all<SlotRow>()
+  return (result.results ?? []).map(mapSlot)
 }
