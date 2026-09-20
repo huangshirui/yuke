@@ -1,4 +1,4 @@
-import { AppError, normalizeError } from './errors'
+import { AppError, normalizeError, ValidationError } from './errors'
 import { errorResponse } from './http'
 
 export type RouteParams = Record<string, string>
@@ -66,7 +66,11 @@ function matchRoute(route: CompiledRoute<unknown>, pathname: string): RouteParam
 
   const params: RouteParams = {}
   for (let index = 0; index < route.paramNames.length; index += 1) {
-    params[route.paramNames[index]] = decodeURIComponent(match[index + 1])
+    try {
+      params[route.paramNames[index]] = decodeURIComponent(match[index + 1])
+    } catch {
+      throw new ValidationError('URL path parameter is malformed', { path: route.paramNames[index] })
+    }
   }
   return params
 }
