@@ -10,15 +10,49 @@ function addDays(date, days) {
   return value.toISOString().slice(0, 10)
 }
 
-function today() {
-  return new Date().toISOString().slice(0, 10)
+function dateInTimezone(value, timezone) {
+  try {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: timezone || 'UTC',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit'
+    }).formatToParts(value)
+    const read = (type) => parts.find((part) => part.type === type)?.value
+    return `${read('year')}-${read('month')}-${read('day')}`
+  } catch {
+    return value.toISOString().slice(0, 10)
+  }
 }
 
-function groupSlots(slots) {
+function timeInTimezone(iso, timezone) {
+  try {
+    const parts = new Intl.DateTimeFormat('zh-CN', {
+      timeZone: timezone || 'UTC',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23'
+    }).formatToParts(new Date(iso))
+    const read = (type) => parts.find((part) => part.type === type)?.value
+    return `${read('hour')}:${read('minute')}`
+  } catch {
+    return String(iso).slice(11, 16)
+  }
+}
+
+function today(timezone) {
+  return dateInTimezone(new Date(), timezone)
+}
+
+function groupSlots(slots, timezone) {
   const map = new Map()
   for (const slot of slots.filter((item) => item.bookable)) {
     const list = map.get(slot.localDate) || []
-    list.push(slot)
+    list.push({
+      ...slot,
+      displayStart: timeInTimezone(slot.startAt, timezone),
+      displayEnd: timeInTimezone(slot.endAt, timezone)
+    })
     map.set(slot.localDate, list)
   }
   return [...map.entries()].map(([date, items]) => ({
@@ -70,7 +104,7 @@ Page({
     const { currentSpace, selectedResourceId } = this.data
     if (!currentSpace || !selectedResourceId) return
     this.setData({ loadingSlots: true })
-    const from = today()
+    const from = today(currentSpace.timezone)
     const to = addDays(from, 13)
     try {
       const slots = await getApp().globalData.api.listResourceSlots(
@@ -79,7 +113,7 @@ Page({
         from,
         to
       )
-      this.setData({ groups: groupSlots(slots) })
+      this.setData({ groups: groupSlots(slots, currentSpace.timezone) })
     } catch (error) {
       wx.showToast({ title: error.message || '可预约时间加载失败', icon: 'none' })
     } finally {
