@@ -6,7 +6,7 @@ describe('D1 migration gate', () => {
     const tables = await env.DB.prepare(`
       SELECT name
       FROM sqlite_master
-      WHERE type = 'table' AND name NOT LIKE 'sqlite_%'
+      WHERE type = 'table' AND name NOT LIKE 'sqlite_%' AND name NOT GLOB '_cf_*'
       ORDER BY name
     `).all()
 
