@@ -95,3 +95,23 @@ test('downloads protected avatar with bearer token', async () => {
   assert.equal(captured.url, 'https://api.example.invalid/v1/me/avatar')
   assert.equal(captured.header.Authorization, 'Bearer synthetic-token')
 })
+
+test('requests active resources and resource slots with Space scope', async () => {
+  const calls = []
+  const api = createApiClient({
+    baseUrl: 'https://api.example.invalid',
+    getToken: () => 'synthetic-token',
+    request(options) {
+      calls.push(options)
+      options.success({ statusCode: 200, data: { data: [] } })
+    }
+  })
+  await api.listResources('sp_synthetic')
+  await api.listResourceSlots('sp_synthetic', 'res_synthetic', '2026-09-20', '2026-10-03')
+  assert.equal(calls[0].url, 'https://api.example.invalid/v1/spaces/sp_synthetic/resources')
+  assert.equal(
+    calls[1].url,
+    'https://api.example.invalid/v1/spaces/sp_synthetic/resources/res_synthetic/slots?from=2026-09-20&to=2026-10-03'
+  )
+  assert.equal(calls[1].header.Authorization, 'Bearer synthetic-token')
+})
