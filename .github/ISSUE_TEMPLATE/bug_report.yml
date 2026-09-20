@@ -1,0 +1,45 @@
+name: Bug report
+description: 报告可公开复现的问题
+title: "[Bug] "
+labels: []
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈。请不要在公开 Issue 中粘贴真实用户数据、Token、Cookie、AppSecret、Cloudflare 凭据、生产日志或其他敏感信息。安全漏洞请按照 SECURITY.md 使用私密渠道报告。
+  - type: textarea
+    id: summary
+    attributes:
+      label: 问题描述
+      description: 简要说明实际行为与期望行为。
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: 复现步骤
+      description: 请使用合成数据和安全占位符。
+      placeholder: |
+        1. ...
+        2. ...
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: 期望结果
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: 环境
+      description: 仅填写可公开的信息，例如浏览器、微信开发者工具版本、Node.js 版本；不要填写账号或线上资源 ID。
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: 公开信息确认
+      options:
+        - label: 我确认本 Issue 不包含真实用户数据、凭据或非公开基础设施信息。
+          required: true
