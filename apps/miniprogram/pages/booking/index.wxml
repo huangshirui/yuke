@@ -42,7 +42,7 @@
             bindtap="chooseSlot"
           >
             <view class="slot-time">
-              <text>{{slot.startAt.slice(11, 16)}}–{{slot.endAt.slice(11, 16)}}</text>
+              <text>{{slot.displayStart}}–{{slot.displayEnd}}</text>
               <text class="slot-type">{{slot.slotTypeName || slot.slotType?.name || '时段'}}</text>
             </view>
             <text class="chevron">›</text>
