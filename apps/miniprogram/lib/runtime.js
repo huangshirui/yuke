@@ -5,6 +5,10 @@ const { loadToken } = require('./storage')
 
 function getApi(wxApi) {
   if (config.apiMode === 'mock') {
+    const envVersion = wxApi.getAccountInfoSync?.().miniProgram?.envVersion
+    if (envVersion === 'release') {
+      throw new Error('Mock API mode is disabled for release builds')
+    }
     return createMockApi(wxApi)
   }
 
