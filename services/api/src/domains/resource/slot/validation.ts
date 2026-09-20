@@ -1,6 +1,10 @@
 import type { CreateSlotInput } from '@yuke/shared'
 import { ValidationError } from '../../../lib/errors'
 import { expectObject, optionalString, requireString } from '../../../lib/validation'
+import {
+  parseBulkSeriesEditInput,
+  type BulkSeriesEditInput
+} from '../series/validation'
 
 export type UpdateSingleSlotInput = {
   scope?: 'single'
@@ -8,6 +12,8 @@ export type UpdateSingleSlotInput = {
   startAt?: string
   endAt?: string
 }
+
+export type ScheduleSlotEditInput = UpdateSingleSlotInput | BulkSeriesEditInput
 
 function requireIsoInstant(value: string, path: string): string {
   const parsed = Date.parse(value)
@@ -51,4 +57,12 @@ export function parseUpdateSingleSlotInput(value: unknown): UpdateSingleSlotInpu
     ...(startAtRaw === undefined ? {} : { startAt: requireIsoInstant(startAtRaw, 'startAt') }),
     ...(endAtRaw === undefined ? {} : { endAt: requireIsoInstant(endAtRaw, 'endAt') })
   }
+}
+
+export function parseScheduleSlotEditInput(value: unknown): ScheduleSlotEditInput {
+  const object = expectObject(value)
+  if (object.scope === 'this_and_future' || object.scope === 'entire_series') {
+    return parseBulkSeriesEditInput(value)
+  }
+  return parseUpdateSingleSlotInput(value)
 }

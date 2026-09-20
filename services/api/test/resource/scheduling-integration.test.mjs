@@ -1,9 +1,13 @@
 import { env, exports } from 'cloudflare:workers'
 import { describe, expect, it } from 'vitest'
 import { issueUserToken } from '../../src/domains/identity/token'
-import { createAdminSlot } from '../../src/domains/resource/slot/service'
+import {
+  changeAdminSingleSlot,
+  createAdminSlot
+} from '../../src/domains/resource/slot/service'
 import {
   createAdminSlotSeries,
+  editAdminSlotSeriesFromOccurrence,
   ensureSeriesMaterialized
 } from '../../src/domains/resource/series/service'
 import {
@@ -152,8 +156,353 @@ describe('Phase 3 Scheduling Gate', () => {
     expect(byId.get(`slot_booked_${suffix}`)?.bookable).toBe(false)
   })
 
-  it.todo('single scope converts one Series occurrence into an exception (#26)')
-  it.todo('this_and_future splits a Series without rewriting history (#26)')
-  it.todo('entire_series recalculates future unbooked occurrences only (#26)')
-  it.todo('returns SERIES_BOOKING_CONFLICT for booked occurrences affected by bulk edits (#26)')
+  it('single scope converts only the selected occurrence into a persistent exception', async () => {
+    const ids = await seedBookingFixture(`p3-single-${crypto.randomUUID()}`)
+    const series = await createAdminSlotSeries(env.DB, ids.space, ids.admin, {
+      resourceId: ids.resource,
+      slotTypeId: ids.slotType,
+      weekdays: [1],
+      localStartTime: '09:00',
+      localEndTime: '12:00',
+      startsOn: '2026-09-21',
+      endsOn: null
+    })
+    await ensureSeriesMaterialized(
+      env.DB,
+      ids.space,
+      ids.resource,
+      '2026-09-21',
+      '2026-10-05'
+    )
+
+    const anchor = await env.DB.prepare(`
+      SELECT id
+      FROM slots
+      WHERE series_id = ? AND series_occurrence_date = '2026-09-28'
+    `).bind(series.id).first()
+
+    await changeAdminSingleSlot(env.DB, ids.space, anchor.id, {
+      scope: 'single',
+      startAt: '2026-09-28T02:00:00.000Z',
+      endAt: '2026-09-28T05:00:00.000Z'
+    })
+
+    const rows = await env.DB.prepare(`
+      SELECT series_occurrence_date, is_series_exception, start_at, end_at
+      FROM slots
+      WHERE series_id = ?
+      ORDER BY series_occurrence_date
+    `).bind(series.id).all()
+
+    expect(rows.results).toHaveLength(3)
+    expect(rows.results[0]).toMatchObject({
+      series_occurrence_date: '2026-09-21',
+      is_series_exception: 0
+    })
+    expect(rows.results[1]).toMatchObject({
+      series_occurrence_date: '2026-09-28',
+      is_series_exception: 1,
+      start_at: Date.parse('2026-09-28T02:00:00.000Z'),
+      end_at: Date.parse('2026-09-28T05:00:00.000Z')
+    })
+    expect(rows.results[2]).toMatchObject({
+      series_occurrence_date: '2026-10-05',
+      is_series_exception: 0
+    })
+
+    expect(
+      await ensureSeriesMaterialized(
+        env.DB,
+        ids.space,
+        ids.resource,
+        '2026-09-28',
+        '2026-09-28'
+      )
+    ).toBe(0)
+  })
+
+  it('this_and_future splits the Series and preserves occurrences before the anchor', async () => {
+    const ids = await seedBookingFixture(`p3-split-${crypto.randomUUID()}`)
+    const series = await createAdminSlotSeries(env.DB, ids.space, ids.admin, {
+      resourceId: ids.resource,
+      slotTypeId: ids.slotType,
+      weekdays: [1],
+      localStartTime: '09:00',
+      localEndTime: '12:00',
+      startsOn: '2026-09-21',
+      endsOn: null
+    })
+    await ensureSeriesMaterialized(
+      env.DB,
+      ids.space,
+      ids.resource,
+      '2026-09-21',
+      '2026-10-12'
+    )
+
+    const anchor = await env.DB.prepare(`
+      SELECT id
+      FROM slots
+      WHERE series_id = ? AND series_occurrence_date = '2026-09-28'
+    `).bind(series.id).first()
+
+    const result = await editAdminSlotSeriesFromOccurrence(
+      env.DB,
+      ids.space,
+      anchor.id,
+      ids.admin,
+      {
+        scope: 'this_and_future',
+        weekdays: [2],
+        localStartTime: '10:00',
+        localEndTime: '11:00',
+        endsOn: null
+      },
+      Date.parse('2026-09-20T00:00:00.000Z')
+    )
+
+    expect(result.scope).toBe('this_and_future')
+    expect(result.series.supersedesSeriesId).toBe(series.id)
+    expect(result.series.startsOn).toBe('2026-09-28')
+    expect(result.series.weekdays).toEqual([2])
+
+    const oldSeries = await env.DB.prepare(`
+      SELECT ends_on, status
+      FROM slot_series
+      WHERE id = ?
+    `).bind(series.id).first()
+    expect(oldSeries).toMatchObject({ ends_on: '2026-09-27', status: 'active' })
+
+    const oldSlots = await env.DB.prepare(`
+      SELECT local_date, status, series_id
+      FROM slots
+      WHERE local_date IN ('2026-09-21', '2026-09-28', '2026-10-05', '2026-10-12')
+      ORDER BY local_date, status
+    `).all()
+
+    expect(
+      oldSlots.results.find((row) => row.local_date === '2026-09-21' && row.series_id === series.id)
+    ).toMatchObject({ status: 'open' })
+    for (const date of ['2026-09-28', '2026-10-05', '2026-10-12']) {
+      expect(
+        oldSlots.results.find((row) => row.local_date === date && row.series_id === null)
+      ).toMatchObject({ status: 'cancelled' })
+    }
+
+    const replacementSlots = await env.DB.prepare(`
+      SELECT local_date, start_at, end_at, status
+      FROM slots
+      WHERE series_id = ?
+      ORDER BY local_date
+    `).bind(result.series.id).all()
+
+    expect(replacementSlots.results.map((row) => row.local_date)).toEqual([
+      '2026-09-29',
+      '2026-10-06'
+    ])
+    expect(replacementSlots.results[0]).toMatchObject({
+      start_at: Date.parse('2026-09-29T02:00:00.000Z'),
+      end_at: Date.parse('2026-09-29T03:00:00.000Z'),
+      status: 'open'
+    })
+
+    expect(
+      await ensureSeriesMaterialized(
+        env.DB,
+        ids.space,
+        ids.resource,
+        '2026-10-13',
+        '2026-10-13'
+      )
+    ).toBe(1)
+  })
+
+  it('entire_series keeps past Slots unchanged and never backfills history with the revised rule', async () => {
+    const ids = await seedBookingFixture(`p3-entire-${crypto.randomUUID()}`)
+    const series = await createAdminSlotSeries(env.DB, ids.space, ids.admin, {
+      resourceId: ids.resource,
+      slotTypeId: ids.slotType,
+      weekdays: [1],
+      localStartTime: '09:00',
+      localEndTime: '12:00',
+      startsOn: '2026-09-07',
+      endsOn: null
+    })
+    await ensureSeriesMaterialized(
+      env.DB,
+      ids.space,
+      ids.resource,
+      '2026-09-07',
+      '2026-10-05'
+    )
+
+    const anchor = await env.DB.prepare(`
+      SELECT id
+      FROM slots
+      WHERE series_id = ? AND series_occurrence_date = '2026-09-28'
+    `).bind(series.id).first()
+
+    const revisionAt = Date.parse('2026-09-22T00:30:00.000Z')
+    const result = await editAdminSlotSeriesFromOccurrence(
+      env.DB,
+      ids.space,
+      anchor.id,
+      ids.admin,
+      {
+        scope: 'entire_series',
+        weekdays: [4],
+        localStartTime: '14:00',
+        localEndTime: '15:00'
+      },
+      revisionAt
+    )
+
+    expect(result.series.id).toBe(series.id)
+    expect(result.series.weekdays).toEqual([4])
+
+    const revisedSeries = await env.DB.prepare(`
+      SELECT materialize_after_at
+      FROM slot_series
+      WHERE id = ?
+    `).bind(series.id).first()
+    expect(revisedSeries.materialize_after_at).toBe(revisionAt)
+
+    const past = await env.DB.prepare(`
+      SELECT local_date, start_at, series_id, status
+      FROM slots
+      WHERE series_id = ?
+        AND local_date IN ('2026-09-07', '2026-09-14', '2026-09-21')
+      ORDER BY local_date
+    `).bind(series.id).all()
+
+    expect(past.results).toHaveLength(3)
+    expect(past.results.every((row) => row.series_id === series.id && row.status === 'open')).toBe(true)
+    expect(past.results[2].start_at).toBe(Date.parse('2026-09-21T01:00:00.000Z'))
+
+    const revised = await env.DB.prepare(`
+      SELECT local_date, start_at, end_at
+      FROM slots
+      WHERE series_id = ? AND local_date >= '2026-09-22'
+      ORDER BY local_date
+    `).bind(series.id).all()
+
+    expect(revised.results.map((row) => row.local_date)).toEqual([
+      '2026-09-24',
+      '2026-10-01'
+    ])
+    expect(revised.results[0]).toMatchObject({
+      start_at: Date.parse('2026-09-24T06:00:00.000Z'),
+      end_at: Date.parse('2026-09-24T07:00:00.000Z')
+    })
+
+    expect(
+      await ensureSeriesMaterialized(
+        env.DB,
+        ids.space,
+        ids.resource,
+        '2026-09-17',
+        '2026-09-17'
+      )
+    ).toBe(0)
+    const historicalBackfill = await env.DB.prepare(`
+      SELECT COUNT(*) AS count
+      FROM slots
+      WHERE series_id = ? AND local_date = '2026-09-17'
+    `).bind(series.id).first()
+    expect(historicalBackfill.count).toBe(0)
+
+    expect(
+      await ensureSeriesMaterialized(
+        env.DB,
+        ids.space,
+        ids.resource,
+        '2026-10-08',
+        '2026-10-08'
+      )
+    ).toBe(1)
+  })
+
+  it('returns SERIES_BOOKING_CONFLICT and leaves the Series untouched when a bulk edit hits a Booking', async () => {
+    const ids = await seedBookingFixture(`p3-conflict-${crypto.randomUUID()}`)
+    const series = await createAdminSlotSeries(env.DB, ids.space, ids.admin, {
+      resourceId: ids.resource,
+      slotTypeId: ids.slotType,
+      weekdays: [1],
+      localStartTime: '09:00',
+      localEndTime: '12:00',
+      startsOn: '2026-09-21',
+      endsOn: null
+    })
+    await ensureSeriesMaterialized(
+      env.DB,
+      ids.space,
+      ids.resource,
+      '2026-09-21',
+      '2026-10-05'
+    )
+
+    const anchor = await env.DB.prepare(`
+      SELECT id
+      FROM slots
+      WHERE series_id = ? AND series_occurrence_date = '2026-09-28'
+    `).bind(series.id).first()
+    const booked = await env.DB.prepare(`
+      SELECT id
+      FROM slots
+      WHERE series_id = ? AND series_occurrence_date = '2026-10-05'
+    `).bind(series.id).first()
+
+    await insertBooking(ids, {
+      id: `booking_p3_conflict_${crypto.randomUUID()}`,
+      slotId: booked.id
+    })
+
+    await expect(
+      editAdminSlotSeriesFromOccurrence(
+        env.DB,
+        ids.space,
+        anchor.id,
+        ids.admin,
+        {
+          scope: 'this_and_future',
+          localStartTime: '10:00',
+          localEndTime: '11:00'
+        },
+        Date.parse('2026-09-20T00:00:00.000Z')
+      )
+    ).rejects.toMatchObject({
+      code: 'SERIES_BOOKING_CONFLICT',
+      details: {
+        conflicts: [
+          expect.objectContaining({
+            slotId: booked.id,
+            localDate: '2026-10-05'
+          })
+        ]
+      }
+    })
+
+    const saved = await env.DB.prepare(`
+      SELECT ends_on, status
+      FROM slot_series
+      WHERE id = ?
+    `).bind(series.id).first()
+    expect(saved).toMatchObject({ ends_on: null, status: 'active' })
+
+    const superseding = await env.DB.prepare(`
+      SELECT COUNT(*) AS count
+      FROM slot_series
+      WHERE supersedes_series_id = ?
+    `).bind(series.id).first()
+    expect(superseding.count).toBe(0)
+
+    const futureSlots = await env.DB.prepare(`
+      SELECT COUNT(*) AS count
+      FROM slots
+      WHERE series_id = ?
+        AND series_occurrence_date >= '2026-09-28'
+        AND status = 'open'
+    `).bind(series.id).first()
+    expect(futureSlots.count).toBe(2)
+  })
 })
