@@ -1,3 +1,11 @@
-<view class="container">
-  <text>{{title}}</text>
+<view class="page page--centered bootstrap-page">
+  <view class="bootstrap-content">
+    <text class="brand-mark">Yu</text>
+    <text class="bootstrap-title">Yu言在线</text>
+    <text wx:if="{{loading}}" class="page-description">正在准备你的空间…</text>
+    <view wx:else>
+      <text class="page-description">{{errorMessage}}</text>
+      <button class="primary-button retry-button" bindtap="bootstrap">重试</button>
+    </view>
+  </view>
 </view>

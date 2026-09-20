@@ -1,0 +1,32 @@
+.bootstrap-page {
+  text-align: center;
+}
+
+.bootstrap-content {
+  width: 100%;
+}
+
+.brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 96rpx;
+  height: 96rpx;
+  border-radius: 24rpx;
+  background: #126e62;
+  color: #ffffff;
+  font-size: 42rpx;
+  font-weight: 600;
+  line-height: 96rpx;
+}
+
+.bootstrap-title {
+  display: block;
+  margin-top: 24rpx;
+  font-size: 40rpx;
+  font-weight: 600;
+}
+
+.retry-button {
+  margin-top: 32rpx;
+}

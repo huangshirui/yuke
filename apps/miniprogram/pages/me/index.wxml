@@ -1,0 +1,50 @@
+<view class="page">
+  <view class="profile-summary card" bindtap="editProfile">
+    <image wx:if="{{avatarDisplayUrl}}" class="profile-avatar" src="{{avatarDisplayUrl}}" mode="aspectFill" />
+    <view wx:else class="profile-avatar profile-avatar--empty">Yu</view>
+    <view class="profile-copy">
+      <text class="profile-name">{{user.nickname || '未设置昵称'}}</text>
+      <text class="caption">点击编辑资料</text>
+    </view>
+    <text class="chevron">›</text>
+  </view>
+
+  <view class="space-section">
+    <text class="section-title">当前空间</text>
+    <view wx:if="{{currentSpace}}" class="card current-space">
+      <view>
+        <text class="space-name">{{currentSpace.name}}</text>
+        <text class="space-state">当前使用</text>
+      </view>
+    </view>
+    <view wx:else class="card empty-space">
+      <text class="space-name">请选择一个空间</text>
+      <text class="page-description">当前没有可使用的默认空间。</text>
+    </view>
+  </view>
+
+  <view class="space-section" wx:if="{{spaces.length > 1 || selectSpaceRequired}}">
+    <text class="section-title">切换空间</text>
+    <view class="card space-list">
+      <view
+        wx:for="{{spaces}}"
+        wx:key="id"
+        class="space-row {{item.id === currentSpaceId ? 'space-row--current' : ''}}"
+        data-space-id="{{item.id}}"
+        bindtap="switchSpace"
+      >
+        <view>
+          <text class="space-name">{{item.name}}</text>
+          <text wx:if="{{item.id === currentSpaceId}}" class="space-current-label">当前</text>
+        </view>
+        <text wx:if="{{switchingSpaceId === item.id}}" class="caption">切换中…</text>
+        <text wx:elif="{{item.id !== currentSpaceId}}" class="chevron">›</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="secondary-actions">
+    <button class="secondary-button" bindtap="addSpace">加入其他空间</button>
+  </view>
+  <view class="safe-bottom"></view>
+</view>

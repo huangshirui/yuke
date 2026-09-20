@@ -1,0 +1,36 @@
+<view class="page">
+  <view class="page-header">
+    <text class="page-title">{{editMode ? '编辑资料' : '完善资料'}}</text>
+    <text class="page-description">{{editMode ? '更新你的头像和昵称。' : '设置头像和昵称后即可继续。'}}</text>
+  </view>
+
+  <view class="card profile-card">
+    <view class="avatar-section">
+      <button class="avatar-button" open-type="chooseAvatar" bindchooseavatar="onChooseAvatar">
+        <image wx:if="{{avatarPath || savedAvatarPath}}" class="avatar-image" src="{{avatarPath || savedAvatarPath}}" mode="aspectFill" />
+        <view wx:else class="avatar-placeholder">添加头像</view>
+      </button>
+      <text class="caption">点击头像可使用微信头像或选择图片</text>
+    </view>
+
+    <view class="field nickname-field">
+      <text class="field-label">昵称</text>
+      <input
+        class="field-input"
+        type="nickname"
+        maxlength="64"
+        value="{{nickname}}"
+        placeholder="请输入昵称"
+        bindinput="onNicknameInput"
+      />
+    </view>
+  </view>
+
+  <button
+    class="primary-button submit-button"
+    loading="{{submitting}}"
+    disabled="{{submitting}}"
+    bindtap="submit"
+  >{{editMode ? '保存' : '继续'}}</button>
+  <view class="safe-bottom"></view>
+</view>

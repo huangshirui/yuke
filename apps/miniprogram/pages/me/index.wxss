@@ -1,0 +1,83 @@
+.profile-summary {
+  display: flex;
+  align-items: center;
+}
+
+.profile-avatar {
+  width: 104rpx;
+  height: 104rpx;
+  border-radius: 52rpx;
+  background: #e8f4f1;
+}
+
+.profile-avatar--empty {
+  color: #126e62;
+  font-size: 32rpx;
+  font-weight: 600;
+  line-height: 104rpx;
+  text-align: center;
+}
+
+.profile-copy {
+  flex: 1;
+  margin-left: 24rpx;
+}
+
+.profile-name {
+  display: block;
+  margin-bottom: 8rpx;
+  font-size: 32rpx;
+  font-weight: 600;
+}
+
+.chevron {
+  color: #98a2b3;
+  font-size: 40rpx;
+}
+
+.space-section {
+  margin-top: 40rpx;
+}
+
+.current-space {
+  border-color: #b9dcd5;
+  background: #f7fbfa;
+}
+
+.space-name {
+  font-size: 28rpx;
+  font-weight: 600;
+}
+
+.space-state,
+.space-current-label {
+  display: inline-block;
+  margin-left: 12rpx;
+  color: #126e62;
+  font-size: 22rpx;
+}
+
+.empty-space .page-description {
+  margin-top: 8rpx;
+}
+
+.space-list {
+  padding-top: 4rpx;
+  padding-bottom: 4rpx;
+}
+
+.space-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 96rpx;
+  border-bottom: 1rpx solid #e7eaf0;
+}
+
+.space-row:last-child {
+  border-bottom: 0;
+}
+
+.secondary-actions {
+  margin-top: 40rpx;
+}
