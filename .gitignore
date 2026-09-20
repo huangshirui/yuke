@@ -1,0 +1,38 @@
+node_modules/
+dist/
+build/
+coverage/
+.wrangler/
+
+# Local runtime secrets / environment overrides
+.dev.vars
+.dev.vars.*
+!.dev.vars.example
+.env
+.env.*
+!.env.example
+*.local
+
+# Keys, certificates and credential containers
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+
+# Local data / captures that may contain personal information
+*.db
+*.sqlite
+*.sqlite3
+*.har
+
+# WeChat DevTools local-only configuration
+**/project.private.config.json
+
+# Editor / OS / logs
+.DS_Store
+Thumbs.db
+*.log
+.vscode/
+.idea/
