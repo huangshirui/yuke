@@ -1,58 +1,81 @@
-# Yu言在线 · Admin Worker Static Assets + Cloudflare Access Runbook
+# Yu言在线 · Admin Worker Static Assets + Service Binding + Cloudflare Access Runbook
 
-> 对应 GitHub #55。Admin Web 使用独立的 `yuke-admin` Cloudflare Worker Static Assets，不使用 Cloudflare Pages；API 继续由独立 `yuke-api` Worker 承载。
+> 对应 GitHub #55。Admin 浏览器只访问 `yuke.verinasci.com`；`yuke-admin` 同时承载 Vue Static Assets 和极薄的 Admin Gateway，Gateway 通过 Cloudflare Service Binding 内部调用独立 `yuke-api`。
 
-## 1. 目标拓扑
-
-```text
-Browser
-  │
-  ├─ https://yuke.verinasci.com
-  │    Cloudflare Access
-  │    └─ yuke-admin Worker Static Assets
-  │         └─ apps/admin/dist
-  │
-  └─ https://api.yuke.verinasci.com/v1/admin/*
-       Cloudflare Access
-       └─ yuke-api Worker
-            ├─ Cf-Access-Jwt-Assertion validation
-            ├─ D1 AdminUser authorization
-            └─ exact CORS: https://yuke.verinasci.com
-```
-
-Admin UI 与 API 保持两个独立 Worker：
-- `yuke-admin`：只负责 Vue SPA 静态资产；
-- `yuke-api`：负责 API、D1、R2 与身份授权。
-
-两者独立部署、独立回滚。Admin 页面和 Admin API path 放在**同一个 multi-domain self-hosted Access Application** 中。
-
-## 2. Admin Worker Static Assets
-
-仓库已提交：
+## 1. 最终拓扑
 
 ```text
-apps/admin/wrangler.toml
+WeChat Mini
+  │ HTTPS + project Bearer token
+  ▼
+https://api.yuke.verinasci.com/v1/*
+  │
+  ▼
+yuke-api Worker
+  ├─ D1
+  └─ R2
+
+
+Admin Browser
+  │ HTTPS + Cloudflare Access
+  ▼
+https://yuke.verinasci.com
+  │
+  ├─ Static Assets
+  │
+  └─ /api/v1/admin/*
+       │ yuke-admin Gateway
+       │ Service Binding: API -> yuke-api
+       ▼
+     yuke-api /v1/admin/*
+       ├─ verify Cf-Access-Jwt-Assertion
+       └─ D1 AdminUser / Space RBAC
 ```
 
-核心配置：
+核心边界：
+
+- Mini 继续使用公开 `api.yuke.verinasci.com`。
+- Admin 浏览器**不再直接请求** `api.yuke.verinasci.com`。
+- Admin 只使用同源 `/api/*`。
+- `yuke-admin` 不实现业务逻辑，只做 Admin 路径收口、Access JWT 必需检查和 Service Binding 转发。
+- `yuke-api` 仍是唯一业务 API 与授权实现。
+- 不再需要 Admin 浏览器 CORS。
+
+## 2. yuke-admin Worker
+
+`apps/admin/wrangler.toml`：
 
 ```toml
 name = "yuke-admin"
+main = "./worker/index.js"
 workers_dev = false
 preview_urls = false
 
 [assets]
 directory = "./dist"
 not_found_handling = "single-page-application"
+run_worker_first = ["/api/*"]
+
+[[services]]
+binding = "API"
+service = "yuke-api"
 
 [[routes]]
 pattern = "yuke.verinasci.com"
 custom_domain = true
 ```
 
-Vue Router 的 history fallback 由 Workers Static Assets 的 `single-page-application` 模式负责，不依赖 Pages。
+只有 `/api/*` 必须先运行 Worker script；静态文件继续直接由 Static Assets 服务。
 
-### 首次人工部署
+Gateway 只接受 `/api/v1/admin` 与其子路径：
+
+1. 必须存在 `Cf-Access-Jwt-Assertion`；
+2. 去掉 `/api` 前缀；
+3. 不把 Access Cookie / Origin / Referer 下传；
+4. 显式保留 Access JWT；
+5. 通过 `env.API.fetch()` Service Binding 调用 `yuke-api`。
+
+## 3. Production build / deploy
 
 Git Bash：
 
@@ -62,56 +85,62 @@ git pull --ff-only
 pnpm install
 
 export VITE_ADMIN_DATA_MODE=api
-export VITE_API_BASE_URL=https://api.yuke.verinasci.com
+export VITE_API_BASE_URL=/api
 
 pnpm --filter @yuke/admin deploy:production
 ```
 
-`build:production` 会拒绝 mock 模式或非 HTTPS API origin；随后 Wrangler 会创建/更新 `yuke-admin` Worker、上传 `dist` Static Assets，并为 `yuke.verinasci.com` 配置 Custom Domain。
+生产构建会拒绝：
 
-如果 `yuke.verinasci.com` 已存在冲突 CNAME / Worker Custom Domain，需要先处理冲突 DNS/route 后再部署。
+- mock mode；
+- `https://api.yuke.verinasci.com` 等公网直连；
+- 任何不是精确 `/api` 的 API base。
 
-## 3. Access Application（人工）
+## 4. Cloudflare Access（人工）
 
-Cloudflare Zero Trust → Access controls → Applications → Add an application → Self-hosted。
+Access Application 只需要：
 
-在**同一个 Application** 中加入：
-
-1. `yuke.verinasci.com`（全部路径）
-2. `api.yuke.verinasci.com/v1/admin/*`
-
-认证方式：
-
-- Identity provider: One-time PIN / Email OTP
-- MVP 授权权威仍然是 Yu言在线 D1 AdminUser；Access 负责认证。
-- Access policy 可允许完成 OTP 的用户进入认证层；未被 Super Admin 预置的普通邮箱仍会在 Worker D1 授权层返回 403。
-
-关键 Advanced settings：
-
-- **Eager redirect cookie: ON**
-  - 登录一个域名后，为同一 multi-domain application 的另一个显式域名预发 application cookie；
-  - 避免 Admin SPA 第一次请求 API 时再次要求登录。
-- API 域名的 CORS：
-  - **Bypass OPTIONS requests to origin: ON**
-  - OPTIONS 由 `yuke-api` Worker 的严格 CORS middleware 校验。
-
-不要对 `api.yuke.verinasci.com` 整个 hostname 开 Access；小程序 API 必须保持公网可达，只保护 `/v1/admin/*`。
-
-## 4. Access Runtime values（人工录入，不贴到 Git/聊天）
-
-创建 Application 后获取：
-
-- Team domain：`https://<team>.cloudflareaccess.com`
-- Application Audience (AUD) tag
-- Super Admin email
-
-确保当前本机仍有 #54 的三个 API 资源环境变量，然后重新生成 API production config：
-
-```bash
-pnpm --filter @yuke/api production:config
+```text
+yuke.verinasci.com
 ```
 
-交互式录入：
+Identity provider：
+
+- One-time PIN / Email OTP
+
+授权规则仍是：
+
+- Access = authentication；
+- Yu言在线 D1 AdminUser / Space RBAC = authorization。
+
+### 从旧 multi-domain 配置收敛
+
+如果 #55 前一步已经添加：
+
+```text
+api.yuke.verinasci.com/v1/admin/*
+```
+
+从同一 Access Application 中删除这个第二 hostname。
+
+以下设置不再是必需条件，可以恢复默认/关闭：
+
+- Eager redirect cookie；
+- Bypass OPTIONS requests to origin。
+
+原因：浏览器不再跨域访问 API，也不会再产生 Admin CORS preflight。
+
+## 5. yuke-api Access runtime values
+
+`yuke-api` 仍负责验证 Access JWT，因此保留：
+
+- `CF_ACCESS_TEAM_DOMAIN`
+- `CF_ACCESS_AUD`
+- `SUPER_ADMIN_EMAIL`
+
+其中 AUD 对应保护 `yuke.verinasci.com` 的 Access Application。
+
+真实值继续使用 Wrangler secret prompt，不进入 Git、Issue 或聊天。
 
 ```bash
 pnpm --filter @yuke/api exec wrangler secret put CF_ACCESS_TEAM_DOMAIN --config .wrangler/production.toml
@@ -119,33 +148,59 @@ pnpm --filter @yuke/api exec wrangler secret put CF_ACCESS_AUD --config .wrangle
 pnpm --filter @yuke/api exec wrangler secret put SUPER_ADMIN_EMAIL --config .wrangler/production.toml
 ```
 
-真实值不要贴到 Issue、PR、聊天或 shell command 参数。
+## 6. 发布顺序
 
-随后重新部署包含 Admin CORS 的 API Worker：
+架构切换时建议：
+
+1. 先部署包含 CORS 清理但仍保持公开 Mini API 的 `yuke-api`；
+2. 再部署带 Service Binding Gateway 的 `yuke-admin`；
+3. Access Application 删除 API hostname；
+4. 浏览器 smoke。
+
+对应命令：
 
 ```bash
+pnpm --filter @yuke/api production:config
 pnpm --filter @yuke/api deploy:production
+
+export VITE_ADMIN_DATA_MODE=api
+export VITE_API_BASE_URL=/api
+pnpm --filter @yuke/admin deploy:production
 ```
 
-## 5. Smoke
+## 7. Smoke
 
-1. 未登录访问 `https://yuke.verinasci.com` → Access 登录页。
-2. 用 Super Admin 邮箱 OTP 登录。
-3. Admin UI 应通过真实 API 加载，不显示 Mock synthetic 数据。
-4. DevTools Network：
-   - API origin = `https://api.yuke.verinasci.com`
-   - preflight OPTIONS = 204（需要 preflight 的写请求）
-   - Admin API 请求由 `yuke-api` Worker 校验 Access JWT。
-5. 未预置的普通邮箱即使通过 Access OTP，也不能获得 Admin API 数据。
+登录 `https://yuke.verinasci.com` 后，在 DevTools Network 验证：
 
-## 6. Gate
+```text
+GET /api/v1/admin/spaces
+```
 
-- `yuke-admin` Worker Static Assets 已部署；
-- `yuke.verinasci.com` Custom Domain Active；
-- Static Assets 使用 SPA fallback；
-- 一个 multi-domain Access Application 同时保护 Admin 页面与 Admin API path；
-- Eager redirect cookie 开启；
-- API Access Application 对 OPTIONS bypass 到 origin；
-- `yuke-api` CORS 仅允许 `https://yuke.verinasci.com`，credentials enabled；
-- Super Admin 首次登录可 bootstrap；
-- 未预置普通邮箱 API 403。
+预期：
+
+- 请求 Host 只有 `yuke.verinasci.com`；
+- 不出现浏览器对 `api.yuke.verinasci.com` 的 Admin 请求；
+- 不需要 OPTIONS CORS preflight；
+- API 正常返回真实 D1 数据；
+- `yuke-api` 继续验证 Access JWT。
+
+再验证公网 API：
+
+```bash
+curl -i https://api.yuke.verinasci.com/v1/admin/spaces
+```
+
+未提供有效 Access JWT 时应返回 API 侧未认证语义，而不是 Access 登录页；Mini 的非 Admin API 保持公开网络可达。
+
+## 8. Gate
+
+- `yuke-admin` Static Assets 正常；
+- `/api/*` selective `run_worker_first` 正常；
+- `API -> yuke-api` Service Binding 正常；
+- Admin production build 固定同源 `/api`；
+- Access 只保护 `yuke.verinasci.com`；
+- Admin 浏览器无跨域请求、无 CORS 依赖；
+- Access JWT 经 Gateway 传递并由 `yuke-api` 验证；
+- Super Admin bootstrap 正常；
+- 未预置普通邮箱仍返回 403；
+- Mini 继续通过 `api.yuke.verinasci.com` 正常使用。

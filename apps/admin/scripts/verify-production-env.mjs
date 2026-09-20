@@ -5,15 +5,8 @@ if (mode !== 'api') {
   throw new Error('VITE_ADMIN_DATA_MODE must be "api" for a production Admin build')
 }
 
-let url
-try {
-  url = new URL(apiBaseUrl)
-} catch {
-  throw new Error('VITE_API_BASE_URL must be an absolute HTTPS URL')
+if (apiBaseUrl !== '/api') {
+  throw new Error('VITE_API_BASE_URL must be "/api" so production Admin uses the same-origin Service Binding gateway')
 }
 
-if (url.protocol !== 'https:' || url.origin !== apiBaseUrl || url.pathname !== '/') {
-  throw new Error('VITE_API_BASE_URL must be an HTTPS origin without path')
-}
-
-console.log(`Production Admin API: ${apiBaseUrl}`)
+console.log('Production Admin API gateway: /api -> yuke-admin -> Service Binding -> yuke-api')

@@ -22,7 +22,7 @@ Yu言在线是一个公开开源（Public Open-source）的微信小程序 + Web
 - Backend：Cloudflare Workers，并按领域组织。
 - 数据与边缘能力：优先 Cloudflare D1 / R2 / KV / Queues 等免费资源。
 - **不使用微信云开发平台能力**；不得引入 `wx.cloud`、云函数、云数据库作为项目后端依赖。
-- 小程序与 Web 通过公开定义的 HTTPS API / Contract 使用 Cloudflare 后端能力。
+- 小程序通过公开 HTTPS API 使用 Cloudflare 后端；Web Admin 通过同源 `yuke-admin` Gateway + Service Binding 内部调用 `yuke-api`。两端继续复用同一公开定义的 `/v1` Contract，不在 Gateway 复制业务规则。
 - 业务模型和数据库 Schema 必须在需求确认后再固化；不要从临时 UI 反推长期领域模型。
 
 ## Open-source and public-repository safety（公开仓库安全）
