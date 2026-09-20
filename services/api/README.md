@@ -66,3 +66,24 @@ pnpm --filter @yuke/api d1:verify:local
 仓库根目录执行 `pnpm test` 时也会执行这项验证。
 
 > 不要把 `--local` 改成 `--remote` 作为日常开发命令。远程 migration 必须通过后续受控发布流程执行，并明确指定真实数据库与环境。
+
+
+## Mini Program identity runtime
+
+Issue #14 使用以下运行时 binding / secret：
+
+- `DB` — D1
+- `AVATARS` — private R2 bucket
+- `WECHAT_APP_ID`
+- `WECHAT_APP_SECRET`
+- `USER_TOKEN_SECRET` — 至少 32 bytes 的随机值
+
+公开 `wrangler.toml` 里的 R2 bucket name 仅为 local/CI 合成占位符。生产环境必须使用受控部署配置与 Secret。
+
+当前小程序身份接口：
+
+- `POST /v1/auth/wechat/session`
+- `GET /v1/me`
+- `PATCH /v1/me/profile`
+- `POST /v1/me/avatar`
+- `GET /v1/me/avatar`

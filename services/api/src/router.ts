@@ -1,8 +1,10 @@
 import { ok } from './lib/http'
 import { errorBoundaryMiddleware, requestIdMiddleware } from './lib/middleware'
 import { Router, type RouteContext as RuntimeRouteContext } from './lib/router'
+import { registerIdentityRoutes } from './domains/identity/routes'
+import type { IdentityEnv } from './domains/identity/env'
 
-export type WorkerEnv = Record<string, unknown>
+export type WorkerEnv = IdentityEnv
 export type RouteContext = Pick<RuntimeRouteContext<WorkerEnv>, 'request' | 'env' | 'executionCtx'>
 
 const app = new Router<WorkerEnv>()
@@ -15,6 +17,8 @@ app.get('/health', () =>
     service: 'yuke-api'
   })
 )
+
+registerIdentityRoutes(app)
 
 export async function router(context: RouteContext): Promise<Response> {
   return app.handle(context)

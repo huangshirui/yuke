@@ -158,3 +158,28 @@ export type UpdateAdminBookingInput = {
 
 // Compatibility alias for the initial repository stub.
 export type ReservationStatus = BookingStatus
+
+
+export type UserProfile = {
+  id: Id
+  nickname: string
+  avatarUrl: string | null
+  profileInitialized: boolean
+  currentSpaceId: Id | null
+  spaces: SpaceSummary[]
+}
+
+export type WeChatSessionInput = {
+  code: string
+}
+
+export type WeChatSessionResponse = {
+  tokenType: 'Bearer'
+  accessToken: string
+  expiresAt: string
+  user: UserProfile
+}
+
+export type UpdateUserProfileInput = {
+  nickname: string
+}
