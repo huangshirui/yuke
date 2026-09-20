@@ -111,8 +111,15 @@ function formatDateTime(value: string) {
   }).format(new Date(value))
 }
 
-function todayDate() {
-  return new Date().toISOString().slice(0, 10)
+function currentDateInSpace() {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: selectedSpace.value?.timezone || 'UTC',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).formatToParts(new Date())
+  const read = (type: string) => parts.find((part) => part.type === type)?.value
+  return `${read('year')}-${read('month')}-${read('day')}`
 }
 
 function addDays(date: string, days: number) {
@@ -222,9 +229,10 @@ async function loadEditSlots() {
   }
 
   const currentDate = editingBooking.value.slot.localDate
-  const today = todayDate()
+  const today = currentDateInSpace()
   const from = currentDate < today ? currentDate : today
-  const to = addDays(today, 60)
+  const horizon = addDays(today, 60)
+  const to = currentDate > horizon ? currentDate : horizon
 
   const slots = await api.listScheduleSlots(
     selectedSpaceId.value,
