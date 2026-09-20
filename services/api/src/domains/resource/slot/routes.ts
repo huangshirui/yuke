@@ -1,4 +1,5 @@
 import { getAdminPrincipal, requireAdminAccess, requireSpaceAdmin, type AdminAuthEnv } from '../../../lib/auth'
+import { ValidationError } from '../../../lib/errors'
 import { ok } from '../../../lib/http'
 import type { Router } from '../../../lib/router'
 import { parseJsonBody } from '../../../lib/validation'
@@ -24,7 +25,7 @@ function requireDateQuery(request: Request): { from: string; to: string } {
   const from = url.searchParams.get('from') ?? ''
   const to = url.searchParams.get('to') ?? ''
   if (!/^\d{4}-\d{2}-\d{2}$/.test(from) || !/^\d{4}-\d{2}-\d{2}$/.test(to) || to < from) {
-    throw new Error('INVALID_SLOT_DATE_RANGE')
+    throw new ValidationError('from/to must be a valid ascending YYYY-MM-DD range')
   }
   return { from, to }
 }
