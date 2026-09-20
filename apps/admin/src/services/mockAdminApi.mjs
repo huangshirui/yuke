@@ -10,11 +10,11 @@ const seed = {
   },
   admins: {
     sp_demo_alpha: [
-      { id: 'adm_demo_owner', displayName: '示例管理员 A', email: 'admin-a@example.invalid' },
-      { id: 'adm_demo_ops', displayName: '示例管理员 B', email: 'admin-b@example.invalid' },
+      { id: 'adm_demo_owner', email: 'admin-a@example.invalid', platformRole: 'none', status: 'active' },
+      { id: 'adm_demo_ops', email: 'admin-b@example.invalid', platformRole: 'none', status: 'active' },
     ],
     sp_demo_beta: [
-      { id: 'adm_demo_owner', displayName: '示例管理员 A', email: 'admin-a@example.invalid' },
+      { id: 'adm_demo_owner', email: 'admin-a@example.invalid', platformRole: 'none', status: 'active' },
     ],
   },
   invites: {
@@ -97,7 +97,7 @@ export function createMockAdminApi(storage = globalThis.localStorage ?? memorySt
       const list = state.admins[spaceId] ?? (state.admins[spaceId] = [])
       const current = list.find((item) => item.id === id)
       if (current) return clone(current)
-      const admin = { id, displayName: '示例待分配管理员', email: 'assigned-admin@example.invalid' }
+      const admin = { id, email: 'assigned-admin@example.invalid', platformRole: 'none', status: 'active' }
       list.push(admin)
       save()
       return clone(admin)
