@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability / 安全漏洞
+    url: https://github.com/huangshirui/yuke/security
+    about: 请优先使用 GitHub Security / Private Vulnerability Reporting；不要公开披露敏感漏洞细节。
