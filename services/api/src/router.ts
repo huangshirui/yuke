@@ -1,10 +1,12 @@
+import { registerIdentityRoutes } from './domains/identity/routes'
+import type { IdentityEnv } from './domains/identity/env'
+import { registerSpaceRoutes } from './domains/tenant/space/routes'
+import type { SpaceEnv } from './domains/tenant/space/routes'
 import { ok } from './lib/http'
 import { errorBoundaryMiddleware, requestIdMiddleware } from './lib/middleware'
 import { Router, type RouteContext as RuntimeRouteContext } from './lib/router'
-import { registerIdentityRoutes } from './domains/identity/routes'
-import type { IdentityEnv } from './domains/identity/env'
 
-export type WorkerEnv = IdentityEnv
+export type WorkerEnv = IdentityEnv & SpaceEnv
 export type RouteContext = Pick<RuntimeRouteContext<WorkerEnv>, 'request' | 'env' | 'executionCtx'>
 
 const app = new Router<WorkerEnv>()
@@ -19,6 +21,7 @@ app.get('/health', () =>
 )
 
 registerIdentityRoutes(app)
+registerSpaceRoutes(app)
 
 export async function router(context: RouteContext): Promise<Response> {
   return app.handle(context)

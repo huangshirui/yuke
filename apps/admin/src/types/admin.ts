@@ -1,12 +1,8 @@
-import type { CutoffMinutes, SpaceSettings, SpaceSummary } from '@yuke/shared'
+import type { CutoffMinutes, SpaceAdminSummary, SpaceSettings, SpaceSummary } from '@yuke/shared'
 
 export type AdminSpace = SpaceSummary
 
-export type AdminUserSummary = {
-  id: string
-  displayName: string
-  email: string
-}
+export type AdminUserSummary = SpaceAdminSummary
 
 export type InviteSummary = {
   id: string

@@ -183,3 +183,36 @@ export type WeChatSessionResponse = {
 export type UpdateUserProfileInput = {
   nickname: string
 }
+
+export type SpaceDetail = SpaceSummary & {
+  settings: SpaceSettings
+}
+
+export type SpaceAdminSummary = {
+  id: Id
+  email: string
+  platformRole: 'none' | 'super_admin'
+  status: EntityStatus
+}
+
+export type CreateSpaceInput = {
+  name: string
+  timezone: string
+  bookingCutoffMinutes: CutoffMinutes
+  cancellationCutoffMinutes: CutoffMinutes
+}
+
+export type UpdateSpaceInput = {
+  name?: string
+  timezone?: string
+}
+
+export type UpdateSpaceSettingsInput = {
+  bookingCutoffMinutes?: CutoffMinutes
+  cancellationCutoffMinutes?: CutoffMinutes
+}
+
+export type AssignSpaceAdminInput = {
+  adminUserId: Id
+}
+
