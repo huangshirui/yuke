@@ -76,6 +76,24 @@ export type SlotType = {
   status: EntityStatus
 }
 
+export type CreateResourceInput = {
+  name: string
+  note?: string | null
+}
+
+export type UpdateResourceInput = {
+  name?: string
+  note?: string | null
+}
+
+export type CreateSlotTypeInput = {
+  name: string
+}
+
+export type UpdateSlotTypeInput = {
+  name?: string
+}
+
 export type Slot = {
   id: Id
   spaceId: Id
