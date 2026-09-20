@@ -1,4 +1,5 @@
 import type {
+  AdminBookingDetail,
   Booking,
   BookingDetail,
   CreateBookingInput,
@@ -16,6 +17,7 @@ import {
   completeBookingForAdmin,
   findBookingById,
   findBookingCreationContext,
+  findAdminBookingDetailById,
   findBookingDetailById,
   findBookingStateById,
   insertBookingIfEligible,
@@ -305,7 +307,7 @@ export async function listVisibleAdminBookings(
   env: BookingEnv,
   spaceId: string,
   filters: BookingListFilters
-): Promise<BookingDetail[]> {
+): Promise<AdminBookingDetail[]> {
   return listBookingsForAdmin(bookingDb(env), spaceId, filters)
 }
 
@@ -313,8 +315,8 @@ export async function readAdminBooking(
   env: BookingEnv,
   spaceId: string,
   bookingId: string
-): Promise<BookingDetail> {
-  const detail = await findBookingDetailById(bookingDb(env), spaceId, bookingId)
+): Promise<AdminBookingDetail> {
+  const detail = await findAdminBookingDetailById(bookingDb(env), spaceId, bookingId)
   if (!detail) {
     throw new AppError('NOT_FOUND', 'Booking not found')
   }
