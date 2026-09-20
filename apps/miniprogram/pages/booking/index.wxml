@@ -1,0 +1,55 @@
+<view class="page">
+  <view class="page-header">
+    <text class="page-title">选择时间</text>
+    <text class="page-description">查看 {{currentSpace.name || '当前空间'}} 中未来 14 天可预约的时间。</text>
+  </view>
+
+  <view wx:if="{{loading}}" class="card state-card"><text class="muted">正在加载预约对象…</text></view>
+
+  <block wx:else>
+    <scroll-view wx:if="{{resources.length}}" class="resource-strip" scroll-x enable-flex>
+      <button
+        wx:for="{{resources}}"
+        wx:key="id"
+        class="resource-chip {{item.id === selectedResourceId ? 'resource-chip--active' : ''}}"
+        data-resource-id="{{item.id}}"
+        bindtap="selectResource"
+      >{{item.name}}</button>
+    </scroll-view>
+
+    <view wx:if="{{!resources.length}}" class="card state-card">
+      <text class="state-title">暂无可预约对象</text>
+      <text class="page-description">当前空间还没有启用中的预约对象。</text>
+    </view>
+
+    <view wx:elif="{{loadingSlots}}" class="card state-card"><text class="muted">正在加载可预约时间…</text></view>
+
+    <view wx:elif="{{!groups.length}}" class="card state-card">
+      <text class="state-title">未来 14 天暂无可预约时间</text>
+      <text class="page-description">可以稍后再来查看新的开放时段。</text>
+    </view>
+
+    <view wx:else class="slot-groups">
+      <view wx:for="{{groups}}" wx:key="date" class="slot-day">
+        <text class="section-title">{{item.label}}</text>
+        <view class="slot-list">
+          <button
+            wx:for="{{item.slots}}"
+            wx:for-item="slot"
+            wx:key="id"
+            class="card slot-card"
+            data-slot-id="{{slot.id}}"
+            bindtap="chooseSlot"
+          >
+            <view class="slot-time">
+              <text>{{slot.startAt.slice(11, 16)}}–{{slot.endAt.slice(11, 16)}}</text>
+              <text class="slot-type">{{slot.slotTypeName || slot.slotType?.name || '时段'}}</text>
+            </view>
+            <text class="chevron">›</text>
+          </button>
+        </view>
+      </view>
+    </view>
+  </block>
+  <view class="safe-bottom"></view>
+</view>
