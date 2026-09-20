@@ -235,17 +235,27 @@ Query 可用：
 - `to`
 - `status`
 
+`from/to` 使用 Slot 的 Space 本地日期（`YYYY-MM-DD`）。接口只返回当前 active Membership 自己创建的 Booking。
+
 日程视图与三日视图都由相同列表接口驱动，不为 UI 视图定义两个后端模型。
+
+列表与详情均返回 Booking 基础字段以及 Participant、Resource、Slot Type、具体 Slot 时间摘要。
 
 ### GET /spaces/{spaceId}/bookings/{bookingId}
 
-返回预约详情、Participant、Resource、Slot Type 与留言。
+只允许读取当前 Membership 自己的 Booking；其他 Membership 的 Booking 按 `NOT_FOUND` 处理，避免泄漏存在性。
 
 ### POST /spaces/{spaceId}/bookings/{bookingId}/cancel
 
 无 Body。
 
-用户取消需满足 Space cancellation cutoff。管理员取消不受该用户规则限制。
+规则：
+- 仅 `booked` 状态可由用户取消；
+- Space `cancellationCutoffMinutes` 非 null 时，达到截止点后返回 `CANCELLATION_CUTOFF_REACHED`；
+- null 表示不设置取消时间限制；
+- Slot 是否 Frozen 不改变已有 Booking 的取消规则；
+- 取消后 Booking 不再占用 capacity；如果 Slot 仍为 Frozen，则依然不能产生新预约；
+- 成功取消写入 `booking_history`。
 
 ### GET /spaces/{spaceId}/bookings/{bookingId}/messages
 ### POST /spaces/{spaceId}/bookings/{bookingId}/messages
@@ -564,6 +574,12 @@ Query：
 - slotTypeId
 - status
 
+返回 Space 内匹配的 Booking 及 Participant / Resource / Slot Type / Slot 摘要。
+
+### GET /admin/spaces/{spaceId}/bookings/{bookingId}
+
+返回单个 Booking 详情。
+
 ### PATCH /admin/spaces/{spaceId}/bookings/{bookingId}
 
 MVP 允许修改：
@@ -571,14 +587,27 @@ MVP 允许修改：
 - slotId
 - participantId
 
-修改 slotId 时重新执行所有 Slot 校验和 capacity=1 最终约束。
+规则：
+- 仅 `booked` Booking 可修改；
+- 修改 Participant 时，目标 Participant 必须属于原 Membership 且为 active；
+- 修改 slotId 时重新执行 Space / Resource / Slot / booking cutoff / capacity=1 校验；
+- capacity=1 仍由 D1 partial unique index 做最终并发裁决；
+- 修改与 `booking_history(updated)` 在同一 D1 batch 中提交。
 
 ### POST /admin/spaces/{spaceId}/bookings/{bookingId}/cancel
+
+Admin 取消不受用户 cancellation cutoff 限制，但仅允许从 `booked` 转为 `cancelled`。
+
 ### POST /admin/spaces/{spaceId}/bookings/{bookingId}/complete
+
+仅允许从 `booked` 转为 `completed`。
+
 ### GET /admin/spaces/{spaceId}/bookings/{bookingId}/messages
 ### POST /admin/spaces/{spaceId}/bookings/{bookingId}/messages
 
-所有管理修改都写 `booking_history`。
+Message API 在 Phase 5 实现。
+
+所有成功的 created / updated / cancelled / completed 操作都写 `booking_history`。
 
 ## 16. 用户与参与人 / Admin
 
