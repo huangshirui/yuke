@@ -2,10 +2,11 @@ import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { spawnSync } from 'node:child_process'
+import { fileURLToPath } from 'node:url'
 
 const tempDir = mkdtempSync(join(tmpdir(), 'yuke-production-config-'))
 const output = join(tempDir, 'production.toml')
-const script = new URL('./render-production-config.mjs', import.meta.url)
+const script = fileURLToPath(new URL('./render-production-config.mjs', import.meta.url))
 
 try {
   const result = spawnSync(process.execPath, [script], {
