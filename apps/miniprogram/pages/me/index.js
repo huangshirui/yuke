@@ -70,6 +70,10 @@ Page({
     wx.navigateTo({ url: '/pages/profile/setup?mode=edit' })
   },
 
+  browseAvailability() {
+    wx.navigateTo({ url: '/pages/booking/index' })
+  },
+
   manageParticipants() {
     wx.navigateTo({ url: '/pages/participants/index' })
   },
