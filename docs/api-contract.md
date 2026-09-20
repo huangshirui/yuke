@@ -131,11 +131,30 @@ MVP 服务端限制：
 { "inviteCode": "high-entropy-invite-code" }
 ```
 
-成功后建立 Membership，并固化 `inviteCodeId` 与 `invitedByAdminId`。
+规则：
+
+- 需要小程序 Bearer Token；
+- InviteCode 只限制有效期，不限制使用人数；
+- 成功后建立 Membership，并固化最初的 `inviteCodeId` 与 `invitedByAdminId`；
+- 同一 User 再次加入同一 Space 为幂等操作，不创建第二条 Membership，也不覆盖原来源；
+- 成功加入后自动把该 Space 设为当前 Space；
+- revoked → `INVITE_REVOKED`；
+- expired → `INVITE_EXPIRED`；
+- Space disabled → `SPACE_DISABLED`。
+
+返回 Membership、Space 摘要和 `currentSpaceId`。
 
 ### GET /me/spaces
 
-列出当前用户已加入的 Space。
+需要小程序 Bearer Token。列出当前用户所有 active Membership 对应的 Space；Space 本身可能是 disabled，以便客户端显示停用状态。
+
+### PUT /me/current-space
+
+```json
+{ "spaceId": "sp_xxx" }
+```
+
+只允许切换到当前用户已有 active Membership 的 Space；不满足时返回 `SPACE_ACCESS_DENIED`。
 
 ## 4. Participant
 
@@ -327,6 +346,8 @@ Space 即使处于 `disabled`，管理员仍可维护 Settings；终端预约能
 ### GET /admin/spaces/{spaceId}/invites
 ### POST /admin/spaces/{spaceId}/invites
 
+Super Admin 或该 Space 的 Space Admin 可访问。
+
 ```json
 {
   "label": "示例渠道 A",
@@ -334,13 +355,26 @@ Space 即使处于 `disabled`，管理员仍可维护 Settings；终端预约能
 }
 ```
 
-服务端生成至少 96-bit 随机熵的邀请码。
+- `label` 可为 null；
+- `expiresAt` 必须是未来时间；
+- 服务端使用 Web Crypto 生成 144-bit 随机邀请码；
+- 邀请码没有人数/次数上限；
+- 每个 Invite 保存 `createdByAdminId` 与累计 `memberCount`。
 
 ### POST /admin/spaces/{spaceId}/invites/{inviteId}/revoke
 
+撤销只影响后续加入；既有 Membership 与来源数据保留。重复撤销为幂等操作。
+
 ### GET /admin/spaces/{spaceId}/invites/{inviteId}/members
 
-查看通过该邀请码加入的 Membership。
+查看通过该邀请码加入的 Membership，返回：
+
+- membershipId
+- nickname
+- joinedAt
+- participantCount
+- invitedByAdminId
+- inviteCodeId
 
 ## 11. Resource / Admin
 
