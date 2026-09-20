@@ -12,7 +12,10 @@ export default defineConfig({
       },
       miniflare: {
         bindings: {
-          TEST_MIGRATIONS: await readD1Migrations(migrationsPath)
+          TEST_MIGRATIONS: await readD1Migrations(migrationsPath),
+          WECHAT_APP_ID: 'synthetic-app-id',
+          WECHAT_APP_SECRET: 'synthetic-app-secret-not-a-credential',
+          USER_TOKEN_SECRET: 'synthetic-token-signing-secret-for-tests-only-0001'
         }
       }
     }))
