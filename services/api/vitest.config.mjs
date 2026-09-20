@@ -1,6 +1,5 @@
 import { fileURLToPath } from 'node:url'
-import { cloudflareTest } from '@cloudflare/vitest-plugin'
-import { readD1Migrations } from '@cloudflare/vitest-plugin/config'
+import { cloudflareTest, readD1Migrations } from '@cloudflare/vitest-plugin'
 import { defineConfig } from 'vitest/config'
 
 const migrationsPath = fileURLToPath(new URL('./migrations', import.meta.url))
