@@ -1,5 +1,6 @@
-import type { ApiResponse, SpaceSettings } from '@yuke/shared'
+import type { ApiResponse, SpaceSettings, UpdateAdminBookingInput } from '@yuke/shared'
 import type {
+  AdminBooking,
   AdminMemberDetail,
   AdminMemberSummary,
   AdminResource,
@@ -11,6 +12,7 @@ import type {
   CreateSpaceInput,
   InviteMemberSummary,
   InviteSummary,
+  BookingFilters,
   MemberFilters,
   ResourceInput,
   SlotTypeInput,
@@ -50,6 +52,12 @@ export interface AdminApi {
   updateScheduleSlot(spaceId: string, slotId: string, input: import('../types/admin').UpdateScheduleSlotInput): Promise<import('../types/admin').AdminScheduleSlot | AdminSeriesEditResult>
   setScheduleSlotFrozen(spaceId: string, slotId: string, frozen: boolean): Promise<import('../types/admin').AdminScheduleSlot>
 
+  listBookings(spaceId: string, filters?: BookingFilters): Promise<AdminBooking[]>
+  getBooking(spaceId: string, bookingId: string): Promise<AdminBooking>
+  updateBooking(spaceId: string, bookingId: string, input: UpdateAdminBookingInput): Promise<AdminBooking>
+  cancelBooking(spaceId: string, bookingId: string): Promise<AdminBooking>
+  completeBooking(spaceId: string, bookingId: string): Promise<AdminBooking>
+
   listMembers(spaceId: string, filters?: MemberFilters): Promise<AdminMemberSummary[]>
   getMember(spaceId: string, membershipId: string): Promise<AdminMemberDetail>
   updateMemberAdminNote(spaceId: string, membershipId: string, adminNote: string | null): Promise<void>
@@ -74,7 +82,15 @@ class HttpAdminApi implements AdminApi {
     let payload: ApiResponse<T> | null = null
     try { payload = (await response.json()) as ApiResponse<T> } catch { payload = null }
     if (!response.ok || !payload || 'error' in payload) {
-      throw new Error(payload && 'error' in payload ? payload.error.message : '请求失败，请稍后重试。')
+      const error = new Error(
+        payload && 'error' in payload ? payload.error.message : '请求失败，请稍后重试。'
+      ) as Error & { code?: string; details?: unknown; statusCode?: number }
+      if (payload && 'error' in payload) {
+        error.code = payload.error.code
+        error.details = payload.error.details
+      }
+      error.statusCode = response.status
+      throw error
     }
     return payload.data
   }
@@ -224,6 +240,41 @@ class HttpAdminApi implements AdminApi {
   setScheduleSlotFrozen(spaceId: string, slotId: string, frozen: boolean) {
     return this.request<import('../types/admin').AdminScheduleSlot>(
       this.spacePath(spaceId) + '/slots/' + encodeURIComponent(slotId) + '/' + (frozen ? 'freeze' : 'unfreeze'),
+      { method: 'POST' },
+    )
+  }
+
+  listBookings(spaceId: string, filters: BookingFilters = {}) {
+    const query = new URLSearchParams()
+    if (filters.from) query.set('from', filters.from)
+    if (filters.to) query.set('to', filters.to)
+    if (filters.status) query.set('status', filters.status)
+    if (filters.resourceId) query.set('resourceId', filters.resourceId)
+    if (filters.participantId) query.set('participantId', filters.participantId)
+    if (filters.slotTypeId) query.set('slotTypeId', filters.slotTypeId)
+    const suffix = query.size ? '?' + query.toString() : ''
+    return this.request<AdminBooking[]>(this.spacePath(spaceId) + '/bookings' + suffix)
+  }
+  getBooking(spaceId: string, bookingId: string) {
+    return this.request<AdminBooking>(
+      this.spacePath(spaceId) + '/bookings/' + encodeURIComponent(bookingId),
+    )
+  }
+  updateBooking(spaceId: string, bookingId: string, input: UpdateAdminBookingInput) {
+    return this.request<AdminBooking>(
+      this.spacePath(spaceId) + '/bookings/' + encodeURIComponent(bookingId),
+      { method: 'PATCH', body: JSON.stringify(input) },
+    )
+  }
+  cancelBooking(spaceId: string, bookingId: string) {
+    return this.request<AdminBooking>(
+      this.spacePath(spaceId) + '/bookings/' + encodeURIComponent(bookingId) + '/cancel',
+      { method: 'POST' },
+    )
+  }
+  completeBooking(spaceId: string, bookingId: string) {
+    return this.request<AdminBooking>(
+      this.spacePath(spaceId) + '/bookings/' + encodeURIComponent(bookingId) + '/complete',
       { method: 'POST' },
     )
   }

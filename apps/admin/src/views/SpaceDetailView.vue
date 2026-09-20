@@ -225,6 +225,10 @@ function goSection(next: string) {
   router.push('/spaces/' + spaceId.value + '/' + next)
 }
 
+function goBookings() {
+  router.push({ path: '/bookings', query: { spaceId: spaceId.value } })
+}
+
 watch(spaceId, load)
 onMounted(load)
 </script>
@@ -260,6 +264,7 @@ onMounted(load)
         <button @click="goSection('resources')">预约对象</button>
         <button @click="goSection('slot-types')">时段类型</button>
         <button @click="goSection('members')">用户</button>
+        <button @click="goBookings">预约</button>
       </nav>
 
       <section v-if="section === 'settings'" class="panel">

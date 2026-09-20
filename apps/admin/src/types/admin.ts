@@ -1,4 +1,6 @@
 import type {
+  AdminBookingDetail as SharedAdminBookingDetail,
+  BookingStatus,
   CreateInviteInput as SharedCreateInviteInput,
   CutoffMinutes,
   EntityStatus,
@@ -122,3 +124,15 @@ export type UpdateScheduleSlotInput = {
 }
 
 export type AdminSeriesEditResult = SeriesEditResult
+
+
+export type AdminBooking = SharedAdminBookingDetail
+
+export type BookingFilters = {
+  from?: string
+  to?: string
+  status?: BookingStatus
+  resourceId?: string
+  participantId?: string
+  slotTypeId?: string
+}

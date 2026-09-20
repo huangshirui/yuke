@@ -143,6 +143,10 @@ export type BookingDetail = Booking & {
   }
 }
 
+export type AdminBookingDetail = BookingDetail & {
+  membershipId: Id
+}
+
 export type BookingMessage = {
   id: Id
   bookingId: Id
