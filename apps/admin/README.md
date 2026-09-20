@@ -34,7 +34,7 @@ VITE_ADMIN_DATA_MODE=api
 VITE_API_BASE_URL=https://api.yuke.verinasci.com
 ```
 
-生产 Pages 必须使用 `pnpm --filter @yuke/admin build:production`，该命令会在 Vite build 前校验生产数据模式和 HTTPS API origin。
+生产 Worker Static Assets 部署必须先执行 `pnpm --filter @yuke/admin build:production`；该命令会在 Vite build 前校验生产数据模式和 HTTPS API origin。
 
 不要把真实基础设施地址、Token、用户数据写入仓库或示例。
 
@@ -58,6 +58,19 @@ Cloudflare Access 负责 Web 登录；Admin 前端不实现自己的密码登录
 
 ## Online deployment
 
-首次 Pages + Cloudflare Access 联调见 [docs/deployment-admin.md](../../docs/deployment-admin.md)。
+首次 Workers Static Assets + Cloudflare Access 联调见 [docs/deployment-admin.md](../../docs/deployment-admin.md)。
 
 Admin 与 `api.yuke.verinasci.com/v1/admin/*` 使用同一个 multi-domain Access Application，并开启 Eager redirect cookie。API preflight OPTIONS 由 Access bypass 到 Worker，再由 Worker 精确 CORS 校验。
+
+
+### Production deploy / 生产部署
+
+Admin 使用独立的 `yuke-admin` Cloudflare Worker Static Assets，不使用 Pages，也不与 API Worker 合并：
+
+```bash
+export VITE_ADMIN_DATA_MODE=api
+export VITE_API_BASE_URL=https://api.yuke.verinasci.com
+pnpm --filter @yuke/admin deploy:production
+```
+
+`apps/admin/wrangler.toml` 将 `dist` 作为 Static Assets，并使用 `single-page-application` fallback；Custom Domain 为 `yuke.verinasci.com`。
