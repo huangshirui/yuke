@@ -7,15 +7,29 @@ const script = fileURLToPath(
   new URL('../scripts/verify-production-env.mjs', import.meta.url)
 )
 
-test('accepts the same-origin Admin Service Binding gateway', () => {
+test('accepts production API mode without an API base environment variable', () => {
+  const env = { ...process.env, VITE_ADMIN_DATA_MODE: 'api' }
+  delete env.VITE_API_BASE_URL
+
+  const result = spawnSync(process.execPath, [script], {
+    encoding: 'utf8',
+    env
+  })
+
+  assert.equal(result.status, 0, result.stderr)
+  assert.match(result.stdout, /\/api -> yuke-admin -> Service Binding -> yuke-api/)
+})
+
+test('ignores shell-specific VITE_API_BASE_URL values because production base is code-fixed', () => {
   const result = spawnSync(process.execPath, [script], {
     encoding: 'utf8',
     env: {
       ...process.env,
       VITE_ADMIN_DATA_MODE: 'api',
-      VITE_API_BASE_URL: '/api'
+      VITE_API_BASE_URL: 'C:/Program Files/Git/api'
     }
   })
+
   assert.equal(result.status, 0, result.stderr)
 })
 
@@ -24,27 +38,9 @@ test('rejects production mock mode', () => {
     encoding: 'utf8',
     env: {
       ...process.env,
-      VITE_ADMIN_DATA_MODE: 'mock',
-      VITE_API_BASE_URL: '/api'
+      VITE_ADMIN_DATA_MODE: 'mock'
     }
   })
-  assert.notEqual(result.status, 0)
-})
 
-test('rejects direct or malformed production API targets', () => {
-  for (const value of [
-    'https://api.example.invalid',
-    '/api/',
-    '/v1'
-  ]) {
-    const result = spawnSync(process.execPath, [script], {
-      encoding: 'utf8',
-      env: {
-        ...process.env,
-        VITE_ADMIN_DATA_MODE: 'api',
-        VITE_API_BASE_URL: value
-      }
-    })
-    assert.notEqual(result.status, 0, value)
-  }
+  assert.notEqual(result.status, 0)
 })

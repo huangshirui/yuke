@@ -56,7 +56,7 @@ export interface AdminApi {
   updateParticipantAdminNote(spaceId: string, participantId: string, adminNote: string | null): Promise<void>
 }
 
-const baseUrl = (import.meta.env.VITE_API_BASE_URL ?? '/api').replace(/\/$/, '')
+const baseUrl = '/api'
 export const adminDataMode = import.meta.env.VITE_ADMIN_DATA_MODE === 'api' ? 'api' : 'mock'
 
 class HttpAdminApi implements AdminApi {

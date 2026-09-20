@@ -27,14 +27,13 @@ VITE_ADMIN_DATA_MODE=mock
 
 Mock 仅包含仓库内 Synthetic Data，不访问真实后端。
 
-线上构建使用：
+线上构建只需要：
 
 ```text
 VITE_ADMIN_DATA_MODE=api
-VITE_API_BASE_URL=/api
 ```
 
-生产 Worker 部署必须先执行 `pnpm --filter @yuke/admin build:production`；该命令会在 Vite build 前强制校验同源 `/api` Gateway，禁止生产 Admin 直连公网 API。
+生产 Admin 的 API base 已在代码中固定为同源 `/api`，不再通过环境变量配置。这样可以避免 Windows Git Bash / MSYS 将 `/api` 自动转换为本地文件路径，也禁止生产 Admin 误切回公网 API。
 
 不要把真实基础设施地址、Token、用户数据写入仓库或示例。
 
@@ -69,7 +68,6 @@ Admin 使用独立的 `yuke-admin` Cloudflare Worker Static Assets，不使用 P
 
 ```bash
 export VITE_ADMIN_DATA_MODE=api
-export VITE_API_BASE_URL=/api
 pnpm --filter @yuke/admin deploy:production
 ```
 
