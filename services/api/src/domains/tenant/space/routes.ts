@@ -122,14 +122,14 @@ export function registerSpaceRoutes(app: Router<SpaceEnv>): void {
 
   app.delete(
     '/v1/admin/spaces/:spaceId/admins/:adminUserId',
-    async ({ env, params }) =>
-      ok(
-        await deleteSpaceAdmin(
-          db(env),
-          params.spaceId,
-          params.adminUserId
-        )
-      ),
+    async ({ env, params }) => {
+      await deleteSpaceAdmin(
+        db(env),
+        params.spaceId,
+        params.adminUserId
+      )
+      return ok({ removed: true })
+    },
     [requireAdminAccess, requireSuperAdmin]
   )
 }
