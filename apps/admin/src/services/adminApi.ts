@@ -3,6 +3,7 @@ import type {
   AdminMemberDetail,
   AdminMemberSummary,
   AdminResource,
+  AdminSeriesEditResult,
   AdminSlotType,
   AdminSpace,
   AdminUserSummary,
@@ -46,7 +47,7 @@ export interface AdminApi {
   listScheduleSlots(spaceId: string, resourceId: string, from: string, to: string): Promise<import('../types/admin').AdminScheduleSlot[]>
   createScheduleSlot(spaceId: string, input: import('../types/admin').CreateScheduleSlotInput): Promise<import('../types/admin').AdminScheduleSlot>
   createSlotSeries(spaceId: string, input: import('../types/admin').CreateSlotSeriesInput): Promise<unknown>
-  updateScheduleSlot(spaceId: string, slotId: string, input: import('../types/admin').UpdateScheduleSlotInput): Promise<import('../types/admin').AdminScheduleSlot>
+  updateScheduleSlot(spaceId: string, slotId: string, input: import('../types/admin').UpdateScheduleSlotInput): Promise<import('../types/admin').AdminScheduleSlot | AdminSeriesEditResult>
   setScheduleSlotFrozen(spaceId: string, slotId: string, frozen: boolean): Promise<import('../types/admin').AdminScheduleSlot>
 
   listMembers(spaceId: string, filters?: MemberFilters): Promise<AdminMemberSummary[]>
@@ -210,7 +211,7 @@ class HttpAdminApi implements AdminApi {
     })
   }
   updateScheduleSlot(spaceId: string, slotId: string, input: import('../types/admin').UpdateScheduleSlotInput) {
-    return this.request<import('../types/admin').AdminScheduleSlot>(
+    return this.request<import('../types/admin').AdminScheduleSlot | AdminSeriesEditResult>(
       this.spacePath(spaceId) + '/slots/' + encodeURIComponent(slotId),
       { method: 'PATCH', body: JSON.stringify(input) },
     )
