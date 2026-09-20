@@ -23,7 +23,8 @@ MVP 领域需求已经冻结，稳定领域模型见 [domain-model.md](domain-mo
 - Vue 3 + Vite + TypeScript
 - 面向 Super Admin / Space Admin
 - 使用 Cloudflare Access 登录，MVP 为邮箱 OTP
-- 部署到独立的 Cloudflare Worker Static Assets（`yuke-admin`）
+- 部署到独立的 Cloudflare Worker Static Assets + Gateway（`yuke-admin`）
+- 浏览器统一请求同源 `/api/*`；`yuke-admin` 通过 Service Binding 内部调用 `yuke-api`
 
 ## 服务层
 
@@ -87,14 +88,14 @@ MVP 暂不作为核心业务一致性数据源；后续按缓存、异步任务�
 
 ### Web Admin
 
-Cloudflare Access 负责登录认证，Worker 验证 Access JWT；项目数据库负责 Super Admin / Space Admin 授权。
+Cloudflare Access 只保护 `yuke.verinasci.com` 并负责登录认证。Access 注入的 `Cf-Access-Jwt-Assertion` 由 `yuke-admin` Gateway 原样转发给 Service Binding 下游 `yuke-api`；`yuke-api` 继续验证 Access JWT，项目数据库负责 Super Admin / Space Admin 授权。
 
 ## API
 
 统一使用 `/v1` 前缀。
 
-- 小程序 API：项目访问令牌
-- Admin API：Cloudflare Access
+- 小程序 API：浏览器外部入口 `https://api.yuke.verinasci.com/v1/*`，使用项目访问令牌
+- Admin API：浏览器只访问同源 `https://yuke.verinasci.com/api/v1/admin/*`，由 `yuke-admin` Service Binding 转发到 `yuke-api /v1/admin/*`，使用 Cloudflare Access JWT
 - Space 级接口必须服务端重新验证 Space Scope
 - API 错误使用稳定 error code，前端负责本地化友好文案
 
