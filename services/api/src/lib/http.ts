@@ -23,23 +23,20 @@ export function ok<T>(data: T, init: ResponseInit = {}): Response {
   return jsonResponse({ data }, init)
 }
 
-export function fail(error: ApiError, init: ResponseInit = {}): Response {
+export function fail(error: ApiError, init: Omit<ResponseInit, 'status'> = {}): Response {
   return jsonResponse(
     { error },
     {
       ...init,
-      status: init.status ?? ERROR_STATUS_BY_CODE[error.code]
+      status: ERROR_STATUS_BY_CODE[error.code]
     }
   )
 }
 
 export function errorResponse(error: AppError): Response {
-  return fail(
-    {
-      code: error.code,
-      message: error.message,
-      ...(error.details === undefined ? {} : { details: error.details })
-    },
-    { status: error.status }
-  )
+  return fail({
+    code: error.code,
+    message: error.message,
+    ...(error.details === undefined ? {} : { details: error.details })
+  })
 }
