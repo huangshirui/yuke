@@ -164,6 +164,7 @@ describe('Admin Booking mutations and history', () => {
     await expect(patch.json()).resolves.toMatchObject({
       data: {
         id: booking.id,
+        membershipId: ids.membership,
         slotId: secondSlot,
         participantId: secondParticipant,
         slot: { id: secondSlot },
