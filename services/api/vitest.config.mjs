@@ -18,7 +18,8 @@ export default defineConfig({
           USER_TOKEN_SECRET: 'synthetic-token-signing-secret-for-tests-only-0001',
           CF_ACCESS_TEAM_DOMAIN: 'https://synthetic-team.cloudflareaccess.com',
           CF_ACCESS_AUD: 'synthetic-access-audience',
-          SUPER_ADMIN_EMAIL: 'configured-super@example.invalid'
+          SUPER_ADMIN_EMAIL: 'configured-super@example.invalid',
+          ADMIN_ORIGIN: 'https://admin.example.invalid'
         }
       }
     }))
