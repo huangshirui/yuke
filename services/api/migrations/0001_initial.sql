@@ -104,8 +104,7 @@ CREATE TABLE participants (
   name TEXT NOT NULL,
   birth_month TEXT NOT NULL
     CHECK (
-      length(birth_month) = 7 AND
-      substr(birth_month, 5, 1) = '-' AND
+      birth_month GLOB '[0-9][0-9][0-9][0-9]-[0-9][0-9]' AND
       CAST(substr(birth_month, 6, 2) AS INTEGER) BETWEEN 1 AND 12
     ),
   user_note TEXT,
