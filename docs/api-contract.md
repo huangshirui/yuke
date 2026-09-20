@@ -379,18 +379,58 @@ Super Admin 或该 Space 的 Space Admin 可访问。
 ## 11. Resource / Admin
 
 ### GET /admin/spaces/{spaceId}/resources
+
+Super Admin 或该 Space 的 Space Admin 可访问。返回该 Space 的全部 Resource，包括 inactive，供管理和历史查看。
+
 ### POST /admin/spaces/{spaceId}/resources
+
+```json
+{
+  "name": "示例预约对象",
+  "note": "可选备注"
+}
+```
+
+- `name` 必填，1–128 字符；
+- `note` 可省略、字符串或 null；
+- 新建后状态固定为 `active`；
+- MVP 不要求 Resource 名称在 Space 内唯一。
+
 ### PATCH /admin/spaces/{spaceId}/resources/{resourceId}
+
+可修改 `name` / `note`，至少提供一个字段。使用 `note: null` 清空备注。
+
 ### POST /admin/spaces/{spaceId}/resources/{resourceId}/deactivate
 ### POST /admin/spaces/{spaceId}/resources/{resourceId}/activate
+
+软停用 / 启用，操作幂等。停用不删除历史关联；后续 Slot / Booking 领域必须阻止 inactive Resource 产生新的预约能力。
+
+小程序 `GET /spaces/{spaceId}/resources` 仅允许 active Membership 调用，并且只返回 active Resource。
 
 ## 12. Slot Type / Admin
 
 ### GET /admin/spaces/{spaceId}/slot-types
+
+Super Admin 或该 Space 的 Space Admin 可访问。返回 active + inactive Slot Type。
+
 ### POST /admin/spaces/{spaceId}/slot-types
+
+```json
+{
+  "name": "示例类型"
+}
+```
+
+Slot Type 名称在同一 Space 内唯一；不同 Space 可以同名。
+
 ### PATCH /admin/spaces/{spaceId}/slot-types/{slotTypeId}
+
+MVP 仅修改 `name`。若目标名称在当前 Space 已存在，返回 `VALIDATION_ERROR`。
+
 ### POST /admin/spaces/{spaceId}/slot-types/{slotTypeId}/deactivate
 ### POST /admin/spaces/{spaceId}/slot-types/{slotTypeId}/activate
+
+软停用 / 启用，操作幂等。已使用的 Slot Type 不物理删除，历史 Slot / Booking 关联保留。
 
 ## 13. 单次 Slot / Admin
 
