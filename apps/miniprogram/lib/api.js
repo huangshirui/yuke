@@ -133,6 +133,31 @@ function createApiClient(options) {
     },
     switchSpace(spaceId) {
       return call('PUT', '/v1/me/current-space', { spaceId })
+    },
+    listParticipants(spaceId) {
+      return call('GET', `/v1/spaces/${encodeURIComponent(spaceId)}/participants`)
+    },
+    createParticipant(spaceId, input) {
+      return call('POST', `/v1/spaces/${encodeURIComponent(spaceId)}/participants`, input)
+    },
+    updateParticipant(spaceId, participantId, input) {
+      return call(
+        'PATCH',
+        `/v1/spaces/${encodeURIComponent(spaceId)}/participants/${encodeURIComponent(participantId)}`,
+        input
+      )
+    },
+    deactivateParticipant(spaceId, participantId) {
+      return call(
+        'POST',
+        `/v1/spaces/${encodeURIComponent(spaceId)}/participants/${encodeURIComponent(participantId)}/deactivate`
+      )
+    },
+    activateParticipant(spaceId, participantId) {
+      return call(
+        'POST',
+        `/v1/spaces/${encodeURIComponent(spaceId)}/participants/${encodeURIComponent(participantId)}/activate`
+      )
     }
   }
 }

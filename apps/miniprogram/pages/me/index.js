@@ -70,6 +70,10 @@ Page({
     wx.navigateTo({ url: '/pages/profile/setup?mode=edit' })
   },
 
+  manageParticipants() {
+    wx.navigateTo({ url: '/pages/participants/index' })
+  },
+
   addSpace() {
     wx.navigateTo({ url: '/pages/invite/index?mode=add' })
   },

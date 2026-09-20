@@ -1,0 +1,35 @@
+.picker-value {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.picker-value--placeholder {
+  color: #98a2b3;
+}
+
+.picker-chevron {
+  color: #98a2b3;
+  font-size: 38rpx;
+}
+
+.note-input {
+  min-height: 160rpx;
+  line-height: 1.55;
+}
+
+.field-helper {
+  display: block;
+  margin-top: 10rpx;
+  color: #98a2b3;
+  font-size: 22rpx;
+  line-height: 1.5;
+}
+
+.submit-button {
+  margin-top: 32rpx;
+}
+
+.form-state {
+  text-align: center;
+}

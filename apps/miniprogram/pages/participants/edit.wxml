@@ -1,0 +1,61 @@
+<view class="page">
+  <view class="page-header">
+    <text class="page-title">{{editMode ? '编辑参与人' : '新增参与人'}}</text>
+    <text class="page-description">参与人信息仅用于当前空间中的预约。</text>
+  </view>
+
+  <view wx:if="{{loading}}" class="card form-state">
+    <text class="muted">正在加载…</text>
+  </view>
+
+  <view wx:else class="card">
+    <view class="field">
+      <text class="field-label">名称</text>
+      <input
+        class="field-input"
+        maxlength="64"
+        value="{{name}}"
+        placeholder="请输入参与人名称"
+        bindinput="onNameInput"
+      />
+    </view>
+
+    <view class="field">
+      <text class="field-label">出生年月</text>
+      <picker
+        mode="date"
+        fields="month"
+        value="{{birthMonth}}"
+        end="{{today}}"
+        bindchange="onBirthMonthChange"
+      >
+        <view class="field-input picker-value {{birthMonth ? '' : 'picker-value--placeholder'}}">
+          {{birthMonth || '请选择出生年月'}}
+          <text class="picker-chevron">›</text>
+        </view>
+      </picker>
+    </view>
+
+    <view class="field">
+      <text class="field-label">备注</text>
+      <textarea
+        class="field-input note-input"
+        maxlength="500"
+        auto-height
+        value="{{note}}"
+        placeholder="选填"
+        bindinput="onNoteInput"
+      />
+      <text class="field-helper">备注会跟随这个参与人保存在当前空间中。</text>
+    </view>
+  </view>
+
+  <button
+    class="primary-button submit-button"
+    loading="{{submitting}}"
+    disabled="{{submitting || loading}}"
+    bindtap="submit"
+  >{{editMode ? '保存修改' : '新增参与人'}}</button>
+
+  <view class="safe-bottom"></view>
+</view>

@@ -81,3 +81,7 @@
 .secondary-actions {
   margin-top: 40rpx;
 }
+
+.secondary-actions .secondary-button + .secondary-button {
+  margin-top: 20rpx;
+}

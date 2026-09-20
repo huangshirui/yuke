@@ -1,0 +1,52 @@
+<view class="page">
+  <view class="page-header participant-header">
+    <view class="participant-header__copy">
+      <text class="page-title">参与人</text>
+      <text class="page-description">管理 {{currentSpace.name || '当前空间'}} 中用于预约的参与人。</text>
+    </view>
+    <button class="participant-add" bindtap="addParticipant">新增</button>
+  </view>
+
+  <view wx:if="{{loading}}" class="card state-card">
+    <text class="muted">正在加载参与人…</text>
+  </view>
+
+  <view wx:elif="{{!participants.length}}" class="card state-card">
+    <text class="state-title">还没有参与人</text>
+    <text class="page-description">先新增一位参与人，之后创建预约时即可直接选择。</text>
+    <button class="primary-button empty-action" bindtap="addParticipant">新增参与人</button>
+  </view>
+
+  <view wx:else class="participant-list">
+    <view wx:for="{{participants}}" wx:key="id" class="card participant-card">
+      <view class="participant-card__main">
+        <view class="participant-card__heading">
+          <text class="participant-name">{{item.name}}</text>
+          <text class="status-badge {{item.status === 'active' ? 'status-badge--active' : 'status-badge--inactive'}}">
+            {{item.status === 'active' ? '可使用' : '已停用'}}
+          </text>
+        </view>
+        <text class="participant-meta">出生年月 {{item.birthMonth}}</text>
+        <text wx:if="{{item.note}}" class="participant-note">{{item.note}}</text>
+      </view>
+
+      <view class="participant-actions">
+        <button
+          class="text-button participant-action"
+          data-participant-id="{{item.id}}"
+          bindtap="editParticipant"
+        >编辑</button>
+        <button
+          class="text-button participant-action {{item.status === 'active' ? 'participant-action--danger' : ''}}"
+          loading="{{actionParticipantId === item.id}}"
+          disabled="{{actionParticipantId === item.id}}"
+          data-participant-id="{{item.id}}"
+          data-status="{{item.status}}"
+          bindtap="toggleParticipant"
+        >{{item.status === 'active' ? '停用' : '启用'}}</button>
+      </view>
+    </view>
+  </view>
+
+  <view class="safe-bottom"></view>
+</view>
