@@ -7,9 +7,12 @@
     "deploy": "wrangler deploy",
     "d1:migrate:local": "wrangler d1 migrations apply yuke-local --local",
     "d1:verify:local": "node scripts/verify-d1-migrations.mjs",
-    "test": "pnpm run d1:verify:local"
+    "test:worker": "vitest run",
+    "test": "pnpm run test:worker && pnpm run d1:verify:local"
   },
   "devDependencies": {
+    "@cloudflare/vitest-plugin": "^1.0.0",
+    "vitest": "^4.1.0",
     "wrangler": "4.135.0"
   }
 }
