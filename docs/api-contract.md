@@ -38,6 +38,7 @@
 | 409 | `INVITE_EXPIRED` | 邀请码过期 |
 | 409 | `INVITE_REVOKED` | 邀请码已撤销 |
 | 409 | `SPACE_DISABLED` | Space 已停用 |
+| 500 | `INTERNAL_ERROR` | 未预期的服务端错误；不向客户端暴露内部异常细节 |
 
 对于用户并发预约失败，小程序可将 `SLOT_ALREADY_BOOKED` 映射为：
 “这个时间刚刚被预约了，请选择其他时间。”

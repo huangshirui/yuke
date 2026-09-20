@@ -15,6 +15,7 @@ export type ApiErrorCode =
   | 'INVITE_EXPIRED'
   | 'INVITE_REVOKED'
   | 'SPACE_DISABLED'
+  | 'INTERNAL_ERROR'
 
 export type ApiError = {
   code: ApiErrorCode
