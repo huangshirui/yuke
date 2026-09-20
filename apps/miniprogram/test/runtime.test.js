@@ -15,12 +15,38 @@ function createStorage() {
   }
 }
 
-test('mock API is blocked for release builds', () => {
-  assert.throws(() => getApi({
+test('release runtime uses the real HTTPS Worker API', async () => {
+  let captured
+  const storage = createStorage()
+  const api = getApi({
+    ...storage,
     getAccountInfoSync() {
       return { miniProgram: { envVersion: 'release' } }
-    }
-  }), /Mock API mode is disabled/)
+    },
+    request(options) {
+      captured = options
+      options.success({
+        statusCode: 200,
+        data: {
+          data: {
+            tokenType: 'Bearer',
+            accessToken: 'synthetic-token',
+            expiresAt: '2099-01-01T00:00:00Z',
+            user: { id: 'usr_synthetic' }
+          }
+        }
+      })
+    },
+    uploadFile() {},
+    downloadFile() {}
+  })
+
+  await api.createWeChatSession('synthetic-login-code')
+
+  assert.equal(
+    captured.url,
+    'https://api.yuke.verinasci.com/v1/auth/wechat/session'
+  )
 })
 
 test('mock join makes the joined Space current and switch returns backend-shaped response', async () => {
