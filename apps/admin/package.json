@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "test": "node --test test/*.test.mjs"
+    "test": "node --test test/*.test.mjs",
+    "build:production": "node scripts/verify-production-env.mjs && vite build"
   },
   "dependencies": {
     "@yuke/shared": "workspace:*",
