@@ -49,13 +49,14 @@ async function insertSpace({
 async function adminToken({
   id,
   platformRole = 'none',
-  suffix = crypto.randomUUID()
+  suffix = crypto.randomUUID(),
+  signingKey
 }) {
   const subject = `access-${suffix}`
   const email = `${suffix}@example.invalid`
   await insertAdmin({ id, subject, email, platformRole })
 
-  const key = await createSyntheticAccessKey(`space-${suffix}`)
+  const key = signingKey ?? await createSyntheticAccessKey(`space-${suffix}`)
   const token = await signSyntheticAccessJwt({
     ...key,
     issuer: TEAM_DOMAIN,
@@ -186,15 +187,18 @@ describe('Space admin backend', () => {
 
   it('lists all Spaces for Super Admin but only assigned Spaces for regular Admin', async () => {
     const suffix = crypto.randomUUID()
+    const signingKey = await createSyntheticAccessKey(`space-list-${suffix}`)
     const superAdmin = await adminToken({
       id: `adm_super_list_${suffix}`,
       platformRole: 'super_admin',
-      suffix: `super-list-${suffix}`
+      suffix: `super-list-${suffix}`,
+      signingKey
     })
     const regularId = `adm_regular_list_${suffix}`
     const regular = await adminToken({
       id: regularId,
-      suffix: `regular-list-${suffix}`
+      suffix: `regular-list-${suffix}`,
+      signingKey
     })
     const assignedId = `spc_assigned_${suffix}`
     const otherId = `spc_other_${suffix}`
@@ -300,15 +304,18 @@ describe('Space admin backend', () => {
 
   it('lets Super Admin update lifecycle and manage Space Admin assignments', async () => {
     const suffix = crypto.randomUUID()
+    const signingKey = await createSyntheticAccessKey(`space-manage-${suffix}`)
     const superAdmin = await adminToken({
       id: `adm_super_manage_${suffix}`,
       platformRole: 'super_admin',
-      suffix: `super-manage-${suffix}`
+      suffix: `super-manage-${suffix}`,
+      signingKey
     })
     const targetAdminId = `adm_target_${suffix}`
     const target = await adminToken({
       id: targetAdminId,
-      suffix: `target-${suffix}`
+      suffix: `target-${suffix}`,
+      signingKey
     })
     const spaceId = `spc_manage_${suffix}`
     await insertSpace({ id: spaceId, name: 'Synthetic Managed Space' })
