@@ -1,3 +1,4 @@
+import { ValidationError } from '../../lib/errors'
 import { ok } from '../../lib/http'
 import type { Router } from '../../lib/router'
 import {
@@ -33,13 +34,11 @@ async function parseAvatarFile(request: Request): Promise<File> {
   try {
     formData = await request.formData()
   } catch {
-    const { ValidationError } = await import('../../lib/errors')
     throw new ValidationError('Request body must be multipart/form-data')
   }
 
   const file = formData.get('file')
   if (!(file instanceof File)) {
-    const { ValidationError } = await import('../../lib/errors')
     throw new ValidationError('file must be an uploaded image', { path: 'file' })
   }
   return file
