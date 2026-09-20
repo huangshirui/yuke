@@ -1,3 +1,4 @@
+import { registerAdminProvisioningRoutes } from './domains/identity/admin-routes'
 import { registerIdentityRoutes } from './domains/identity/routes'
 import { registerCatalogRoutes } from './domains/resource/catalog/routes'
 import { registerAvailabilityRoutes } from './domains/resource/availability/routes'
@@ -28,6 +29,7 @@ app.get('/health', () =>
 )
 
 registerIdentityRoutes(app)
+registerAdminProvisioningRoutes(app)
 registerSpaceRoutes(app)
 registerInviteRoutes(app)
 registerMembershipRoutes(app)

@@ -66,6 +66,8 @@ try {
       '--command',
       [
         "SELECT name FROM d1_migrations WHERE name = '0001_initial.sql';",
+        "SELECT name FROM d1_migrations WHERE name = '0002_admin_identity_binding.sql';",
+        "SELECT name FROM pragma_table_info('admin_users') WHERE name = 'identity_status';",
         "SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'bookings';",
         "SELECT name FROM sqlite_master WHERE type = 'index' AND name = 'ux_bookings_slot_occupancy';",
         "SELECT name FROM sqlite_master WHERE type = 'trigger' AND name = 'trg_slots_no_overlap_insert';",
@@ -74,6 +76,8 @@ try {
     {
       mustInclude: [
         '0001_initial.sql',
+        '0002_admin_identity_binding.sql',
+        'identity_status',
         'bookings',
         'ux_bookings_slot_occupancy',
         'trg_slots_no_overlap_insert',

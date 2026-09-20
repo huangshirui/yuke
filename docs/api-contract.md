@@ -260,7 +260,32 @@ Query 可用：
 
 `/admin/*` 由 Cloudflare Access 保护。
 
-Worker 必须验证 Access JWT，并将 `sub` 映射到 `admin_users.access_subject`。
+Worker 必须验证 Access JWT。管理员身份生命周期：
+
+- 已绑定 AdminUser：按稳定 Access `sub` 映射。
+- Super Admin：运行时 `SUPER_ADMIN_EMAIL` 命中的 Access 身份首次登录时自动 bootstrap，并绑定稳定 `sub`。
+- 普通 Admin：必须由 Super Admin 先按邮箱预置；首次 Access 登录时只绑定到该既有 AdminUser，不创建新的项目身份。
+- 未预置普通邮箱返回 403；已经 bound 的 AdminUser 不自动改绑到不同 `sub`。
+
+### GET /admin/admin-users
+
+仅 Super Admin。列出 AdminUser，包括：
+
+- id
+- email
+- platformRole
+- status
+- identityStatus: `pending | bound`
+
+### POST /admin/admin-users
+
+仅 Super Admin。按邮箱显式创建/读取普通 AdminUser：
+
+```json
+{ "email": "synthetic-admin@example.invalid" }
+```
+
+新建普通 AdminUser 的 `identityStatus = pending`；稳定项目 Admin ID 在首次 Access 登录前即存在，因此可提前分配 Space。
 
 ## 8. Space / Admin
 
