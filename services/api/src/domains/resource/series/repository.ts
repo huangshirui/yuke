@@ -404,6 +404,7 @@ export async function applySplitSeriesEdit(
   input: {
     current: SlotSeriesRecord
     oldEndsOn: string
+    oldStatus: SlotSeriesStatus
     replacement: SlotSeriesRecord
     affectedSlotIds: string[]
     occurrences: MaterializedOccurrenceInput[]
@@ -413,9 +414,15 @@ export async function applySplitSeriesEdit(
   const statements: D1StatementLike[] = [
     db.prepare(`
       UPDATE slot_series
-      SET ends_on = ?, updated_at = ?
+      SET ends_on = ?, status = ?, updated_at = ?
       WHERE id = ? AND space_id = ?
-    `).bind(input.oldEndsOn, input.now, input.current.id, input.current.spaceId),
+    `).bind(
+      input.oldEndsOn,
+      input.oldStatus,
+      input.now,
+      input.current.id,
+      input.current.spaceId
+    ),
     insertSeriesStatement(db, {
       id: input.replacement.id,
       spaceId: input.replacement.spaceId,
