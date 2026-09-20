@@ -77,3 +77,45 @@ export type AdminMemberDetail = AdminMemberSummary & {
   participants: AdminParticipantDetail[]
   bookingCount: number
 }
+
+export type AdminScheduleSlot = {
+  id: string
+  spaceId: string
+  resourceId: string
+  slotTypeId: string
+  slotTypeName?: string
+  seriesId: string | null
+  startAt: string
+  endAt: string
+  localDate: string
+  status: 'open' | 'frozen' | 'cancelled'
+  bookable: boolean
+}
+
+export type CreateScheduleSlotInput = {
+  resourceId: string
+  slotTypeId: string
+  startAt: string
+  endAt: string
+}
+
+export type CreateSlotSeriesInput = {
+  resourceId: string
+  slotTypeId: string
+  weekdays: number[]
+  localStartTime: string
+  localEndTime: string
+  startsOn: string
+  endsOn: string | null
+}
+
+export type UpdateScheduleSlotInput = {
+  scope: 'single' | 'this_and_future' | 'entire_series'
+  slotTypeId?: string
+  startAt?: string
+  endAt?: string
+  weekdays?: number[]
+  localStartTime?: string
+  localEndTime?: string
+  endsOn?: string | null
+}
