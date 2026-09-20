@@ -18,7 +18,9 @@ import { adminDataMode } from './services/adminApi'
         <RouterLink to="/spaces" class="nav-item">
           <span class="nav-icon">⌂</span><span>空间管理</span>
         </RouterLink>
-        <span class="nav-item nav-item--disabled"><span class="nav-icon">◫</span><span>预约管理</span><small>后续</small></span>
+        <RouterLink to="/bookings" class="nav-item">
+          <span class="nav-icon">◫</span><span>预约管理</span>
+        </RouterLink>
         <span class="nav-item nav-item--disabled"><span class="nav-icon">◎</span><span>用户管理</span><small>后续</small></span>
         <span class="nav-item nav-item--disabled"><span class="nav-icon">⌁</span><span>对账</span><small>后续</small></span>
       </nav>
