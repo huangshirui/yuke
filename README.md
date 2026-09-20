@@ -42,7 +42,7 @@ pnpm test
 
 这是公开仓库。不要提交真实用户数据、微信 / Cloudflare 凭据、生产日志、数据库导出或非公开基础设施标识。测试和示例只能使用 Synthetic Data（合成数据）。
 
-安全问题请阅读 [SECURITY.md](SECURITY.md)，贡献规范请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。
+UI / UX 与视觉实现请遵循 [DESIGN.md](DESIGN.md)。安全问题请阅读 [SECURITY.md](SECURITY.md)，贡献规范请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ## License
 
