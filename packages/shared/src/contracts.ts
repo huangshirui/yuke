@@ -117,6 +117,32 @@ export type Booking = {
   updatedAt: string
 }
 
+export type BookingDetail = Booking & {
+  participant: {
+    id: Id
+    name: string
+    birthMonth: string
+    status: EntityStatus
+  }
+  resource: {
+    id: Id
+    name: string
+    status: EntityStatus
+  }
+  slotType: {
+    id: Id
+    name: string
+    status: EntityStatus
+  }
+  slot: {
+    id: Id
+    startAt: string
+    endAt: string
+    localDate: string
+    status: SlotStatus
+  }
+}
+
 export type BookingMessage = {
   id: Id
   bookingId: Id
