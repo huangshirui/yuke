@@ -53,10 +53,15 @@ Page({
     } catch {
       const user = loadUser(wx)
       const view = deriveView(user)
+      const cachedAvatar = user?.avatarUrl && !String(user.avatarUrl).startsWith('/v1/')
+        ? user.avatarUrl
+        : ''
       this.setData({
         user,
         spaces: view.spaces,
-        currentSpace: view.currentSpace
+        currentSpace: view.currentSpace,
+        currentSpaceId: view.currentSpace?.id || '',
+        avatarDisplayUrl: cachedAvatar
       })
     }
   },
