@@ -2,6 +2,8 @@
 
 Vue 3 + Vite + TypeScript 的运营管理后台。
 
+所有页面视觉与交互实现遵循仓库根目录 [DESIGN.md](../../DESIGN.md)。
+
 ## MVP 当前能力
 
 Issue #19 提供 Space / Invite 的第一版管理界面：
