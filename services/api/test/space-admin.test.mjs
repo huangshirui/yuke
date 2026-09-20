@@ -372,14 +372,12 @@ describe('Space admin backend', () => {
     )
     expect(assign.status).toBe(200)
     await expect(json(assign)).resolves.toMatchObject({
-      data: [
-        {
-          id: targetAdminId,
-          email: target.email,
-          platformRole: 'none',
-          status: 'active'
-        }
-      ]
+      data: {
+        id: targetAdminId,
+        email: target.email,
+        platformRole: 'none',
+        status: 'active'
+      }
     })
 
     const targetSpaces = await request('/v1/admin/spaces', target.token)
@@ -394,7 +392,7 @@ describe('Space admin backend', () => {
       { method: 'DELETE' }
     )
     expect(remove.status).toBe(200)
-    await expect(json(remove)).resolves.toEqual({ data: [] })
+    await expect(json(remove)).resolves.toEqual({ data: { removed: true } })
 
     const targetAfterRemove = await request('/v1/admin/spaces', target.token)
     await expect(json(targetAfterRemove)).resolves.toEqual({ data: [] })
