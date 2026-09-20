@@ -243,35 +243,73 @@ Query 可用：
 
 Worker 必须验证 Access JWT，并将 `sub` 映射到 `admin_users.access_subject`。
 
-## 8. Super Admin
+## 8. Space / Admin
 
 ### GET /admin/spaces
+
+所有 active AdminUser 均可调用：
+
+- Super Admin 返回全部 Space；
+- 普通 Admin 只返回 `space_admins` 已分配的 Space。
+
+该接口仅提供“当前管理员可见 Space 列表”，不会因为能看到 Space 就授予 Space 管理权限；后续 Space-scoped API 仍独立执行 RBAC。
+
 ### POST /admin/spaces
+
+仅 Super Admin。
+
+```json
+{
+  "name": "Synthetic Space",
+  "timezone": "Asia/Shanghai",
+  "bookingCutoffMinutes": 60,
+  "cancellationCutoffMinutes": 240
+}
+```
+
+- `timezone` 必须是有效 IANA time zone；
+- 两个 cutoff 必须显式提供，`null` 表示不限；
+- 创建 Space 与 Space Settings 必须原子完成。
+
 ### PATCH /admin/spaces/{spaceId}
+
+仅 Super Admin，可修改：
+
+```json
+{
+  "name": "Synthetic Renamed Space",
+  "timezone": "Europe/Paris"
+}
+```
+
+至少提供一个字段。
+
 ### POST /admin/spaces/{spaceId}/disable
 ### POST /admin/spaces/{spaceId}/activate
 
-创建 Space 时同时创建 Space Settings，并明确设置：
-
-- timezone
-- bookingCutoffMinutes
-- cancellationCutoffMinutes
+仅 Super Admin。停用不删除 Space 或历史数据。
 
 ### GET /admin/spaces/{spaceId}/admins
 ### POST /admin/spaces/{spaceId}/admins
+
+仅 Super Admin。POST：
 
 ```json
 { "adminUserId": "adm_xxx" }
 ```
 
+目标必须是已经存在且 active 的 AdminUser。Access 登录本身不会自动创建 AdminUser。
+
 ### DELETE /admin/spaces/{spaceId}/admins/{adminUserId}
 
-只删除管理权限关系，不删除管理员身份，也不破坏历史邀请来源。
+仅 Super Admin。只删除管理权限关系，不删除管理员身份，也不破坏历史邀请来源。
 
 ## 9. Space Settings
 
 ### GET /admin/spaces/{spaceId}/settings
 ### PATCH /admin/spaces/{spaceId}/settings
+
+Super Admin 或该 Space 的 Space Admin 可以访问。
 
 ```json
 {
@@ -280,7 +318,9 @@ Worker 必须验证 Access JWT，并将 `sub` 映射到 `admin_users.access_subj
 }
 ```
 
-`null` 表示不限。
+PATCH 可以只提供其中一个字段；`null` 表示不限。固定枚举仍为 `15 / 30 / 60 / 240 / 1440 / null`。
+
+Space 即使处于 `disabled`，管理员仍可维护 Settings；终端预约能力由后续 Resource / Booking domain 按 Space 状态阻断。
 
 ## 10. Invite Code / Admin
 
