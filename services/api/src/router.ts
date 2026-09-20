@@ -1,5 +1,7 @@
 import { registerIdentityRoutes } from './domains/identity/routes'
 import type { IdentityEnv } from './domains/identity/env'
+import { registerInviteRoutes } from './domains/tenant/invite/routes'
+import { registerMembershipRoutes } from './domains/tenant/membership/routes'
 import { registerSpaceRoutes } from './domains/tenant/space/routes'
 import type { SpaceEnv } from './domains/tenant/space/routes'
 import { ok } from './lib/http'
@@ -22,6 +24,8 @@ app.get('/health', () =>
 
 registerIdentityRoutes(app)
 registerSpaceRoutes(app)
+registerInviteRoutes(app)
+registerMembershipRoutes(app)
 
 export async function router(context: RouteContext): Promise<Response> {
   return app.handle(context)
