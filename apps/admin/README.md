@@ -6,12 +6,16 @@ Vue 3 + Vite + TypeScript 的运营管理后台。
 
 ## MVP 当前能力
 
-Issue #19 提供 Space / Invite 的第一版管理界面：
+Issue #19 提供 Space / Invite 的第一版管理界面，Issue #23 在同一个 Space 上下文中补充基础运营能力：
 
 - Space 列表、创建、启用/停用
 - Space 预约/取消截止规则
 - Space Admin 分配/移除
 - Invite 创建、撤销、复制及来源用户查看
+- Resource（预约对象）新建、编辑、停用/启用
+- Slot Type（时段类型）新建、编辑、停用/启用
+- 用户列表按来源管理员 / 邀请码筛选
+- Participant 查看以及用户 / 参与人内部备注维护
 
 ## 数据模式
 
@@ -32,10 +36,12 @@ VITE_API_BASE_URL=https://<public-api-host>
 
 不要把真实基础设施地址、Token、用户数据写入仓库或示例。
 
-## 当前 Contract 缺口
+## Contract 边界
 
-Space Admin 的现有 Contract 允许用 `adminUserId` 分配管理员，但尚未定义管理员目录/搜索接口。
-因此当前 UI 严格按 Contract 使用管理员 ID 输入，不私自增加 API；后续由 #15/#16 决定是否补充可搜索的管理员目录。
+- Space Admin 仍严格按现有 Contract 使用 `adminUserId` 分配，不私自增加管理员目录接口。
+- Resource / Slot Type 直接使用 shared Contract 中的领域类型。
+- 用户运营页面只调用既有 `/admin/spaces/{spaceId}/members`、成员详情和 admin note API；前端 adapter 负责页面需要的读取模型，不修改领域语义。
+- Admin 内部备注与用户可见备注始终分离，内部备注不会进入小程序展示。
 
 ## 开发
 
