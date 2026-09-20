@@ -1,8 +1,11 @@
 import type {
   CreateInviteInput as SharedCreateInviteInput,
   CutoffMinutes,
+  EntityStatus,
   InviteMemberSummary as SharedInviteMemberSummary,
   InviteSummary as SharedInviteSummary,
+  Resource,
+  SlotType,
   SpaceAdminSummary,
   SpaceSettings,
   SpaceSummary
@@ -32,3 +35,45 @@ export type UpdateSpaceSettingsInput = {
 }
 
 export type CreateInviteInput = SharedCreateInviteInput
+
+export type AdminResource = Resource
+export type AdminSlotType = SlotType
+
+export type ResourceInput = {
+  name: string
+  note: string | null
+}
+
+export type SlotTypeInput = {
+  name: string
+}
+
+export type MemberFilters = {
+  invitedByAdminId?: string
+  inviteCodeId?: string
+}
+
+export type AdminMemberSummary = {
+  membershipId: string
+  nickname: string
+  joinedAt: string
+  participantCount: number
+  invitedByAdminId: string
+  inviteCodeId: string
+  status: EntityStatus
+  adminNote: string | null
+}
+
+export type AdminParticipantDetail = {
+  id: string
+  name: string
+  birthMonth: string
+  status: EntityStatus
+  userNote: string | null
+  adminNote: string | null
+}
+
+export type AdminMemberDetail = AdminMemberSummary & {
+  participants: AdminParticipantDetail[]
+  bookingCount: number
+}
