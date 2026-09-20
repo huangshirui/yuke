@@ -169,6 +169,27 @@ export type UpdateSeriesSlotInput = {
   endsOn?: string | null
 }
 
+export type SlotSeriesSummary = {
+  id: Id
+  spaceId: Id
+  resourceId: Id
+  slotTypeId: Id
+  weekdays: IsoWeekday[]
+  localStartTime: string
+  localEndTime: string
+  startsOn: string
+  endsOn: string | null
+  status: SlotSeriesStatus
+  supersedesSeriesId: Id | null
+}
+
+export type SeriesEditResult = {
+  scope: Exclude<SeriesEditScope, 'single'>
+  series: SlotSeriesSummary
+  retiredSlotIds: Id[]
+  materializedCount: number
+}
+
 export type UpdateAdminBookingInput = {
   slotId?: Id
   participantId?: Id
