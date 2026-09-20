@@ -12,3 +12,9 @@ database_name = "yuke-local"
 database_id = "00000000-0000-0000-0000-000000000000"
 migrations_dir = "migrations"
 migrations_table = "d1_migrations"
+
+# Public-repository local/CI R2 binding. The bucket name is synthetic and only
+# used by local Miniflare/Workerd. Production uses controlled deployment config.
+[[r2_buckets]]
+binding = "AVATARS"
+bucket_name = "yuke-avatars-local"

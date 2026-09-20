@@ -53,11 +53,37 @@ Body:
 { "code": "wx-login-temporary-code" }
 ```
 
-返回项目访问令牌与用户初始化状态。
+Worker 使用运行时 Secret 调用微信 `code2Session`，只持久化 OpenID / 可选 UnionID；微信 `session_key` 不落库、不记录日志、不返回客户端。
+
+返回 24 小时项目 Bearer Token 与用户初始化状态：
+
+```json
+{
+  "tokenType": "Bearer",
+  "accessToken": "<signed-project-token>",
+  "expiresAt": "2026-09-21T08:00:00.000Z",
+  "user": {
+    "id": "usr_synthetic",
+    "nickname": "",
+    "avatarUrl": null,
+    "profileInitialized": false,
+    "currentSpaceId": null,
+    "spaces": []
+  }
+}
+```
+
+除登录接口外，小程序用户接口使用：
+
+```http
+Authorization: Bearer <signed-project-token>
+```
 
 ### GET /me
 
-返回当前用户头像、昵称、当前 Space、已加入 Space 摘要。
+返回当前用户头像、昵称、Profile 初始化状态、当前 Space 与已加入 Space 摘要。
+
+`profileInitialized = true` 仅当昵称非空且已设置头像。
 
 ### PATCH /me/profile
 
@@ -69,9 +95,25 @@ Body:
 }
 ```
 
+昵称长度 1–64。
+
 ### POST /me/avatar
 
-multipart 上传已经在小程序端压缩的头像。服务端写入 R2，并更新 `avatar_object_key`。
+multipart 上传已经在小程序端压缩的头像，字段名固定为 `file`。
+
+MVP 服务端限制：
+
+- JPEG / PNG / WebP；
+- 最大 1 MiB；
+- 写入私有 R2；
+- D1 只保存 `avatar_object_key`；
+- 上传新头像成功后替换 D1 引用，并尽力清理旧 R2 对象。
+
+返回更新后的 `UserProfile`。
+
+### GET /me/avatar
+
+认证后读取当前用户头像。头像不要求配置公开 R2 URL；响应使用 private/no-cache 策略与对象 ETag。
 
 ### PUT /me/current-space
 

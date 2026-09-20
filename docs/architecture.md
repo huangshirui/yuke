@@ -77,9 +77,13 @@ MVP 暂不作为核心业务一致性数据源；后续按缓存、异步任务�
 
 ### 小程序
 
-`wx.login` -> Worker 服务端换取微信身份 -> 项目访问令牌。
+`wx.login` -> Worker 服务端调用微信 `code2Session` -> OpenID 映射项目 User -> 24 小时 HMAC-SHA256 项目 Bearer Token。
 
-微信 AppSecret / session_key 等不得进入仓库。
+- 微信 AppID / AppSecret 与 Token 签名 Secret 由运行时环境提供，不进入仓库；
+- 微信 `session_key` 不持久化、不记录日志、不回传；
+- Token payload 只包含项目 User ID 与签发/过期时间；
+- 每次认证请求仍回查 User active 状态，因此停用用户立即失效；
+- 用户头像保存到私有 R2，D1 仅保存 object key。
 
 ### Web Admin
 
