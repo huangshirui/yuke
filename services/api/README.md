@@ -100,3 +100,10 @@ Issue #14 使用以下运行时 binding / secret：
 - `0002_admin_identity_binding.sql`：增加 `pending | bound` 管理员身份绑定状态。
 
 Super Admin 首次 Access 登录由 `SUPER_ADMIN_EMAIL` bootstrap。普通 Admin 必须由 Super Admin 通过 `/v1/admin/admin-users` 按邮箱预置，随后在首次 Access 登录绑定稳定 `sub`。
+
+
+## 首次线上部署
+
+真实 Cloudflare D1 / R2 / Worker 的首次部署请按 [docs/deployment-worker.md](../../docs/deployment-worker.md) 执行。
+
+公开仓库中的 `wrangler.toml` **只用于 Local / CI**。生产配置由环境变量生成到 ignored 的 `.wrangler/production.toml`，禁止把真实 Cloudflare Resource ID 提交到 Git。
