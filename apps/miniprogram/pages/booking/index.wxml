@@ -1,10 +1,15 @@
 <view class="page">
-  <view class="page-header">
-    <text class="page-title">选择时间</text>
-    <text class="page-description">查看 {{currentSpace.name || '当前空间'}} 中未来 14 天可预约的时间。</text>
+  <view class="page-header booking-header">
+    <view>
+      <text class="page-title">发起预约</text>
+      <text class="page-description">选择预约对象、可预约时段和参与人。</text>
+    </view>
+    <button class="text-button" bindtap="viewSchedule">我的预约</button>
   </view>
 
-  <view wx:if="{{loading}}" class="card state-card"><text class="muted">正在加载预约对象…</text></view>
+  <view wx:if="{{loading}}" class="card state-card">
+    <text class="muted">正在加载预约对象…</text>
+  </view>
 
   <block wx:else>
     <scroll-view wx:if="{{resources.length}}" class="resource-strip" scroll-x enable-flex>
@@ -22,7 +27,9 @@
       <text class="page-description">当前空间还没有启用中的预约对象。</text>
     </view>
 
-    <view wx:elif="{{loadingSlots}}" class="card state-card"><text class="muted">正在加载可预约时间…</text></view>
+    <view wx:elif="{{loadingSlots}}" class="card state-card">
+      <text class="muted">正在加载可预约时间…</text>
+    </view>
 
     <view wx:elif="{{!groups.length}}" class="card state-card">
       <text class="state-title">未来 14 天暂无可预约时间</text>
@@ -43,7 +50,7 @@
           >
             <view class="slot-time">
               <text>{{slot.displayStart}}–{{slot.displayEnd}}</text>
-              <text class="slot-type">{{slot.slotTypeName || slot.slotType?.name || '时段'}}</text>
+              <text class="slot-type">{{slot.slotTypeName || '时段'}}</text>
             </view>
             <text class="chevron">›</text>
           </button>
@@ -51,5 +58,55 @@
       </view>
     </view>
   </block>
+
+  <view wx:if="{{selectedSlot}}" class="confirm-backdrop" bindtap="closeConfirm">
+    <view class="confirm-sheet" catchtap="noop">
+      <view class="confirm-heading">
+        <view>
+          <text class="section-title">确认预约</text>
+          <text class="confirm-time">
+            {{selectedSlot.localDate}} {{selectedSlot.displayStart}}–{{selectedSlot.displayEnd}}
+          </text>
+          <text class="caption">{{selectedSlot.slotTypeName || '时段'}}</text>
+        </view>
+        <button class="confirm-close" bindtap="closeConfirm">×</button>
+      </view>
+
+      <view wx:if="{{loadingParticipants}}" class="confirm-state">
+        <text class="muted">正在加载参与人…</text>
+      </view>
+
+      <view wx:elif="{{!participants.length}}" class="confirm-state">
+        <text class="state-title">还没有可用参与人</text>
+        <text class="page-description">先新增一位参与人，再回来完成预约。</text>
+        <button class="secondary-button" bindtap="addParticipant">新增参与人</button>
+      </view>
+
+      <view wx:else class="participant-picker">
+        <text class="field-label">参与人</text>
+        <button
+          wx:for="{{participants}}"
+          wx:key="id"
+          class="participant-option {{item.id === selectedParticipantId ? 'participant-option--active' : ''}}"
+          data-participant-id="{{item.id}}"
+          bindtap="selectParticipant"
+        >
+          <view>
+            <text class="participant-name">{{item.name}}</text>
+            <text class="caption">出生年月 {{item.birthMonth}}</text>
+          </view>
+          <text class="participant-check">{{item.id === selectedParticipantId ? '✓' : ''}}</text>
+        </button>
+
+        <button
+          class="primary-button confirm-action"
+          loading="{{submitting}}"
+          disabled="{{submitting || !selectedParticipantId}}"
+          bindtap="submitBooking"
+        >确认预约</button>
+      </view>
+    </view>
+  </view>
+
   <view class="safe-bottom"></view>
 </view>

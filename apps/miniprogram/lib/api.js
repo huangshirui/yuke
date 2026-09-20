@@ -144,6 +144,33 @@ function createApiClient(options) {
         `/v1/spaces/${encodeURIComponent(spaceId)}/resources/${encodeURIComponent(resourceId)}/slots?${query}`
       )
     },
+    createBooking(spaceId, input) {
+      return call(
+        'POST',
+        `/v1/spaces/${encodeURIComponent(spaceId)}/bookings`,
+        input
+      )
+    },
+    listBookings(spaceId, filters = {}) {
+      const parts = []
+      if (filters.from) parts.push(`from=${encodeURIComponent(filters.from)}`)
+      if (filters.to) parts.push(`to=${encodeURIComponent(filters.to)}`)
+      if (filters.status) parts.push(`status=${encodeURIComponent(filters.status)}`)
+      const suffix = parts.length ? `?${parts.join('&')}` : ''
+      return call('GET', `/v1/spaces/${encodeURIComponent(spaceId)}/bookings${suffix}`)
+    },
+    getBooking(spaceId, bookingId) {
+      return call(
+        'GET',
+        `/v1/spaces/${encodeURIComponent(spaceId)}/bookings/${encodeURIComponent(bookingId)}`
+      )
+    },
+    cancelBooking(spaceId, bookingId) {
+      return call(
+        'POST',
+        `/v1/spaces/${encodeURIComponent(spaceId)}/bookings/${encodeURIComponent(bookingId)}/cancel`
+      )
+    },
     listParticipants(spaceId) {
       return call('GET', `/v1/spaces/${encodeURIComponent(spaceId)}/participants`)
     },

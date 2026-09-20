@@ -6,7 +6,9 @@
     "pages/me/index",
     "pages/participants/index",
     "pages/participants/edit",
-    "pages/booking/index"
+    "pages/booking/index",
+    "pages/schedule/index",
+    "pages/schedule/detail"
   ],
   "window": {
     "navigationBarTitleText": "Yu言在线",

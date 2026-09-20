@@ -74,6 +74,10 @@ Page({
     wx.navigateTo({ url: '/pages/booking/index' })
   },
 
+  viewBookings() {
+    wx.navigateTo({ url: '/pages/schedule/index' })
+  },
+
   manageParticipants() {
     wx.navigateTo({ url: '/pages/participants/index' })
   },
