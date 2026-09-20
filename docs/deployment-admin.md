@@ -150,22 +150,25 @@ pnpm --filter @yuke/api exec wrangler secret put SUPER_ADMIN_EMAIL --config .wra
 
 ## 6. 发布顺序
 
-架构切换时建议：
+架构切换采用兼容优先顺序：
 
-1. 先部署包含 CORS 清理但仍保持公开 Mini API 的 `yuke-api`；
-2. 再部署带 Service Binding Gateway 的 `yuke-admin`；
-3. Access Application 删除 API hostname；
-4. 浏览器 smoke。
+1. **先部署 `yuke-admin`**：新 Admin 前端开始使用同源 `/api` + Service Binding；此时旧 `yuke-api` 的 CORS 仍在，不影响内部调用。
+2. 验证 Admin 同源 Gateway 正常。
+3. **再部署 `yuke-api`**：移除已经不再需要的 Admin browser CORS / `ADMIN_ORIGIN`。
+4. Access Application 删除 API hostname，仅保留 `yuke.verinasci.com`。
+5. 最终浏览器与 Mini smoke。
+
+这个顺序避免先移除 CORS 导致旧 Admin bundle 在切换窗口内失效。
 
 对应命令：
 
 ```bash
-pnpm --filter @yuke/api production:config
-pnpm --filter @yuke/api deploy:production
-
 export VITE_ADMIN_DATA_MODE=api
 export VITE_API_BASE_URL=/api
 pnpm --filter @yuke/admin deploy:production
+
+pnpm --filter @yuke/api production:config
+pnpm --filter @yuke/api deploy:production
 ```
 
 ## 7. Smoke
