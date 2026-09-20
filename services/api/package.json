@@ -11,5 +11,9 @@
   },
   "devDependencies": {
     "wrangler": "4.135.0"
+  },
+  "type": "module",
+  "dependencies": {
+    "@yuke/shared": "workspace:*"
   }
 }
