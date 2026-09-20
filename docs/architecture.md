@@ -6,18 +6,23 @@ Yu言在线采用 Monorepo 管理微信小程序、Web Admin 和 Cloudflare 后�
 
 不使用微信云开发能力，所有运行时能力部署在 Cloudflare 平台。
 
+MVP 领域需求已经冻结，稳定领域模型见 [domain-model.md](domain-model.md)，HTTP Contract 见 [api-contract.md](api-contract.md)。
+
 ## 应用层
 
 ### apps/miniprogram
 
 - 微信原生小程序
-- 面向用户预约场景
+- 面向通用预约用户
 - 不依赖微信云开发
+- 通过 HTTPS API 使用 Cloudflare 后端
+- 头像上传前由客户端压缩
 
 ### apps/admin
 
 - Vue 3 + Vite + TypeScript
-- 面向运营管理
+- 面向 Super Admin / Space Admin
+- 使用 Cloudflare Access 登录，MVP 为邮箱 OTP
 - 部署到 Cloudflare Pages
 
 ## 服务层
@@ -26,25 +31,78 @@ Yu言在线采用 Monorepo 管理微信小程序、Web Admin 和 Cloudflare 后�
 
 Cloudflare Workers API，按领域拆分：
 
-- auth
-- user
-- organization
-- booking
-- notification
+- identity
+- tenant
+- resource
+- reservation
+
+领域规则不分叉到小程序/Web；跨端 Contract 由 `packages/shared` 提供。
 
 ## 数据与基础设施
 
-- Cloudflare D1: 业务关系数据
-- Cloudflare R2: 文件和资源
-- Cloudflare KV: 配置和缓存（按需）
-- Cloudflare Queues: 异步任务（按需）
+### Cloudflare D1
 
-## 部署
+MVP 使用单个 D1 数据库：
+
+- 所有业务记录显式携带 `space_id`
+- Space 通过授权、复合外键和查询条件实现租户隔离
+- capacity=1 由 partial unique index 最终保证
+- Resource Slot 不重叠由 SQLite Trigger 最终保证
+- 预约并发不能只依赖“先查再写”
+
+D1 使用 SQLite 语义和外键。首版 Schema 位于：
+
+`services/api/migrations/0001_initial.sql`
+
+### Cloudflare R2
+
+用于用户头像等对象资源。
+
+仓库只保存 Object Key / Contract，不保存真实用户文件。
+
+### Cloudflare KV / Queues
+
+MVP 暂不作为核心业务一致性数据源；后续按缓存、异步任务需求启用。
+
+## 时间与周期
+
+- Space 持有 IANA timezone。
+- 具体 Slot 保存 UTC epoch milliseconds。
+- 周期规则保存 Space 本地日期/时间。
+- Booking 永远指向具体 Slot。
+- 周期 Series 通过日期范围按需、幂等物化为具体 Slot；MVP 不依赖后台 Cron 才能工作。
+- “本次及之后”通过 split series 实现；“仅本次”通过 series exception 实现。
+
+## 认证
+
+### 小程序
+
+`wx.login` -> Worker 服务端换取微信身份 -> 项目访问令牌。
+
+微信 AppSecret / session_key 等不得进入仓库。
+
+### Web Admin
+
+Cloudflare Access 负责登录认证，Worker 验证 Access JWT；项目数据库负责 Super Admin / Space Admin 授权。
+
+## API
+
+统一使用 `/v1` 前缀。
+
+- 小程序 API：项目访问令牌
+- Admin API：Cloudflare Access
+- Space 级接口必须服务端重新验证 Space Scope
+- API 错误使用稳定 error code，前端负责本地化友好文案
+
+## CI / 部署
 
 - GitHub Actions 负责 CI/CD
 - Pages 部署 Web Admin
 - Workers 部署 API
+- D1 Schema 通过 migration 管理
 
 ## 开源策略
 
-项目采用 AGPL-3.0，要求基于本项目提供网络服务的修改版本保持开源。
+项目采用 AGPL-3.0-or-later。
+
+公开仓库不得包含真实用户数据、Credential、生产日志、数据库导出、真实 OpenID / UnionID 或非公开基础设施标识。
