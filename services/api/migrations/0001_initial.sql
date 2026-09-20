@@ -1,6 +1,4 @@
-PRAGMA foreign_keys = ON;
-
-CREATE TABLE admin_users (
+-- D1 enforces foreign-key constraints by default for queries and migrations.\n\nCREATE TABLE admin_users (
   id TEXT PRIMARY KEY,
   access_subject TEXT NOT NULL UNIQUE,
   email TEXT NOT NULL UNIQUE,
