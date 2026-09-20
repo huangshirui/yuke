@@ -148,7 +148,7 @@ export async function addSpaceAdmin(
   db: SpaceDatabase,
   spaceId: string,
   adminUserId: string
-): Promise<SpaceAdminSummary[]> {
+): Promise<SpaceAdminSummary> {
   await requireSpace(db, spaceId)
   const admin = await findAdminById(db, adminUserId)
   if (!admin || admin.status !== 'active') {
@@ -156,7 +156,7 @@ export async function addSpaceAdmin(
   }
 
   await assignSpaceAdmin(db, spaceId, adminUserId, Date.now())
-  return listSpaceAdmins(db, spaceId)
+  return admin
 }
 
 export async function deleteSpaceAdmin(
