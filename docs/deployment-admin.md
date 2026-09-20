@@ -85,16 +85,11 @@ git pull --ff-only
 pnpm install
 
 export VITE_ADMIN_DATA_MODE=api
-export VITE_API_BASE_URL=/api
 
 pnpm --filter @yuke/admin deploy:production
 ```
 
-生产构建会拒绝：
-
-- mock mode；
-- `https://api.yuke.verinasci.com` 等公网直连；
-- 任何不是精确 `/api` 的 API base。
+生产构建会拒绝 mock mode。Admin 的生产 API base 不再读取环境变量，而是在前端 adapter 中固定为同源 `/api`；因此 Windows Git Bash / MSYS 的路径转换不会影响构建，也无法通过环境变量把生产 Admin 改回公网 API。
 
 ## 4. Cloudflare Access（人工）
 
@@ -164,7 +159,6 @@ pnpm --filter @yuke/api exec wrangler secret put SUPER_ADMIN_EMAIL --config .wra
 
 ```bash
 export VITE_ADMIN_DATA_MODE=api
-export VITE_API_BASE_URL=/api
 pnpm --filter @yuke/admin deploy:production
 
 pnpm --filter @yuke/api production:config
