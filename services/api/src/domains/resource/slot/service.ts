@@ -1,6 +1,5 @@
 import type { CreateSlotInput, Slot, SlotStatus } from '@yuke/shared'
 import { AppError, ValidationError } from '../../../lib/errors'
-import { findSpaceById } from '../../tenant/space/repository'
 import {
   findResourceById,
   findSlotTypeById,
@@ -8,7 +7,9 @@ import {
 } from '../catalog/repository'
 import {
   findSlotById,
+  findSpaceTimezone,
   insertSlot,
+  listSlotsByLocalDateRange,
   listSlotsByResourceRange,
   updateSlot,
   type SlotDatabase,
@@ -59,12 +60,12 @@ async function requireActiveCatalog(
   resourceId: string,
   slotTypeId: string
 ): Promise<{ timezone: string }> {
-  const [space, resource, slotType] = await Promise.all([
-    findSpaceById(db as never, spaceId),
+  const [timezone, resource, slotType] = await Promise.all([
+    findSpaceTimezone(db, spaceId),
     findResourceById(db, spaceId, resourceId),
     findSlotTypeById(db, spaceId, slotTypeId)
   ])
-  if (!space) throw new AppError('NOT_FOUND', 'Space not found')
+  if (!timezone) throw new AppError('NOT_FOUND', 'Space not found')
   if (!resource) throw new AppError('NOT_FOUND', 'Resource not found')
   if (!slotType) throw new AppError('NOT_FOUND', 'SlotType not found')
   if (resource.status !== 'active') {
@@ -73,7 +74,7 @@ async function requireActiveCatalog(
   if (slotType.status !== 'active') {
     throw new AppError('SLOT_NOT_BOOKABLE', '已停用的时段类型不能用于新时段。')
   }
-  return { timezone: space.timezone }
+  return { timezone }
 }
 
 async function requireSlot(
@@ -225,4 +226,14 @@ export async function listAdminSlots(
   endAt: number
 ): Promise<Slot[]> {
   return listSlotsByResourceRange(db, spaceId, resourceId, startAt, endAt)
+}
+
+export async function listAdminSlotsByLocalDateRange(
+  db: SlotDatabase,
+  spaceId: string,
+  resourceId: string,
+  from: string,
+  to: string
+): Promise<Slot[]> {
+  return listSlotsByLocalDateRange(db, spaceId, resourceId, from, to)
 }
