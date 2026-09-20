@@ -9,7 +9,11 @@ import {
   findSlotTypeById,
   type CatalogDatabase
 } from '../catalog/repository'
-import { findSlotById, type SlotDatabase } from '../slot/repository'
+import {
+  findSlotById,
+  type SlotDatabase,
+  type SlotRecord
+} from '../slot/repository'
 import {
   applyEntireSeriesEdit,
   applySplitSeriesEdit,
@@ -209,7 +213,7 @@ async function requireSeriesAnchor(
   db: ResourceSeriesDatabase,
   spaceId: string,
   slotId: string
-): Promise<{ anchor: Awaited<ReturnType<typeof findSlotById>> & {}; series: SlotSeriesRecord }> {
+): Promise<{ anchor: SlotRecord; series: SlotSeriesRecord }> {
   const anchor = await findSlotById(db, spaceId, slotId)
   if (!anchor) throw new AppError('NOT_FOUND', 'Slot not found')
   if (!anchor.seriesId || !anchor.seriesOccurrenceDate) {
