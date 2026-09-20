@@ -24,3 +24,16 @@ pnpm --filter @yuke/api test:worker
 - D1 tests must use the canonical SQL files under `../migrations`; do not duplicate schema SQL in fixtures.
 - Keep HTTP behavior tests separate from D1 constraint tests.
 - CI executes the root `pnpm test`, so this package gate is merge-blocking whenever the repository CI is required.
+
+
+## Phase 4 Booking Core E2E Gate
+
+`reservation/booking-core-e2e.test.mjs` is the merge-blocking cross-surface gate for Booking Core. It intentionally exercises the same Worker through both authentication surfaces instead of adding a separate browser E2E framework:
+
+- Mini/user HTTP contract with project Bearer Token;
+- Admin HTTP contract with synthetic Cloudflare Access JWT + Space RBAC;
+- the real D1 migration schema and final database constraints;
+- state visibility after create, Admin modification, user refresh, and cancellation;
+- the capacity=1 concurrency race, cutoff rules, frozen Slot behavior, and Admin move conflicts.
+
+UI adapters remain covered in `apps/miniprogram/test` and `apps/admin/test`; the root `pnpm test` runs all of these gates together.
