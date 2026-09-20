@@ -97,3 +97,26 @@ test('member views filter by invite source and keep internal notes separate', as
   assert.equal(member.participants.find((item) => item.id === 'par_demo_01')?.adminNote, 'Synthetic participant internal note.')
   assert.equal(member.participants.find((item) => item.id === 'par_demo_01')?.userNote, 'Synthetic user note.')
 })
+
+test('weekly scheduling mock enforces overlap and frozen visibility', async () => {
+  const api = createMockAdminApi(memoryStorage())
+  const created = await api.createScheduleSlot('sp_demo_alpha', {
+    resourceId: 'res_demo_aurora',
+    slotTypeId: 'sty_demo_standard',
+    startAt: '2026-09-23T01:00:00.000Z',
+    endAt: '2026-09-23T02:00:00.000Z',
+  })
+  assert.equal(created.status, 'open')
+  await assert.rejects(
+    api.createScheduleSlot('sp_demo_alpha', {
+      resourceId: 'res_demo_aurora',
+      slotTypeId: 'sty_demo_standard',
+      startAt: '2026-09-23T01:30:00.000Z',
+      endAt: '2026-09-23T02:30:00.000Z',
+    }),
+    /已经存在时段/
+  )
+  const frozen = await api.setScheduleSlotFrozen('sp_demo_alpha', created.id, true)
+  assert.equal(frozen.status, 'frozen')
+  assert.equal(frozen.bookable, false)
+})
