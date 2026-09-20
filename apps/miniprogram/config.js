@@ -1,6 +1,6 @@
 module.exports = {
-  // #18 uses mock mode until the Phase 1 membership APIs are merged and deployed.
-  // Remote mode must use a production HTTPS domain configured in WeChat's request domain list.
-  apiMode: 'mock',
-  apiBaseUrl: ''
+  // Online MVP: all Mini Program builds use the real HTTPS Worker API.
+  // Mock adapters remain available to isolated unit tests only.
+  apiMode: 'remote',
+  apiBaseUrl: 'https://api.yuke.verinasci.com'
 }
