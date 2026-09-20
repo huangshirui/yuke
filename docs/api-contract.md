@@ -574,7 +574,7 @@ Query：
 - slotTypeId
 - status
 
-返回 Space 内匹配的 Booking 及 Participant / Resource / Slot Type / Slot 摘要。
+返回 Space 内匹配的 Booking 及 Participant / Resource / Slot Type / Slot 摘要。Admin 响应额外包含 `membershipId`，用于在修改预约时加载该用户 Membership 下可选的 active Participant；用户侧 Booking Contract 不暴露该字段。
 
 ### GET /admin/spaces/{spaceId}/bookings/{bookingId}
 
