@@ -1,11 +1,18 @@
 import type { ApiResponse, SpaceSettings } from '@yuke/shared'
 import type {
+  AdminMemberDetail,
+  AdminMemberSummary,
+  AdminResource,
+  AdminSlotType,
   AdminSpace,
   AdminUserSummary,
   CreateInviteInput,
   CreateSpaceInput,
   InviteMemberSummary,
   InviteSummary,
+  MemberFilters,
+  ResourceInput,
+  SlotTypeInput,
   UpdateSpaceInput,
   UpdateSpaceSettingsInput,
 } from '../types/admin'
@@ -25,6 +32,21 @@ export interface AdminApi {
   createInvite(spaceId: string, input: CreateInviteInput): Promise<InviteSummary>
   revokeInvite(spaceId: string, inviteId: string): Promise<InviteSummary>
   listInviteMembers(spaceId: string, inviteId: string): Promise<InviteMemberSummary[]>
+
+  listResources(spaceId: string): Promise<AdminResource[]>
+  createResource(spaceId: string, input: ResourceInput): Promise<AdminResource>
+  updateResource(spaceId: string, resourceId: string, input: ResourceInput): Promise<AdminResource>
+  setResourceStatus(spaceId: string, resourceId: string, status: 'active' | 'inactive'): Promise<AdminResource>
+
+  listSlotTypes(spaceId: string): Promise<AdminSlotType[]>
+  createSlotType(spaceId: string, input: SlotTypeInput): Promise<AdminSlotType>
+  updateSlotType(spaceId: string, slotTypeId: string, input: SlotTypeInput): Promise<AdminSlotType>
+  setSlotTypeStatus(spaceId: string, slotTypeId: string, status: 'active' | 'inactive'): Promise<AdminSlotType>
+
+  listMembers(spaceId: string, filters?: MemberFilters): Promise<AdminMemberSummary[]>
+  getMember(spaceId: string, membershipId: string): Promise<AdminMemberDetail>
+  updateMemberAdminNote(spaceId: string, membershipId: string, adminNote: string | null): Promise<void>
+  updateParticipantAdminNote(spaceId: string, participantId: string, adminNote: string | null): Promise<void>
 }
 
 const baseUrl = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/$/, '')
@@ -45,6 +67,10 @@ class HttpAdminApi implements AdminApi {
     return payload.data
   }
 
+  private spacePath(spaceId: string) {
+    return '/admin/spaces/' + encodeURIComponent(spaceId)
+  }
+
   listSpaces() { return this.request<AdminSpace[]>('/admin/spaces') }
   createSpace(input: CreateSpaceInput) {
     return this.request<AdminSpace>('/admin/spaces', {
@@ -58,13 +84,13 @@ class HttpAdminApi implements AdminApi {
     })
   }
   updateSpace(spaceId: string, input: UpdateSpaceInput) {
-    return this.request<AdminSpace>('/admin/spaces/' + encodeURIComponent(spaceId), {
+    return this.request<AdminSpace>(this.spacePath(spaceId), {
       method: 'PATCH', body: JSON.stringify(input),
     })
   }
   async setSpaceStatus(spaceId: string, status: 'active' | 'disabled') {
     await this.request<unknown>(
-      '/admin/spaces/' + encodeURIComponent(spaceId) + '/' + (status === 'active' ? 'activate' : 'disable'),
+      this.spacePath(spaceId) + '/' + (status === 'active' ? 'activate' : 'disable'),
       { method: 'POST' },
     )
     const space = (await this.listSpaces()).find((item) => item.id === spaceId)
@@ -72,44 +98,117 @@ class HttpAdminApi implements AdminApi {
     return space
   }
   getSettings(spaceId: string) {
-    return this.request<SpaceSettings>('/admin/spaces/' + encodeURIComponent(spaceId) + '/settings')
+    return this.request<SpaceSettings>(this.spacePath(spaceId) + '/settings')
   }
   updateSettings(spaceId: string, input: UpdateSpaceSettingsInput) {
-    return this.request<SpaceSettings>('/admin/spaces/' + encodeURIComponent(spaceId) + '/settings', {
+    return this.request<SpaceSettings>(this.spacePath(spaceId) + '/settings', {
       method: 'PATCH', body: JSON.stringify(input),
     })
   }
   listAdmins(spaceId: string) {
-    return this.request<AdminUserSummary[]>('/admin/spaces/' + encodeURIComponent(spaceId) + '/admins')
+    return this.request<AdminUserSummary[]>(this.spacePath(spaceId) + '/admins')
   }
   addAdmin(spaceId: string, adminUserId: string) {
-    return this.request<AdminUserSummary>('/admin/spaces/' + encodeURIComponent(spaceId) + '/admins', {
+    return this.request<AdminUserSummary>(this.spacePath(spaceId) + '/admins', {
       method: 'POST', body: JSON.stringify({ adminUserId }),
     })
   }
   async removeAdmin(spaceId: string, adminUserId: string) {
     await this.request<unknown>(
-      '/admin/spaces/' + encodeURIComponent(spaceId) + '/admins/' + encodeURIComponent(adminUserId),
+      this.spacePath(spaceId) + '/admins/' + encodeURIComponent(adminUserId),
       { method: 'DELETE' },
     )
   }
   listInvites(spaceId: string) {
-    return this.request<InviteSummary[]>('/admin/spaces/' + encodeURIComponent(spaceId) + '/invites')
+    return this.request<InviteSummary[]>(this.spacePath(spaceId) + '/invites')
   }
   createInvite(spaceId: string, input: CreateInviteInput) {
-    return this.request<InviteSummary>('/admin/spaces/' + encodeURIComponent(spaceId) + '/invites', {
+    return this.request<InviteSummary>(this.spacePath(spaceId) + '/invites', {
       method: 'POST', body: JSON.stringify(input),
     })
   }
   revokeInvite(spaceId: string, inviteId: string) {
     return this.request<InviteSummary>(
-      '/admin/spaces/' + encodeURIComponent(spaceId) + '/invites/' + encodeURIComponent(inviteId) + '/revoke',
+      this.spacePath(spaceId) + '/invites/' + encodeURIComponent(inviteId) + '/revoke',
       { method: 'POST' },
     )
   }
   listInviteMembers(spaceId: string, inviteId: string) {
     return this.request<InviteMemberSummary[]>(
-      '/admin/spaces/' + encodeURIComponent(spaceId) + '/invites/' + encodeURIComponent(inviteId) + '/members',
+      this.spacePath(spaceId) + '/invites/' + encodeURIComponent(inviteId) + '/members',
+    )
+  }
+
+  listResources(spaceId: string) {
+    return this.request<AdminResource[]>(this.spacePath(spaceId) + '/resources')
+  }
+  createResource(spaceId: string, input: ResourceInput) {
+    return this.request<AdminResource>(this.spacePath(spaceId) + '/resources', {
+      method: 'POST', body: JSON.stringify(input),
+    })
+  }
+  updateResource(spaceId: string, resourceId: string, input: ResourceInput) {
+    return this.request<AdminResource>(
+      this.spacePath(spaceId) + '/resources/' + encodeURIComponent(resourceId),
+      { method: 'PATCH', body: JSON.stringify(input) },
+    )
+  }
+  async setResourceStatus(spaceId: string, resourceId: string, status: 'active' | 'inactive') {
+    await this.request<unknown>(
+      this.spacePath(spaceId) + '/resources/' + encodeURIComponent(resourceId) + '/' + (status === 'active' ? 'activate' : 'deactivate'),
+      { method: 'POST' },
+    )
+    const resource = (await this.listResources(spaceId)).find((item) => item.id === resourceId)
+    if (!resource) throw new Error('预约对象状态已更新，但无法重新读取。')
+    return resource
+  }
+
+  listSlotTypes(spaceId: string) {
+    return this.request<AdminSlotType[]>(this.spacePath(spaceId) + '/slot-types')
+  }
+  createSlotType(spaceId: string, input: SlotTypeInput) {
+    return this.request<AdminSlotType>(this.spacePath(spaceId) + '/slot-types', {
+      method: 'POST', body: JSON.stringify(input),
+    })
+  }
+  updateSlotType(spaceId: string, slotTypeId: string, input: SlotTypeInput) {
+    return this.request<AdminSlotType>(
+      this.spacePath(spaceId) + '/slot-types/' + encodeURIComponent(slotTypeId),
+      { method: 'PATCH', body: JSON.stringify(input) },
+    )
+  }
+  async setSlotTypeStatus(spaceId: string, slotTypeId: string, status: 'active' | 'inactive') {
+    await this.request<unknown>(
+      this.spacePath(spaceId) + '/slot-types/' + encodeURIComponent(slotTypeId) + '/' + (status === 'active' ? 'activate' : 'deactivate'),
+      { method: 'POST' },
+    )
+    const slotType = (await this.listSlotTypes(spaceId)).find((item) => item.id === slotTypeId)
+    if (!slotType) throw new Error('时段类型状态已更新，但无法重新读取。')
+    return slotType
+  }
+
+  listMembers(spaceId: string, filters: MemberFilters = {}) {
+    const query = new URLSearchParams()
+    if (filters.invitedByAdminId) query.set('invitedByAdminId', filters.invitedByAdminId)
+    if (filters.inviteCodeId) query.set('inviteCodeId', filters.inviteCodeId)
+    const suffix = query.size ? '?' + query.toString() : ''
+    return this.request<AdminMemberSummary[]>(this.spacePath(spaceId) + '/members' + suffix)
+  }
+  getMember(spaceId: string, membershipId: string) {
+    return this.request<AdminMemberDetail>(
+      this.spacePath(spaceId) + '/members/' + encodeURIComponent(membershipId),
+    )
+  }
+  async updateMemberAdminNote(spaceId: string, membershipId: string, adminNote: string | null) {
+    await this.request<unknown>(
+      this.spacePath(spaceId) + '/members/' + encodeURIComponent(membershipId),
+      { method: 'PATCH', body: JSON.stringify({ adminNote }) },
+    )
+  }
+  async updateParticipantAdminNote(spaceId: string, participantId: string, adminNote: string | null) {
+    await this.request<unknown>(
+      this.spacePath(spaceId) + '/participants/' + encodeURIComponent(participantId),
+      { method: 'PATCH', body: JSON.stringify({ adminNote }) },
     )
   }
 }
