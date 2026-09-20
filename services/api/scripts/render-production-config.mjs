@@ -51,10 +51,26 @@ const databaseId = required('YUKE_D1_DATABASE_ID')
 const bucketName = required('YUKE_R2_BUCKET_NAME')
 const customDomain =
   process.env.YUKE_API_CUSTOM_DOMAIN?.trim() || 'api.yuke.verinasci.com'
+const adminOrigin =
+  process.env.YUKE_ADMIN_ORIGIN?.trim() || 'https://yuke.verinasci.com'
 
 assertDatabaseId(databaseId)
 assertBucketName(bucketName)
 assertHostname(customDomain)
+
+let parsedAdminOrigin
+try {
+  parsedAdminOrigin = new URL(adminOrigin)
+} catch {
+  throw new Error('YUKE_ADMIN_ORIGIN must be an absolute HTTPS origin')
+}
+if (
+  parsedAdminOrigin.protocol !== 'https:' ||
+  parsedAdminOrigin.origin !== adminOrigin ||
+  parsedAdminOrigin.pathname !== '/'
+) {
+  throw new Error('YUKE_ADMIN_ORIGIN must be an HTTPS origin without path')
+}
 
 const outputPath = process.env.YUKE_PRODUCTION_CONFIG_PATH
   ? resolve(process.env.YUKE_PRODUCTION_CONFIG_PATH)
@@ -68,6 +84,9 @@ main = "../src/index.ts"
 compatibility_date = "2026-09-20"
 workers_dev = false
 preview_urls = false
+
+[vars]
+ADMIN_ORIGIN = ${tomlString(adminOrigin)}
 
 [[routes]]
 pattern = ${tomlString(customDomain)}
