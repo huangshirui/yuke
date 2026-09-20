@@ -1,5 +1,8 @@
 import { registerIdentityRoutes } from './domains/identity/routes'
 import { registerCatalogRoutes } from './domains/resource/catalog/routes'
+import { registerAvailabilityRoutes } from './domains/resource/availability/routes'
+import { registerSeriesRoutes } from './domains/resource/series/routes'
+import { registerSlotRoutes } from './domains/resource/slot/routes'
 import type { IdentityEnv } from './domains/identity/env'
 import { registerParticipantRoutes } from './domains/reservation/participant/routes'
 import { registerInviteRoutes } from './domains/tenant/invite/routes'
@@ -30,6 +33,9 @@ registerInviteRoutes(app)
 registerMembershipRoutes(app)
 registerParticipantRoutes(app)
 registerCatalogRoutes(app)
+registerSlotRoutes(app)
+registerSeriesRoutes(app)
+registerAvailabilityRoutes(app)
 
 export async function router(context: RouteContext): Promise<Response> {
   return app.handle(context)
