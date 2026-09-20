@@ -152,6 +152,16 @@ export async function listActiveSeriesForRange(
   return records
 }
 
+export async function findSpaceTimezone(
+  db: SeriesDatabase,
+  spaceId: string
+): Promise<string | null> {
+  const row = await db.prepare(
+    'SELECT timezone FROM spaces WHERE id = ? LIMIT 1'
+  ).bind(spaceId).first<{ timezone: string }>()
+  return row?.timezone ?? null
+}
+
 export async function occurrenceExists(
   db: SeriesDatabase,
   seriesId: string,
@@ -201,12 +211,12 @@ export async function insertSeriesOccurrence(
   ).run()
 }
 
-export async function listConcreteSlots(
+export async function listConcreteSlotsByLocalDateRange(
   db: SeriesDatabase,
   spaceId: string,
   resourceId: string,
-  startAt: number,
-  endAt: number
+  from: string,
+  to: string
 ): Promise<Array<{
   id: string
   spaceId: string
@@ -230,10 +240,10 @@ export async function listConcreteSlots(
     FROM slots
     WHERE slots.space_id = ?
       AND slots.resource_id = ?
-      AND slots.start_at < ?
-      AND slots.end_at > ?
+      AND slots.local_date >= ?
+      AND slots.local_date <= ?
     ORDER BY slots.start_at ASC, slots.id ASC
-  `).bind(spaceId, resourceId, endAt, startAt).all<{
+  `).bind(spaceId, resourceId, from, to).all<{
     id: string
     space_id: string
     resource_id: string
