@@ -65,20 +65,58 @@ function minutesLabel(value: number) {
   const minute = String(value % 60).padStart(2, '0')
   return hour + ':' + minute
 }
+function zonedParts(iso: string) {
+  const zone = space.value?.timezone || 'UTC'
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: zone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23'
+  }).formatToParts(new Date(iso))
+  const read = (type: string) => Number(parts.find((part) => part.type === type)?.value)
+  return {
+    year: read('year'),
+    month: read('month'),
+    day: read('day'),
+    hour: read('hour'),
+    minute: read('minute')
+  }
+}
+function slotLocalTime(iso: string) {
+  const parts = zonedParts(iso)
+  return String(parts.hour).padStart(2, '0') + ':' + String(parts.minute).padStart(2, '0')
+}
 function dateTimeLocal(date: string, time: string) {
   const zone = space.value?.timezone || 'UTC'
-  const probe = new Date(date + 'T' + time + ':00Z')
-  const local = new Intl.DateTimeFormat('en-CA', {
-    timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit',
-    hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
-  }).formatToParts(probe)
-  const read = (type: string) => Number(local.find((part) => part.type === type)?.value)
   const desired = Date.UTC(
     Number(date.slice(0, 4)), Number(date.slice(5, 7)) - 1, Number(date.slice(8, 10)),
     Number(time.slice(0, 2)), Number(time.slice(3, 5))
   )
-  const represented = Date.UTC(read('year'), read('month') - 1, read('day'), read('hour'), read('minute'))
-  return new Date(desired - (represented - probe.getTime())).toISOString()
+  let guess = desired
+  for (let index = 0; index < 4; index += 1) {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      timeZone: zone, year: 'numeric', month: '2-digit', day: '2-digit',
+      hour: '2-digit', minute: '2-digit', hourCycle: 'h23'
+    }).formatToParts(new Date(guess))
+    const read = (type: string) => Number(parts.find((part) => part.type === type)?.value)
+    const represented = Date.UTC(read('year'), read('month') - 1, read('day'), read('hour'), read('minute'))
+    const next = desired - (represented - guess)
+    if (next === guess) break
+    guess = next
+  }
+  return new Date(guess).toISOString()
+}
+function slotStyle(slot: AdminScheduleSlot) {
+  const start = zonedParts(slot.startAt)
+  const end = zonedParts(slot.endAt)
+  const startMinute = start.hour * 60 + start.minute
+  const endMinute = end.hour * 60 + end.minute
+  const top = Math.max(0, ((startMinute - 8 * 60) / 30) * 36)
+  const height = Math.max(34, ((endMinute - startMinute) / 30) * 36)
+  return { top: top + 'px', height: height + 'px' }
 }
 function slotsFor(date: string) {
   return slots.value.filter((slot) => slot.localDate === date && slot.status !== 'cancelled')
@@ -150,8 +188,8 @@ function openEdit(slot: AdminScheduleSlot) {
   form.mode = slot.seriesId ? 'weekly' : 'single'
   form.scope = 'single'
   form.date = slot.localDate
-  form.startTime = slot.startAt.slice(11, 16)
-  form.endTime = slot.endAt.slice(11, 16)
+  form.startTime = slotLocalTime(slot.startAt)
+  form.endTime = slotLocalTime(slot.endAt)
   form.slotTypeId = slot.slotTypeId
   form.weekdays = [new Date(slot.localDate + 'T12:00:00Z').getUTCDay() || 7]
   form.endsOn = ''
@@ -315,20 +353,24 @@ onMounted(loadBase)
               @pointerenter="moveDrag(dayIndex, minute)"
             ></button>
             <div class="day-slots">
-              <button
+              <div
                 v-for="slot in slotsFor(day.date)"
                 :key="slot.id"
                 class="slot-card"
                 :class="{ 'slot-card--frozen': slot.status === 'frozen' }"
+                :style="slotStyle(slot)"
+                role="button"
+                tabindex="0"
                 @click.stop="openEdit(slot)"
+                @keydown.enter.prevent="openEdit(slot)"
               >
-                <strong>{{ slot.startAt.slice(11, 16) }}–{{ slot.endAt.slice(11, 16) }}</strong>
+                <strong>{{ slotLocalTime(slot.startAt) }}–{{ slotLocalTime(slot.endAt) }}</strong>
                 <span>{{ slotTypeName(slot) }}</span>
                 <small>{{ slot.status === 'frozen' ? '已冻结' : slot.seriesId ? '每周重复' : '单次' }}</small>
                 <span class="slot-actions">
                   <button class="mini-action" @click.stop="toggleFrozen(slot)">{{ slot.status === 'frozen' ? '解冻' : '冻结' }}</button>
                 </span>
-              </button>
+              </div>
             </div>
           </div>
         </div>
@@ -379,5 +421,5 @@ onMounted(loadBase)
 </template>
 
 <style scoped>
-.schedule-toolbar{display:flex;align-items:end;justify-content:space-between;gap:20px;margin-bottom:16px}.schedule-toolbar .field{min-width:260px}.week-nav{display:flex;align-items:center;gap:12px}.schedule-panel{overflow:auto;padding:0}.week-head,.schedule-body{display:grid;grid-template-columns:72px repeat(7,minmax(132px,1fr));min-width:1050px}.time-gutter,.day-head{height:64px;border-bottom:1px solid var(--line)}.day-head{display:grid;align-content:center;gap:3px;padding:0 12px;border-left:1px solid var(--line)}.day-head span{color:var(--muted);font-size:12px}.schedule-body{align-items:start}.time-column{display:grid}.time-label{height:36px;padding:7px 8px;color:var(--muted);font-size:11px;border-bottom:1px solid var(--line)}.day-column{position:relative;border-left:1px solid var(--line);min-height:900px}.time-cell{display:block;width:100%;height:36px;border:0;border-bottom:1px solid var(--line);background:transparent;padding:0;cursor:crosshair}.time-cell:hover,.time-cell--selected{background:var(--accent-soft)}.day-slots{position:absolute;inset:4px;display:grid;align-content:start;gap:6px;pointer-events:none}.slot-card{pointer-events:auto;border:1px solid #badbd5;border-left:4px solid var(--accent);border-radius:10px;background:#fff;padding:8px;text-align:left;display:grid;gap:2px;box-shadow:0 2px 8px rgba(23,32,42,.06)}.slot-card span,.slot-card small{font-size:11px;color:var(--muted)}.slot-card--frozen{border-color:#d5d9dc;border-left-color:#77838c;background:#f4f6f7}.slot-actions{margin-top:5px}.mini-action{border:0;background:transparent;padding:0;color:var(--accent);font-size:11px;cursor:pointer}.modal-backdrop{position:fixed;inset:0;background:rgba(10,20,20,.36);display:grid;place-items:center;padding:24px;z-index:20}.modal-card{width:min(720px,100%);max-height:90vh;overflow:auto;background:#fff;border-radius:16px;padding:22px;box-shadow:0 24px 70px rgba(0,0,0,.2)}.schedule-form{margin-top:14px}.repeat-panel{margin-top:18px;padding:16px;border:1px solid var(--line);border-radius:12px;display:grid;gap:14px}.field-label{font-size:13px;font-weight:600}.weekday-picker{display:flex;gap:8px;flex-wrap:wrap}.weekday-button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 11px;cursor:pointer}.weekday-button.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}.modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px}@media(max-width:820px){.schedule-toolbar,.week-nav{align-items:stretch;flex-direction:column}.schedule-toolbar .field{min-width:0}.modal-card{padding:16px}}
+.schedule-toolbar{display:flex;align-items:end;justify-content:space-between;gap:20px;margin-bottom:16px}.schedule-toolbar .field{min-width:260px}.week-nav{display:flex;align-items:center;gap:12px}.schedule-panel{overflow:auto;padding:0}.week-head,.schedule-body{display:grid;grid-template-columns:72px repeat(7,minmax(132px,1fr));min-width:1050px}.time-gutter,.day-head{height:64px;border-bottom:1px solid var(--line)}.day-head{display:grid;align-content:center;gap:3px;padding:0 12px;border-left:1px solid var(--line)}.day-head span{color:var(--muted);font-size:12px}.schedule-body{align-items:start}.time-column{display:grid}.time-label{height:36px;padding:7px 8px;color:var(--muted);font-size:11px;border-bottom:1px solid var(--line)}.day-column{position:relative;border-left:1px solid var(--line);min-height:900px}.time-cell{display:block;width:100%;height:36px;border:0;border-bottom:1px solid var(--line);background:transparent;padding:0;cursor:crosshair}.time-cell:hover,.time-cell--selected{background:var(--accent-soft)}.day-slots{position:absolute;inset:0;pointer-events:none}.slot-card{position:absolute;left:4px;right:4px;pointer-events:auto;border:1px solid #badbd5;border-left:4px solid var(--accent);border-radius:10px;background:#fff;padding:8px;text-align:left;display:grid;gap:2px;box-shadow:0 2px 8px rgba(23,32,42,.06)}.slot-card span,.slot-card small{font-size:11px;color:var(--muted)}.slot-card--frozen{border-color:#d5d9dc;border-left-color:#77838c;background:#f4f6f7}.slot-actions{margin-top:5px}.mini-action{border:0;background:transparent;padding:0;color:var(--accent);font-size:11px;cursor:pointer}.modal-backdrop{position:fixed;inset:0;background:rgba(10,20,20,.36);display:grid;place-items:center;padding:24px;z-index:20}.modal-card{width:min(720px,100%);max-height:90vh;overflow:auto;background:#fff;border-radius:16px;padding:22px;box-shadow:0 24px 70px rgba(0,0,0,.2)}.schedule-form{margin-top:14px}.repeat-panel{margin-top:18px;padding:16px;border:1px solid var(--line);border-radius:12px;display:grid;gap:14px}.field-label{font-size:13px;font-weight:600}.weekday-picker{display:flex;gap:8px;flex-wrap:wrap}.weekday-button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 11px;cursor:pointer}.weekday-button.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}.modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px}@media(max-width:820px){.schedule-toolbar,.week-nav{align-items:stretch;flex-direction:column}.schedule-toolbar .field{min-width:0}.modal-card{padding:16px}}
 </style>
