@@ -216,3 +216,51 @@ export type AssignSpaceAdminInput = {
   adminUserId: Id
 }
 
+export type InviteSummary = {
+  id: Id
+  spaceId: Id
+  label: string | null
+  code: string
+  expiresAt: string
+  status: InviteStatus
+  createdByAdminId: Id
+  memberCount: number
+}
+
+export type InviteMemberSummary = {
+  membershipId: Id
+  nickname: string
+  joinedAt: string
+  participantCount: number
+  invitedByAdminId: Id
+  inviteCodeId: Id
+}
+
+export type CreateInviteInput = {
+  label: string | null
+  expiresAt: string
+}
+
+export type SpaceMembershipSummary = {
+  id: Id
+  spaceId: Id
+  invitedByAdminId: Id
+  inviteCodeId: Id
+  status: EntityStatus
+  joinedAt: string
+}
+
+export type JoinSpaceResponse = {
+  membership: SpaceMembershipSummary
+  space: SpaceSummary
+  currentSpaceId: Id
+}
+
+export type UpdateCurrentSpaceInput = {
+  spaceId: Id
+}
+
+export type CurrentSpaceResponse = {
+  currentSpaceId: Id
+}
+
