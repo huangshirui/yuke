@@ -44,6 +44,7 @@
   </view>
 
   <view class="secondary-actions">
+    <button class="primary-button" bindtap="browseAvailability">查看可预约时间</button>
     <button class="secondary-button" bindtap="manageParticipants">管理参与人</button>
     <button class="secondary-button" bindtap="addSpace">加入其他空间</button>
   </view>

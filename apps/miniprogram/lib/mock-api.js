@@ -158,6 +158,51 @@ function createMockApi(storage) {
       return { currentSpaceId: target.id }
     },
 
+    async listResources(spaceId) {
+      assertSpaceAccess(spaceId)
+      return [
+        { id: `res_${spaceId}_a`, spaceId, name: '预约对象 A', note: null, status: 'active' },
+        { id: `res_${spaceId}_b`, spaceId, name: '预约对象 B', note: null, status: 'active' }
+      ]
+    },
+
+    async listResourceSlots(spaceId, resourceId, from, to) {
+      assertSpaceAccess(spaceId)
+      const resources = await this.listResources(spaceId)
+      if (!resources.some((item) => item.id === resourceId)) {
+        const error = new Error('预约对象不存在')
+        error.code = 'NOT_FOUND'
+        throw error
+      }
+      const result = []
+      let date = from
+      let index = 0
+      while (date <= to) {
+        const weekday = new Date(date + 'T12:00:00Z').getUTCDay()
+        if (weekday !== 0) {
+          const hour = resourceId.endsWith('_a') ? 9 : 14
+          result.push({
+            id: `slot_${resourceId}_${date}`,
+            spaceId,
+            resourceId,
+            slotTypeId: 'sty_synthetic_standard',
+            slotTypeName: index % 2 ? '沟通时段' : '标准时段',
+            seriesId: index % 3 === 0 ? 'series_synthetic' : null,
+            startAt: `${date}T${String(hour).padStart(2, '0')}:00:00.000Z`,
+            endAt: `${date}T${String(hour + 1).padStart(2, '0')}:00:00.000Z`,
+            localDate: date,
+            status: index % 5 === 0 ? 'frozen' : 'open',
+            bookable: index % 5 !== 0
+          })
+          index += 1
+        }
+        const next = new Date(date + 'T00:00:00Z')
+        next.setUTCDate(next.getUTCDate() + 1)
+        date = next.toISOString().slice(0, 10)
+      }
+      return clone(result.filter((slot) => slot.bookable))
+    },
+
     async listParticipants(spaceId) {
       assertSpaceAccess(spaceId)
       return clone(participantsForSpace(spaceId))
