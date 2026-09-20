@@ -1,0 +1,51 @@
+<view class="page">
+  <view class="page-header">
+    <text class="page-title">预约详情</text>
+    <text class="page-description">{{currentSpace.name || '当前空间'}}</text>
+  </view>
+
+  <view wx:if="{{loading}}" class="card"><text class="muted">正在加载预约…</text></view>
+
+  <block wx:elif="{{booking}}">
+    <view class="card detail-card">
+      <view class="detail-heading">
+        <view>
+          <text class="detail-resource">{{booking.resource.name}}</text>
+          <text class="detail-type">{{booking.slotType.name}}</text>
+        </view>
+        <text class="status-badge status-badge--{{booking.status}}">{{booking.statusLabel}}</text>
+      </view>
+
+      <view class="detail-row">
+        <text class="detail-label">时间</text>
+        <text>{{booking.displayDate}}</text>
+        <text>{{booking.displayStart}}–{{booking.displayEnd}}</text>
+      </view>
+      <view class="detail-row">
+        <text class="detail-label">参与人</text>
+        <text>{{booking.participant.name}}</text>
+        <text class="caption">出生年月 {{booking.participant.birthMonth}}</text>
+      </view>
+      <view class="detail-row">
+        <text class="detail-label">预约编号</text>
+        <text class="detail-id">{{booking.id}}</text>
+      </view>
+    </view>
+
+    <button
+      wx:if="{{booking.status === 'booked'}}"
+      class="cancel-button"
+      loading="{{cancelling}}"
+      disabled="{{cancelling}}"
+      bindtap="cancelBooking"
+    >取消预约</button>
+
+    <view wx:else class="card state-note">
+      <text class="muted">
+        {{booking.status === 'completed' ? '这个预约已经完成。' : '这个预约已经取消。'}}
+      </text>
+    </view>
+  </block>
+
+  <view class="safe-bottom"></view>
+</view>

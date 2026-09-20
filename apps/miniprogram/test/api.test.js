@@ -115,3 +115,48 @@ test('requests active resources and resource slots with Space scope', async () =
   )
   assert.equal(calls[1].header.Authorization, 'Bearer synthetic-token')
 })
+
+
+test('uses stable Booking endpoints for create, query, detail and cancel', async () => {
+  const calls = []
+  const api = createApiClient({
+    baseUrl: 'https://api.example.invalid',
+    getToken: () => 'synthetic-token',
+    request(options) {
+      calls.push(options)
+      options.success({ statusCode: 200, data: { data: [] } })
+    }
+  })
+
+  await api.createBooking('sp synthetic', {
+    slotId: 'slot_synthetic',
+    participantId: 'par_synthetic'
+  })
+  await api.listBookings('sp synthetic', {
+    from: '2026-09-20',
+    to: '2026-09-22',
+    status: 'booked'
+  })
+  await api.getBooking('sp synthetic', 'bkg synthetic')
+  await api.cancelBooking('sp synthetic', 'bkg synthetic')
+
+  assert.equal(calls[0].method, 'POST')
+  assert.equal(calls[0].url, 'https://api.example.invalid/v1/spaces/sp%20synthetic/bookings')
+  assert.deepEqual(calls[0].data, {
+    slotId: 'slot_synthetic',
+    participantId: 'par_synthetic'
+  })
+  assert.equal(
+    calls[1].url,
+    'https://api.example.invalid/v1/spaces/sp%20synthetic/bookings?from=2026-09-20&to=2026-09-22&status=booked'
+  )
+  assert.equal(
+    calls[2].url,
+    'https://api.example.invalid/v1/spaces/sp%20synthetic/bookings/bkg%20synthetic'
+  )
+  assert.equal(calls[3].method, 'POST')
+  assert.equal(
+    calls[3].url,
+    'https://api.example.invalid/v1/spaces/sp%20synthetic/bookings/bkg%20synthetic/cancel'
+  )
+})

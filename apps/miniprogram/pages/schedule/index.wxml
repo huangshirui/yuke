@@ -1,0 +1,110 @@
+<view class="page">
+  <view class="page-header schedule-header">
+    <view>
+      <text class="page-title">我的预约</text>
+      <text class="page-description">{{currentSpace.name || '当前空间'}} · 查看和管理自己的预约。</text>
+    </view>
+    <button class="text-button" bindtap="startBooking">发起预约</button>
+  </view>
+
+  <view class="view-switch">
+    <button
+      class="view-switch__item {{mode === 'calendar' ? 'view-switch__item--active' : ''}}"
+      data-mode="calendar"
+      bindtap="switchMode"
+    >日程</button>
+    <button
+      class="view-switch__item {{mode === 'three' ? 'view-switch__item--active' : ''}}"
+      data-mode="three"
+      bindtap="switchMode"
+    >三日</button>
+  </view>
+
+  <view wx:if="{{loading}}" class="card state-card">
+    <text class="muted">正在加载预约…</text>
+  </view>
+
+  <block wx:elif="{{mode === 'calendar'}}">
+    <view class="calendar-toolbar">
+      <button class="calendar-nav" data-delta="-1" bindtap="moveCalendar">‹</button>
+      <text class="calendar-range">{{rangeLabel}}</text>
+      <button class="calendar-nav" data-delta="1" bindtap="moveCalendar">›</button>
+      <button class="calendar-expand" bindtap="toggleMonth">{{expandedMonth ? '收起月' : '展开月'}}</button>
+    </view>
+
+    <view class="calendar-weekdays">
+      <text wx:for="{{weekdayLabels}}" wx:key="*this">周{{item}}</text>
+    </view>
+
+    <view class="calendar-grid {{expandedMonth ? 'calendar-grid--month' : ''}}">
+      <button
+        wx:for="{{calendarDays}}"
+        wx:key="date"
+        class="calendar-day {{item.selected ? 'calendar-day--selected' : ''}} {{item.otherMonth ? 'calendar-day--muted' : ''}}"
+        data-date="{{item.date}}"
+        bindtap="selectDate"
+      >
+        <text class="calendar-day__number">{{item.day}}</text>
+        <text wx:if="{{item.count}}" class="calendar-day__count">{{item.count}}</text>
+      </button>
+    </view>
+
+    <view class="selected-day">
+      <text class="section-title">{{selectedDate}}</text>
+      <view wx:if="{{!selectedBookings.length}}" class="card state-card">
+        <text class="muted">这一天没有预约。</text>
+      </view>
+      <button
+        wx:for="{{selectedBookings}}"
+        wx:key="id"
+        class="card booking-card"
+        data-booking-id="{{item.id}}"
+        bindtap="openDetail"
+      >
+        <view class="booking-card__main">
+          <view class="booking-card__title">
+            <text>{{item.displayStart}}–{{item.displayEnd}}</text>
+            <text class="status-badge status-badge--{{item.status}}">{{item.statusLabel}}</text>
+          </view>
+          <text class="booking-card__resource">{{item.resource.name}} · {{item.slotType.name}}</text>
+          <text class="caption">参与人：{{item.participant.name}}</text>
+        </view>
+        <text class="chevron">›</text>
+      </button>
+    </view>
+  </block>
+
+  <block wx:else>
+    <view class="three-toolbar">
+      <button class="calendar-nav" data-delta="-1" bindtap="moveThree">‹</button>
+      <text class="calendar-range">{{rangeLabel}}</text>
+      <button class="calendar-nav" data-delta="1" bindtap="moveThree">›</button>
+    </view>
+
+    <view class="three-grid">
+      <view wx:for="{{threeGroups}}" wx:key="date" class="three-day">
+        <text class="three-day__title">{{item.label}}</text>
+        <view wx:if="{{!item.bookings.length}}" class="three-empty">暂无预约</view>
+        <button
+          wx:for="{{item.bookings}}"
+          wx:for-item="booking"
+          wx:key="id"
+          class="booking-card booking-card--compact"
+          data-booking-id="{{booking.id}}"
+          bindtap="openDetail"
+        >
+          <view class="booking-card__main">
+            <view class="booking-card__title">
+              <text>{{booking.displayStart}}–{{booking.displayEnd}}</text>
+              <text class="status-badge status-badge--{{booking.status}}">{{booking.statusLabel}}</text>
+            </view>
+            <text class="booking-card__resource">{{booking.resource.name}}</text>
+            <text class="caption">{{booking.participant.name}} · {{booking.slotType.name}}</text>
+          </view>
+        </button>
+      </view>
+    </view>
+  </block>
+
+  <view class="safe-bottom"></view>
+</view>

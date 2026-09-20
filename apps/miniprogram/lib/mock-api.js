@@ -1,6 +1,8 @@
 const STORAGE_KEY = 'yuke.mockUser'
 const PARTICIPANTS_KEY = 'yuke.mockParticipants'
 const PARTICIPANT_SEQUENCE_KEY = 'yuke.mockParticipantSequence'
+const BOOKINGS_KEY = 'yuke.mockBookings'
+const BOOKING_SEQUENCE_KEY = 'yuke.mockBookingSequence'
 const { normalizeParticipantInput } = require('./participants')
 
 function clone(value) {
@@ -62,6 +64,45 @@ function createMockApi(storage) {
   function participantsForSpace(spaceId) {
     const map = loadParticipantMap()
     return Array.isArray(map[spaceId]) ? map[spaceId] : []
+  }
+
+  function loadBookingMap() {
+    return storage.getStorageSync(BOOKINGS_KEY) || {}
+  }
+
+  function saveBookingMap(value) {
+    storage.setStorageSync(BOOKINGS_KEY, value)
+  }
+
+  function bookingsForSpace(spaceId) {
+    const map = loadBookingMap()
+    return Array.isArray(map[spaceId]) ? map[spaceId] : []
+  }
+
+  function nextBookingId() {
+    const current = Number(storage.getStorageSync(BOOKING_SEQUENCE_KEY) || 0) + 1
+    storage.setStorageSync(BOOKING_SEQUENCE_KEY, current)
+    return `bkg_synthetic_${String(current).padStart(3, '0')}`
+  }
+
+  function slotDetailFromId(spaceId, slotId) {
+    const date = String(slotId).slice(-10)
+    const resourceId = String(slotId).startsWith('slot_')
+      ? String(slotId).slice(5, -11)
+      : `res_${spaceId}_a`
+    const hour = resourceId.endsWith('_a') ? 9 : 14
+    const resourceName = resourceId.endsWith('_a') ? '预约对象 A' : '预约对象 B'
+    return {
+      resource: { id: resourceId, name: resourceName, status: 'active' },
+      slotType: { id: 'sty_synthetic_standard', name: '标准时段', status: 'active' },
+      slot: {
+        id: slotId,
+        startAt: `${date}T${String(hour).padStart(2, '0')}:00:00.000Z`,
+        endAt: `${date}T${String(hour + 1).padStart(2, '0')}:00:00.000Z`,
+        localDate: date,
+        status: 'open'
+      }
+    }
   }
 
   function mutateParticipant(spaceId, participantId, mutate) {
@@ -201,6 +242,84 @@ function createMockApi(storage) {
         date = next.toISOString().slice(0, 10)
       }
       return clone(result.filter((slot) => slot.bookable))
+    },
+
+    async createBooking(spaceId, input) {
+      assertSpaceAccess(spaceId)
+      const participant = participantsForSpace(spaceId).find(
+        (item) => item.id === input.participantId && item.status === 'active'
+      )
+      if (!participant) {
+        const error = new Error('参与人不可用于预约')
+        error.code = 'VALIDATION_ERROR'
+        throw error
+      }
+
+      const existing = bookingsForSpace(spaceId).find(
+        (item) => item.slotId === input.slotId && ['booked', 'completed'].includes(item.status)
+      )
+      if (existing) {
+        const error = new Error('这个时间刚刚被预约了，请选择其他时间。')
+        error.code = 'SLOT_ALREADY_BOOKED'
+        throw error
+      }
+
+      const now = new Date().toISOString()
+      const slot = slotDetailFromId(spaceId, input.slotId)
+      const booking = {
+        id: nextBookingId(),
+        spaceId,
+        slotId: input.slotId,
+        participantId: input.participantId,
+        status: 'booked',
+        createdAt: now,
+        updatedAt: now,
+        participant: clone(participant),
+        ...slot
+      }
+      const map = loadBookingMap()
+      map[spaceId] = [...bookingsForSpace(spaceId), booking]
+      saveBookingMap(map)
+      return clone(booking)
+    },
+
+    async listBookings(spaceId, filters = {}) {
+      assertSpaceAccess(spaceId)
+      return clone(bookingsForSpace(spaceId).filter((item) => {
+        if (filters.from && item.slot.localDate < filters.from) return false
+        if (filters.to && item.slot.localDate > filters.to) return false
+        if (filters.status && item.status !== filters.status) return false
+        return true
+      }))
+    },
+
+    async getBooking(spaceId, bookingId) {
+      assertSpaceAccess(spaceId)
+      const booking = bookingsForSpace(spaceId).find((item) => item.id === bookingId)
+      if (!booking) {
+        const error = new Error('预约不存在')
+        error.code = 'NOT_FOUND'
+        throw error
+      }
+      return clone(booking)
+    },
+
+    async cancelBooking(spaceId, bookingId) {
+      assertSpaceAccess(spaceId)
+      const map = loadBookingMap()
+      const list = Array.isArray(map[spaceId]) ? map[spaceId] : []
+      const booking = list.find((item) => item.id === bookingId)
+      if (!booking) {
+        const error = new Error('预约不存在')
+        error.code = 'NOT_FOUND'
+        throw error
+      }
+      if (booking.status === 'booked') {
+        booking.status = 'cancelled'
+        booking.updatedAt = new Date().toISOString()
+      }
+      saveBookingMap(map)
+      return clone(booking)
     },
 
     async listParticipants(spaceId) {
