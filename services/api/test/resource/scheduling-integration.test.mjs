@@ -364,9 +364,10 @@ describe('Phase 3 Scheduling Gate', () => {
     const past = await env.DB.prepare(`
       SELECT local_date, start_at, series_id, status
       FROM slots
-      WHERE local_date IN ('2026-09-07', '2026-09-14', '2026-09-21')
+      WHERE series_id = ?
+        AND local_date IN ('2026-09-07', '2026-09-14', '2026-09-21')
       ORDER BY local_date
-    `).all()
+    `).bind(series.id).all()
 
     expect(past.results).toHaveLength(3)
     expect(past.results.every((row) => row.series_id === series.id && row.status === 'open')).toBe(true)
