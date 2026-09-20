@@ -7,6 +7,7 @@ Page({
     nickname: '',
     avatarPath: '',
     savedAvatarPath: '',
+    hasSavedAvatar: false,
     submitting: false,
     editMode: false
   },
@@ -15,6 +16,7 @@ Page({
     const user = loadUser(wx)
     this.setData({
       nickname: user?.nickname || '',
+      hasSavedAvatar: Boolean(user?.avatarUrl),
       editMode: options?.mode === 'edit'
     })
 
@@ -54,7 +56,7 @@ Page({
       return
     }
 
-    if (!this.data.avatarPath && !this.data.savedAvatarPath) {
+    if (!this.data.avatarPath && !this.data.hasSavedAvatar) {
       wx.showToast({ title: '请选择头像', icon: 'none' })
       return
     }
