@@ -333,6 +333,7 @@ onMounted(load)
         <button @click="goSection('settings')">预约规则</button>
         <button @click="goSection('admins')">管理员</button>
         <button @click="goSection('invites')">邀请码</button>
+        <button @click="router.push('/spaces/' + spaceId + '/schedule')">开放时间</button>
         <button :class="{ active: section === 'resources' }" @click="goSection('resources')">预约对象</button>
         <button :class="{ active: section === 'slot-types' }" @click="goSection('slot-types')">时段类型</button>
         <button :class="{ active: section === 'members' }" @click="goSection('members')">用户</button>
