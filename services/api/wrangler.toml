@@ -2,4 +2,13 @@ name = "yuke-api"
 main = "src/index.ts"
 compatibility_date = "2026-09-20"
 
-# D1/R2/KV bindings will be added when environments are created.
+# Public-repository local/CI D1 binding.
+# The all-zero UUID is synthetic and is used only because Wrangler requires a
+# database_id in configuration. Explicit --local commands use local D1 state.
+# Remote deployment must use a controlled config containing the real database ID.
+[[d1_databases]]
+binding = "DB"
+database_name = "yuke-local"
+database_id = "00000000-0000-0000-0000-000000000000"
+migrations_dir = "migrations"
+migrations_table = "d1_migrations"

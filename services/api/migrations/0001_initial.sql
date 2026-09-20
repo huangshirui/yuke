@@ -1,5 +1,3 @@
-PRAGMA foreign_keys = ON;
-
 CREATE TABLE admin_users (
   id TEXT PRIMARY KEY,
   access_subject TEXT NOT NULL UNIQUE,
