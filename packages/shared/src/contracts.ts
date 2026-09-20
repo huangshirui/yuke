@@ -1,0 +1,159 @@
+export type Id = string
+
+export type ApiErrorCode =
+  | 'VALIDATION_ERROR'
+  | 'UNAUTHENTICATED'
+  | 'SPACE_ACCESS_DENIED'
+  | 'NOT_FOUND'
+  | 'SLOT_ALREADY_BOOKED'
+  | 'SLOT_OVERLAP'
+  | 'SLOT_FROZEN'
+  | 'SLOT_NOT_BOOKABLE'
+  | 'BOOKING_CUTOFF_REACHED'
+  | 'CANCELLATION_CUTOFF_REACHED'
+  | 'SERIES_BOOKING_CONFLICT'
+  | 'INVITE_EXPIRED'
+  | 'INVITE_REVOKED'
+  | 'SPACE_DISABLED'
+
+export type ApiError = {
+  code: ApiErrorCode
+  message: string
+  details?: unknown
+}
+
+export type ApiResponse<T> =
+  | { data: T; error?: never }
+  | { data?: never; error: ApiError }
+
+export const CUTOFF_MINUTES = [15, 30, 60, 240, 1440] as const
+
+export type CutoffMinutes = (typeof CUTOFF_MINUTES)[number] | null
+
+export type SpaceStatus = 'active' | 'disabled'
+export type EntityStatus = 'active' | 'inactive'
+export type InviteStatus = 'active' | 'revoked'
+export type SlotStatus = 'open' | 'frozen' | 'cancelled'
+export type SlotSeriesStatus = 'active' | 'ended' | 'cancelled'
+export type BookingStatus = 'booked' | 'cancelled' | 'completed'
+export type SeriesEditScope = 'single' | 'this_and_future' | 'entire_series'
+export type IsoWeekday = 1 | 2 | 3 | 4 | 5 | 6 | 7
+
+export type SpaceSettings = {
+  bookingCutoffMinutes: CutoffMinutes
+  cancellationCutoffMinutes: CutoffMinutes
+}
+
+export type SpaceSummary = {
+  id: Id
+  name: string
+  timezone: string
+  status: SpaceStatus
+}
+
+export type Participant = {
+  id: Id
+  spaceId: Id
+  name: string
+  birthMonth: string
+  note: string | null
+  status: EntityStatus
+}
+
+export type Resource = {
+  id: Id
+  spaceId: Id
+  name: string
+  note: string | null
+  status: EntityStatus
+}
+
+export type SlotType = {
+  id: Id
+  spaceId: Id
+  name: string
+  status: EntityStatus
+}
+
+export type Slot = {
+  id: Id
+  spaceId: Id
+  resourceId: Id
+  slotTypeId: Id
+  seriesId: Id | null
+  startAt: string
+  endAt: string
+  localDate: string
+  status: SlotStatus
+  bookable: boolean
+}
+
+export type Booking = {
+  id: Id
+  spaceId: Id
+  slotId: Id
+  participantId: Id
+  status: BookingStatus
+  createdAt: string
+  updatedAt: string
+}
+
+export type BookingMessage = {
+  id: Id
+  bookingId: Id
+  senderKind: 'user' | 'admin'
+  body: string
+  createdAt: string
+}
+
+export type JoinSpaceInput = {
+  inviteCode: string
+}
+
+export type CreateParticipantInput = {
+  name: string
+  birthMonth: string
+  note?: string | null
+}
+
+export type UpdateParticipantInput = Partial<CreateParticipantInput>
+
+export type CreateBookingInput = {
+  slotId: Id
+  participantId: Id
+}
+
+export type CreateSlotInput = {
+  resourceId: Id
+  slotTypeId: Id
+  startAt: string
+  endAt: string
+}
+
+export type CreateSlotSeriesInput = {
+  resourceId: Id
+  slotTypeId: Id
+  weekdays: IsoWeekday[]
+  localStartTime: string
+  localEndTime: string
+  startsOn: string
+  endsOn: string | null
+}
+
+export type UpdateSeriesSlotInput = {
+  scope: SeriesEditScope
+  slotTypeId?: Id
+  weekdays?: IsoWeekday[]
+  localStartTime?: string
+  localEndTime?: string
+  startsOn?: string
+  endsOn?: string | null
+}
+
+export type UpdateAdminBookingInput = {
+  slotId?: Id
+  participantId?: Id
+}
+
+// Compatibility alias for the initial repository stub.
+export type ReservationStatus = BookingStatus
