@@ -32,9 +32,11 @@ try {
   const rendered = readFileSync(output, 'utf8')
   for (const expected of [
     'name = "yuke-api"',
+    'main = "../src/index.ts"',
     'pattern = "api.example.invalid"',
     'database_name = "synthetic-yuke-db"',
     'database_id = "11111111-1111-4111-8111-111111111111"',
+    'migrations_dir = "../migrations"',
     'bucket_name = "synthetic-yuke-avatars"',
     'workers_dev = false'
   ]) {
