@@ -43,6 +43,12 @@ export interface AdminApi {
   updateSlotType(spaceId: string, slotTypeId: string, input: SlotTypeInput): Promise<AdminSlotType>
   setSlotTypeStatus(spaceId: string, slotTypeId: string, status: 'active' | 'inactive'): Promise<AdminSlotType>
 
+  listScheduleSlots(spaceId: string, resourceId: string, from: string, to: string): Promise<import('../types/admin').AdminScheduleSlot[]>
+  createScheduleSlot(spaceId: string, input: import('../types/admin').CreateScheduleSlotInput): Promise<import('../types/admin').AdminScheduleSlot>
+  createSlotSeries(spaceId: string, input: import('../types/admin').CreateSlotSeriesInput): Promise<unknown>
+  updateScheduleSlot(spaceId: string, slotId: string, input: import('../types/admin').UpdateScheduleSlotInput): Promise<import('../types/admin').AdminScheduleSlot>
+  setScheduleSlotFrozen(spaceId: string, slotId: string, frozen: boolean): Promise<import('../types/admin').AdminScheduleSlot>
+
   listMembers(spaceId: string, filters?: MemberFilters): Promise<AdminMemberSummary[]>
   getMember(spaceId: string, membershipId: string): Promise<AdminMemberDetail>
   updateMemberAdminNote(spaceId: string, membershipId: string, adminNote: string | null): Promise<void>
@@ -185,6 +191,35 @@ class HttpAdminApi implements AdminApi {
     const slotType = (await this.listSlotTypes(spaceId)).find((item) => item.id === slotTypeId)
     if (!slotType) throw new Error('时段类型状态已更新，但无法重新读取。')
     return slotType
+  }
+
+  listScheduleSlots(spaceId: string, resourceId: string, from: string, to: string) {
+    const query = new URLSearchParams({ from, to })
+    return this.request<import('../types/admin').AdminScheduleSlot[]>(
+      this.spacePath(spaceId) + '/resources/' + encodeURIComponent(resourceId) + '/slots?' + query.toString(),
+    )
+  }
+  createScheduleSlot(spaceId: string, input: import('../types/admin').CreateScheduleSlotInput) {
+    return this.request<import('../types/admin').AdminScheduleSlot>(this.spacePath(spaceId) + '/slots', {
+      method: 'POST', body: JSON.stringify(input),
+    })
+  }
+  createSlotSeries(spaceId: string, input: import('../types/admin').CreateSlotSeriesInput) {
+    return this.request<unknown>(this.spacePath(spaceId) + '/slot-series', {
+      method: 'POST', body: JSON.stringify(input),
+    })
+  }
+  updateScheduleSlot(spaceId: string, slotId: string, input: import('../types/admin').UpdateScheduleSlotInput) {
+    return this.request<import('../types/admin').AdminScheduleSlot>(
+      this.spacePath(spaceId) + '/slots/' + encodeURIComponent(slotId),
+      { method: 'PATCH', body: JSON.stringify(input) },
+    )
+  }
+  setScheduleSlotFrozen(spaceId: string, slotId: string, frozen: boolean) {
+    return this.request<import('../types/admin').AdminScheduleSlot>(
+      this.spacePath(spaceId) + '/slots/' + encodeURIComponent(slotId) + '/' + (frozen ? 'freeze' : 'unfreeze'),
+      { method: 'POST' },
+    )
   }
 
   listMembers(spaceId: string, filters: MemberFilters = {}) {
