@@ -29,16 +29,16 @@
       <view
         wx:for="{{spaces}}"
         wx:key="id"
-        class="space-row {{item.id === currentSpace.id ? 'space-row--current' : ''}}"
+        class="space-row {{item.id === currentSpaceId ? 'space-row--current' : ''}}"
         data-space-id="{{item.id}}"
         bindtap="switchSpace"
       >
         <view>
           <text class="space-name">{{item.name}}</text>
-          <text wx:if="{{item.id === currentSpace.id}}" class="space-current-label">当前</text>
+          <text wx:if="{{item.id === currentSpaceId}}" class="space-current-label">当前</text>
         </view>
         <text wx:if="{{switchingSpaceId === item.id}}" class="caption">切换中…</text>
-        <text wx:elif="{{item.id !== currentSpace.id}}" class="chevron">›</text>
+        <text wx:elif="{{item.id !== currentSpaceId}}" class="chevron">›</text>
       </view>
     </view>
   </view>
