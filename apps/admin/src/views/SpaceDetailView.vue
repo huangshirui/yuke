@@ -306,15 +306,16 @@ onMounted(load)
 
         <div class="table-wrap">
           <table>
-            <thead><tr><th>管理员</th><th>邮箱</th><th>ID</th><th class="align-right">操作</th></tr></thead>
+            <thead><tr><th>邮箱</th><th>身份</th><th>状态</th><th>ID</th><th class="align-right">操作</th></tr></thead>
             <tbody>
               <tr v-for="admin in admins" :key="admin.id">
-                <td><strong>{{ admin.displayName }}</strong></td>
-                <td>{{ admin.email }}</td>
+                <td><strong>{{ admin.email }}</strong></td>
+                <td>{{ admin.platformRole === 'super_admin' ? '超级管理员' : '空间管理员' }}</td>
+                <td>{{ admin.status === 'active' ? '启用' : '停用' }}</td>
                 <td class="mono">{{ admin.id }}</td>
                 <td class="align-right"><button class="button button--danger-ghost" :disabled="saving" @click="removeAdmin(admin)">移除</button></td>
               </tr>
-              <tr v-if="admins.length === 0"><td colspan="4" class="empty-cell">当前没有空间管理员。</td></tr>
+              <tr v-if="admins.length === 0"><td colspan="5" class="empty-cell">当前没有空间管理员。</td></tr>
             </tbody>
           </table>
         </div>
