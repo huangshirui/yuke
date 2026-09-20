@@ -64,7 +64,7 @@ const content = `# GENERATED FILE — DO NOT COMMIT.
 # Real Cloudflare resource identifiers are intentionally kept outside Git.
 
 name = "yuke-api"
-main = "src/index.ts"
+main = "../src/index.ts"
 compatibility_date = "2026-09-20"
 workers_dev = false
 preview_urls = false
@@ -77,7 +77,7 @@ custom_domain = true
 binding = "DB"
 database_name = ${tomlString(databaseName)}
 database_id = ${tomlString(databaseId)}
-migrations_dir = "migrations"
+migrations_dir = "../migrations"
 migrations_table = "d1_migrations"
 
 [[r2_buckets]]
