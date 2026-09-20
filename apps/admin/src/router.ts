@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import SpacesView from './views/SpacesView.vue'
 import SpaceDetailView from './views/SpaceDetailView.vue'
 import SpaceOperationsView from './views/SpaceOperationsView.vue'
+import ScheduleView from './views/ScheduleView.vue'
 
 export const router = createRouter({
   history: createWebHistory(),
@@ -13,6 +14,7 @@ export const router = createRouter({
       name: 'space-detail',
       component: SpaceDetailView,
     },
+    { path: '/spaces/:spaceId/schedule', name: 'space-schedule', component: ScheduleView },
     {
       path: '/spaces/:spaceId/:section(resources|slot-types|members)',
       name: 'space-operations',
