@@ -7,5 +7,14 @@
     "dev": "vite",
     "build": "vite build",
     "test": "echo 'no tests yet'"
+  },
+  "dependencies": {
+    "vue": "latest",
+    "vue-router": "latest"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "latest",
+    "typescript": "latest",
+    "vite": "latest"
   }
 }
