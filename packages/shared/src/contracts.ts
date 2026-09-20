@@ -213,6 +213,20 @@ export type SpaceAdminSummary = {
   status: EntityStatus
 }
 
+export type AdminIdentityStatus = 'pending' | 'bound'
+
+export type AdminUserSummary = {
+  id: Id
+  email: string
+  platformRole: 'none' | 'super_admin'
+  status: EntityStatus
+  identityStatus: AdminIdentityStatus
+}
+
+export type CreateAdminUserInput = {
+  email: string
+}
+
 export type CreateSpaceInput = {
   name: string
   timezone: string
