@@ -5,6 +5,7 @@ import { registerAvailabilityRoutes } from './domains/resource/availability/rout
 import { registerSeriesRoutes } from './domains/resource/series/routes'
 import { registerSlotRoutes } from './domains/resource/slot/routes'
 import type { IdentityEnv } from './domains/identity/env'
+import { registerBookingRoutes } from './domains/reservation/booking/routes'
 import { registerParticipantRoutes } from './domains/reservation/participant/routes'
 import { registerInviteRoutes } from './domains/tenant/invite/routes'
 import { registerMembershipRoutes } from './domains/tenant/membership/routes'
@@ -40,6 +41,7 @@ registerSpaceRoutes(app)
 registerInviteRoutes(app)
 registerMembershipRoutes(app)
 registerParticipantRoutes(app)
+registerBookingRoutes(app)
 registerCatalogRoutes(app)
 registerSlotRoutes(app)
 registerSeriesRoutes(app)
