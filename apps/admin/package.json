@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "test": "node --test test/*.test.mjs",
-    "build:production": "node scripts/verify-production-env.mjs && vite build"
+    "build:production": "node scripts/verify-production-env.mjs && vite build",
+    "deploy:production": "pnpm run build:production && wrangler deploy --config wrangler.toml"
   },
   "dependencies": {
     "@yuke/shared": "workspace:*",
@@ -17,6 +18,7 @@
   "devDependencies": {
     "@vitejs/plugin-vue": "latest",
     "typescript": "latest",
-    "vite": "latest"
+    "vite": "latest",
+    "wrangler": "4.135.0"
   }
 }
