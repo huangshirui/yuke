@@ -4,7 +4,10 @@ import { ok } from '../../../lib/http'
 import type { Router } from '../../../lib/router'
 import { parseJsonBody } from '../../../lib/validation'
 import type { IdentityEnv } from '../../identity/env'
-import { ensureSeriesMaterialized } from '../series/service'
+import {
+  editAdminSlotSeriesFromOccurrence,
+  ensureSeriesMaterialized
+} from '../series/service'
 import {
   cancelAdminSlot,
   changeAdminSingleSlot,
@@ -13,7 +16,7 @@ import {
   setAdminSlotStatus
 } from './service'
 import type { SlotDatabase } from './repository'
-import { parseCreateSlotInput, parseUpdateSingleSlotInput } from './validation'
+import { parseCreateSlotInput, parseScheduleSlotEditInput } from './validation'
 
 export type SlotEnv = IdentityEnv & AdminAuthEnv
 
@@ -64,14 +67,31 @@ export function registerSlotRoutes(app: Router<SlotEnv>): void {
 
   app.patch(
     '/v1/admin/spaces/:spaceId/slots/:slotId',
-    async ({ request, env, params }) => ok(
-      await changeAdminSingleSlot(
-        db(env),
-        params.spaceId,
-        params.slotId,
-        await parseJsonBody(request, parseUpdateSingleSlotInput)
+    async (context) => {
+      const input = await parseJsonBody(context.request, parseScheduleSlotEditInput)
+      if (input.scope === 'this_and_future' || input.scope === 'entire_series') {
+        return ok(
+          await editAdminSlotSeriesFromOccurrence(
+            context.env.DB as unknown as import('../series/repository').SeriesDatabase &
+              import('../catalog/repository').CatalogDatabase &
+              import('./repository').SlotDatabase,
+            context.params.spaceId,
+            context.params.slotId,
+            getAdminPrincipal(context).id,
+            input
+          )
+        )
+      }
+
+      return ok(
+        await changeAdminSingleSlot(
+          db(context.env),
+          context.params.spaceId,
+          context.params.slotId,
+          input
+        )
       )
-    ),
+    },
     [requireAdminAccess, requireSpaceAdmin()]
   )
 

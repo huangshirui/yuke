@@ -523,11 +523,34 @@ MVP 仅修改 `name`。若目标名称在当前 Space 已存在，返回 `VALIDA
 }
 ```
 
-- `single`：只改当前 Slot。
-- `this_and_future`：切断 Series 并创建 superseding Series。
-- `entire_series`：修改当前 Series 的未来部分。
+- `single`：只改当前 Slot，并将该 occurrence 标记为 Series exception。
+- `this_and_future`：以选中 occurrence 为切点；选中项之前的 Series / Slot 保持不变，从该 occurrence 起创建 superseding Series。
+- `entire_series`：保持当前 Series ID；已经开始的具体 Slot 不回写，只重算尚未开始且未预约的未来 Slot。
 
-如果批量变化触及已有 Booking，返回 `SERIES_BOOKING_CONFLICT`，响应中列出冲突 Booking / Slot IDs，管理员必须单独处理。
+批量 scope 成功后返回：
+
+```json
+{
+  "scope": "this_and_future",
+  "series": {
+    "id": "series_xxx",
+    "spaceId": "sp_xxx",
+    "resourceId": "res_xxx",
+    "slotTypeId": "sty_xxx",
+    "weekdays": [2, 4],
+    "localStartTime": "10:00",
+    "localEndTime": "12:00",
+    "startsOn": "2026-10-06",
+    "endsOn": null,
+    "status": "active",
+    "supersedesSeriesId": "series_previous"
+  },
+  "retiredSlotIds": ["slot_old_xxx"],
+  "materializedCount": 2
+}
+```
+
+如果批量变化触及已有 Booking，返回 `SERIES_BOOKING_CONFLICT`，`details.conflicts` 中列出冲突的 `slotId`、`bookingId` 和 `localDate`，管理员必须单独处理；本次批量修改不落库。
 
 ## 15. Booking / Admin
 

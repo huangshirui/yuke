@@ -117,8 +117,10 @@ MVP 不要求后台 Cron 才能正常工作。查询一个日期范围前，reso
 更新 Series 后重新计算未来 Slot。
 
 - 已发生历史不回写；
-- 已有 Booking 的未来 Slot作为冲突显式返回；
-- 未预约的未来 Slot 可取消并按新规则重新物化。
+- 已有 Booking 的未来 Slot 作为冲突显式返回；
+- 未预约且尚未开始的未来 Slot 可取消并按新规则重新物化；
+- Series 内部保存 `materialize_after_at` 修订边界，确保后续查询旧日期时不会按新规则补造历史 Slot；
+- `materialize_after_at` 是内部一致性字段，不属于小程序 / Web 的产品 Contract。
 
 ## 5. Booking 一致性
 
