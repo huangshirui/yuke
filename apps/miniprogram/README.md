@@ -19,8 +19,17 @@
 
 小程序采用轻量、原生感的通用工具风格，并统一使用“用户 / 空间 / 参与人 / 预约对象 / 时段 / 预约”等通用术语。
 
-## #18 开发模式
+## Online runtime
 
-#18 页面在 Phase 1 Membership API 合并前使用 `config.js` 中的 `mock` 模式，以 Synthetic Data 验证进入状态机和页面交互。
+小程序运行配置已切换到真实 Worker：
 
-后端接口部署可用后切换到 `remote`，并配置正式 HTTPS API Base URL。真实凭据和非公开基础设施标识不得进入仓库。
+```text
+apiMode=remote
+apiBaseUrl=https://api.yuke.verinasci.com
+```
+
+Mock adapter 只保留给隔离单元测试使用，不再作为开发版 / 体验版 / 正式版默认运行时。
+
+真实 `WECHAT_APP_ID`、`WECHAT_APP_SECRET` 和 `USER_TOKEN_SECRET` 只存在 Cloudflare Worker runtime，不得写入小程序代码、Git、Issue 或日志。
+
+首次微信后台服务器域名与 Worker Secret 配置见 [docs/deployment-miniprogram.md](../../docs/deployment-miniprogram.md)。
