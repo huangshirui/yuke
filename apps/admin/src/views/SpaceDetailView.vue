@@ -253,10 +253,13 @@ onMounted(load)
       <div v-if="error" class="alert alert--error">{{ error }}</div>
       <div v-if="notice" class="alert alert--success">{{ notice }}</div>
 
-      <nav class="tabbar" aria-label="空间配置">
+      <nav class="tabbar tabbar--wrap" aria-label="空间管理">
         <button :class="{ active: section === 'settings' }" @click="goSection('settings')">预约规则</button>
         <button :class="{ active: section === 'admins' }" @click="goSection('admins')">管理员</button>
         <button :class="{ active: section === 'invites' }" @click="goSection('invites')">邀请码</button>
+        <button @click="goSection('resources')">预约对象</button>
+        <button @click="goSection('slot-types')">时段类型</button>
+        <button @click="goSection('members')">用户</button>
       </nav>
 
       <section v-if="section === 'settings'" class="panel">
