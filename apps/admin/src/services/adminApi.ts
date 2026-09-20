@@ -61,10 +61,15 @@ export const adminDataMode = import.meta.env.VITE_ADMIN_DATA_MODE === 'api' ? 'a
 
 class HttpAdminApi implements AdminApi {
   private async request<T>(path: string, init?: RequestInit): Promise<T> {
+    const headers = new Headers(init?.headers)
+    if (init?.body && !headers.has('content-type')) {
+      headers.set('content-type', 'application/json')
+    }
+
     const response = await fetch(baseUrl + '/v1' + path, {
-      credentials: 'include',
-      headers: { 'content-type': 'application/json', ...init?.headers },
       ...init,
+      credentials: 'include',
+      headers,
     })
     let payload: ApiResponse<T> | null = null
     try { payload = (await response.json()) as ApiResponse<T> } catch { payload = null }
