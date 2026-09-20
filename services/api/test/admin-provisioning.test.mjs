@@ -1,5 +1,5 @@
 import { env, exports } from 'cloudflare:workers'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { authenticateAdminRequest } from '../src/lib/auth/index'
 import {
   createSyntheticAccessKey,
@@ -62,6 +62,12 @@ function request(path, token, init = {}) {
 }
 
 describe('AdminUser bootstrap and provisioning', () => {
+  beforeEach(async () => {
+    await env.DB.prepare(
+      'DELETE FROM admin_users WHERE email = ?'
+    ).bind(SUPER_EMAIL).run()
+  })
+
   it('bootstraps the configured Super Admin on first Access login', async () => {
     const suffix = crypto.randomUUID()
     const subject = `super-sub-${suffix}`
