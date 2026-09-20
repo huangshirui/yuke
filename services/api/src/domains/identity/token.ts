@@ -31,6 +31,18 @@ function base64UrlDecode(value: string): Uint8Array {
   return Uint8Array.from(binary, (character) => character.charCodeAt(0))
 }
 
+function isCanonicalBase64Url(value: string): boolean {
+  if (!value || !/^[A-Za-z0-9_-]+$/.test(value)) {
+    return false
+  }
+
+  try {
+    return base64UrlEncode(base64UrlDecode(value)) === value
+  } catch {
+    return false
+  }
+}
+
 function encodeJson(value: unknown): string {
   return base64UrlEncode(encoder.encode(JSON.stringify(value)))
 }
@@ -110,6 +122,14 @@ export async function verifyUserToken(
     }
 
     const [headerPart, payloadPart, signaturePart] = parts
+    if (
+      !isCanonicalBase64Url(headerPart) ||
+      !isCanonicalBase64Url(payloadPart) ||
+      !isCanonicalBase64Url(signaturePart)
+    ) {
+      return null
+    }
+
     const header = decodeJson<Record<string, unknown>>(headerPart)
     if (header.alg !== 'HS256' || header.typ !== 'JWT') {
       return null
