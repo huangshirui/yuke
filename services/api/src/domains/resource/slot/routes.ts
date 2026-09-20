@@ -4,6 +4,7 @@ import { ok } from '../../../lib/http'
 import type { Router } from '../../../lib/router'
 import { parseJsonBody } from '../../../lib/validation'
 import type { IdentityEnv } from '../../identity/env'
+import { ensureSeriesMaterialized } from '../series/service'
 import {
   cancelAdminSlot,
   changeAdminSingleSlot,
@@ -35,6 +36,13 @@ export function registerSlotRoutes(app: Router<SlotEnv>): void {
     '/v1/admin/spaces/:spaceId/resources/:resourceId/slots',
     async ({ request, env, params }) => {
       const { from, to } = requireDateQuery(request)
+      await ensureSeriesMaterialized(
+        env.DB as unknown as import('../series/repository').SeriesDatabase,
+        params.spaceId,
+        params.resourceId,
+        from,
+        to
+      )
       return ok(await listAdminSlotsByLocalDateRange(db(env), params.spaceId, params.resourceId, from, to))
     },
     [requireAdminAccess, requireSpaceAdmin()]
