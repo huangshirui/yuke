@@ -116,3 +116,12 @@ export function localDateTimeToEpochMs(
 
   return guess
 }
+
+export function localDateForEpochMs(epochMs: number, timezone: string): string {
+  const parts = zonedParts(epochMs, timezone)
+  return [
+    String(parts.year).padStart(4, '0'),
+    String(parts.month).padStart(2, '0'),
+    String(parts.day).padStart(2, '0')
+  ].join('-')
+}
