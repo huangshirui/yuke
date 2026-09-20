@@ -87,3 +87,10 @@ Issue #14 使用以下运行时 binding / secret：
 - `PATCH /v1/me/profile`
 - `POST /v1/me/avatar`
 - `GET /v1/me/avatar`
+
+
+## 首次线上部署
+
+真实 Cloudflare D1 / R2 / Worker 的首次部署请按 [docs/deployment-worker.md](../../docs/deployment-worker.md) 执行。
+
+公开仓库中的 `wrangler.toml` **只用于 Local / CI**。生产配置由环境变量生成到 ignored 的 `.wrangler/production.toml`，禁止把真实 Cloudflare Resource ID 提交到 Git。
