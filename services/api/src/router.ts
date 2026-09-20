@@ -1,16 +1,21 @@
-export type RouteContext = {
-  request: Request
-}
+import { ok } from './lib/http'
+import { errorBoundaryMiddleware, requestIdMiddleware } from './lib/middleware'
+import { Router, type RouteContext as RuntimeRouteContext } from './lib/router'
+
+export type WorkerEnv = Record<string, unknown>
+export type RouteContext = Pick<RuntimeRouteContext<WorkerEnv>, 'request' | 'env' | 'executionCtx'>
+
+const app = new Router<WorkerEnv>()
+app.use(requestIdMiddleware)
+app.use(errorBoundaryMiddleware)
+
+app.get('/health', () =>
+  ok({
+    status: 'ok',
+    service: 'yuke-api'
+  })
+)
 
 export async function router(context: RouteContext): Promise<Response> {
-  const url = new URL(context.request.url)
-
-  if (url.pathname === '/health') {
-    return Response.json({
-      status: 'ok',
-      service: 'yuke-api'
-    })
-  }
-
-  return Response.json({ error: 'Not Found' }, { status: 404 })
+  return app.handle(context)
 }
