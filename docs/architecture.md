@@ -23,7 +23,7 @@ MVP 领域需求已经冻结，稳定领域模型见 [domain-model.md](domain-mo
 - Vue 3 + Vite + TypeScript
 - 面向 Super Admin / Space Admin
 - 使用 Cloudflare Access 登录，MVP 为邮箱 OTP
-- 部署到 Cloudflare Pages
+- 部署到独立的 Cloudflare Worker Static Assets（`yuke-admin`）
 
 ## 服务层
 
@@ -101,8 +101,8 @@ Cloudflare Access 负责登录认证，Worker 验证 Access JWT；项目数据�
 ## CI / 部署
 
 - GitHub Actions 负责 CI/CD
-- Pages 部署 Web Admin
-- Workers 部署 API
+- Workers Static Assets 部署 Web Admin（独立 `yuke-admin` Worker）
+- Workers 部署 API（独立 `yuke-api` Worker）
 - D1 Schema 通过 migration 管理
 
 ## 开源策略
