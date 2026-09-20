@@ -3,7 +3,9 @@
     "pages/index/index",
     "pages/profile/setup",
     "pages/invite/index",
-    "pages/me/index"
+    "pages/me/index",
+    "pages/participants/index",
+    "pages/participants/edit"
   ],
   "window": {
     "navigationBarTitleText": "Yu言在线",

@@ -1,4 +1,7 @@
 const STORAGE_KEY = 'yuke.mockUser'
+const PARTICIPANTS_KEY = 'yuke.mockParticipants'
+const PARTICIPANT_SEQUENCE_KEY = 'yuke.mockParticipantSequence'
+const { normalizeParticipantInput } = require('./participants')
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value))
@@ -28,6 +31,53 @@ function createMockApi(storage) {
   function recompute(user) {
     user.profileInitialized = Boolean(user.nickname && user.avatarUrl)
     return user
+  }
+
+  function assertSpaceAccess(spaceId) {
+    const user = load()
+    const space = user.spaces.find(
+      (item) => item.id === spaceId && item.status === 'active'
+    )
+    if (!space) {
+      const error = new Error('该空间当前不可用')
+      error.code = 'SPACE_ACCESS_DENIED'
+      throw error
+    }
+  }
+
+  function loadParticipantMap() {
+    return storage.getStorageSync(PARTICIPANTS_KEY) || {}
+  }
+
+  function saveParticipantMap(value) {
+    storage.setStorageSync(PARTICIPANTS_KEY, value)
+  }
+
+  function nextParticipantId() {
+    const current = Number(storage.getStorageSync(PARTICIPANT_SEQUENCE_KEY) || 0) + 1
+    storage.setStorageSync(PARTICIPANT_SEQUENCE_KEY, current)
+    return `par_synthetic_${String(current).padStart(3, '0')}`
+  }
+
+  function participantsForSpace(spaceId) {
+    const map = loadParticipantMap()
+    return Array.isArray(map[spaceId]) ? map[spaceId] : []
+  }
+
+  function mutateParticipant(spaceId, participantId, mutate) {
+    assertSpaceAccess(spaceId)
+    const map = loadParticipantMap()
+    const participants = Array.isArray(map[spaceId]) ? map[spaceId] : []
+    const index = participants.findIndex((item) => item.id === participantId)
+    if (index < 0) {
+      const error = new Error('参与人不存在')
+      error.code = 'NOT_FOUND'
+      throw error
+    }
+    participants[index] = mutate({ ...participants[index] })
+    map[spaceId] = participants
+    saveParticipantMap(map)
+    return clone(participants[index])
   }
 
   return {
@@ -106,6 +156,48 @@ function createMockApi(storage) {
       user.currentSpaceId = target.id
       save(user)
       return { currentSpaceId: target.id }
+    },
+
+    async listParticipants(spaceId) {
+      assertSpaceAccess(spaceId)
+      return clone(participantsForSpace(spaceId))
+    },
+
+    async createParticipant(spaceId, input) {
+      assertSpaceAccess(spaceId)
+      const normalized = normalizeParticipantInput(input)
+      const map = loadParticipantMap()
+      const participant = {
+        id: nextParticipantId(),
+        spaceId,
+        ...normalized,
+        status: 'active'
+      }
+      map[spaceId] = [...participantsForSpace(spaceId), participant]
+      saveParticipantMap(map)
+      return clone(participant)
+    },
+
+    async updateParticipant(spaceId, participantId, input) {
+      const normalized = normalizeParticipantInput(input)
+      return mutateParticipant(spaceId, participantId, (participant) => ({
+        ...participant,
+        ...normalized
+      }))
+    },
+
+    async deactivateParticipant(spaceId, participantId) {
+      return mutateParticipant(spaceId, participantId, (participant) => ({
+        ...participant,
+        status: 'inactive'
+      }))
+    },
+
+    async activateParticipant(spaceId, participantId) {
+      return mutateParticipant(spaceId, participantId, (participant) => ({
+        ...participant,
+        status: 'active'
+      }))
     }
   }
 }
