@@ -1,7 +1,9 @@
 import type {
   CreateSlotSeriesInput,
   IsoWeekday,
-  Slot
+  SeriesEditResult,
+  Slot,
+  SlotSeriesSummary
 } from '@yuke/shared'
 import { AppError, ValidationError } from '../../../lib/errors'
 import {
@@ -44,11 +46,20 @@ import type { BulkSeriesEditInput } from './validation'
 
 type ResourceSeriesDatabase = SeriesDatabase & CatalogDatabase & SlotDatabase
 
-export type BulkSeriesEditResult = {
-  scope: BulkSeriesEditInput['scope']
-  series: SlotSeriesRecord
-  retiredSlotIds: string[]
-  materializedCount: number
+function toSlotSeriesSummary(series: SlotSeriesRecord): SlotSeriesSummary {
+  return {
+    id: series.id,
+    spaceId: series.spaceId,
+    resourceId: series.resourceId,
+    slotTypeId: series.slotTypeId,
+    weekdays: series.weekdays,
+    localStartTime: series.localStartTime,
+    localEndTime: series.localEndTime,
+    startsOn: series.startsOn,
+    endsOn: series.endsOn,
+    status: series.status,
+    supersedesSeriesId: series.supersedesSeriesId
+  }
 }
 
 function compareLocalTimes(start: string, end: string): void {
@@ -238,7 +249,7 @@ export async function createAdminSlotSeries(
   spaceId: string,
   adminId: string,
   input: CreateSlotSeriesInput
-): Promise<SlotSeriesRecord> {
+): Promise<SlotSeriesSummary> {
   const rule: SeriesRuleState = {
     slotTypeId: input.slotTypeId,
     weekdays: input.weekdays,
@@ -267,7 +278,7 @@ export async function createAdminSlotSeries(
   })
   const record = await findSeriesById(db, spaceId, id)
   if (!record) throw new AppError('INTERNAL_ERROR', 'Created SlotSeries could not be reloaded')
-  return record
+  return toSlotSeriesSummary(record)
 }
 
 export async function editAdminSlotSeriesFromOccurrence(
@@ -277,7 +288,7 @@ export async function editAdminSlotSeriesFromOccurrence(
   adminId: string,
   patch: BulkSeriesEditInput,
   now = Date.now()
-): Promise<BulkSeriesEditResult> {
+): Promise<SeriesEditResult> {
   const { anchor, series: current } = await requireSeriesAnchor(db, spaceId, slotId)
 
   if (patch.scope === 'this_and_future') {
@@ -352,7 +363,7 @@ export async function editAdminSlotSeriesFromOccurrence(
     }
     return {
       scope: patch.scope,
-      series: saved,
+      series: toSlotSeriesSummary(saved),
       retiredSlotIds: affected.map((slot) => slot.id),
       materializedCount: occurrences.length
     }
@@ -397,7 +408,7 @@ export async function editAdminSlotSeriesFromOccurrence(
   if (!saved) throw new AppError('INTERNAL_ERROR', 'Updated SlotSeries could not be reloaded')
   return {
     scope: patch.scope,
-    series: saved,
+    series: toSlotSeriesSummary(saved),
     retiredSlotIds: affected.map((slot) => slot.id),
     materializedCount: occurrences.length
   }
