@@ -359,7 +359,13 @@ describe('Phase 3 Scheduling Gate', () => {
 
     expect(result.series.id).toBe(series.id)
     expect(result.series.weekdays).toEqual([4])
-    expect(result.series.materializeAfterAt).toBe(revisionAt)
+
+    const revisedSeries = await env.DB.prepare(`
+      SELECT materialize_after_at
+      FROM slot_series
+      WHERE id = ?
+    `).bind(series.id).first()
+    expect(revisedSeries.materialize_after_at).toBe(revisionAt)
 
     const past = await env.DB.prepare(`
       SELECT local_date, start_at, series_id, status
