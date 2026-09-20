@@ -1,12 +1,7 @@
+import { router, type WorkerEnv } from './router'
+
 export default {
-  async fetch(request: Request): Promise<Response> {
-    return new Response(JSON.stringify({
-      name: "Yu言在线 API",
-      status: "ok"
-    }), {
-      headers: {
-        "content-type": "application/json;charset=UTF-8"
-      }
-    });
+  async fetch(request: Request, env: WorkerEnv, executionCtx: unknown): Promise<Response> {
+    return router({ request, env, executionCtx })
   }
-};
+}
