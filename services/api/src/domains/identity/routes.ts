@@ -12,6 +12,7 @@ import {
   createWeChatSession,
   getCurrentUserAvatar,
   getCurrentUserProfile,
+  requireCurrentUser,
   saveCurrentUserAvatar
 } from './service'
 
@@ -58,6 +59,7 @@ export function registerIdentityRoutes(app: Router<IdentityEnv>): void {
   })
 
   app.post('/v1/me/avatar', async ({ request, env }) => {
+    await requireCurrentUser(env, request)
     const file = await parseAvatarFile(request)
     return ok(await saveCurrentUserAvatar(env, request, file))
   })
