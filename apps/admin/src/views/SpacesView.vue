@@ -112,9 +112,9 @@ onMounted(async () => {
     <div v-if="error" class="alert alert--error">{{ error }}</div>
 
     <section class="metric-row">
-      <article class="metric-card"><span>空间总数</span><strong>{{ spaces.length }}</strong></article>
-      <article class="metric-card"><span>运行中</span><strong>{{ activeCount }}</strong></article>
-      <article class="metric-card"><span>已停用</span><strong>{{ spaces.length - activeCount }}</strong></article>
+      <article class="metric-card"><span>空间总数</span><strong>{{ loading ? '—' : spaces.length }}</strong></article>
+      <article class="metric-card"><span>运行中</span><strong>{{ loading ? '—' : activeCount }}</strong></article>
+      <article class="metric-card"><span>已停用</span><strong>{{ loading ? '—' : spaces.length - activeCount }}</strong></article>
     </section>
 
     <section class="panel loading-surface" :aria-busy="loading">
