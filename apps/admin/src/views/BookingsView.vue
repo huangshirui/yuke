@@ -100,10 +100,11 @@ function statusLabel(status: AdminBooking['status']) {
 
 function reconciliationLabel(booking: AdminBooking) {
   if (booking.status !== 'completed') return ''
+  if (booking.reconciliation === undefined) return '对账状态同步中'
   return booking.reconciliation?.status === 'settled' ? '已对账' : '待对账'
 }
 
-function completionSourceLabel(source: AdminBooking['completion']['source'] | undefined | null) {
+function completionSourceLabel(source: NonNullable<AdminBooking['completion']>['source'] | undefined | null) {
   if (source === 'classin_import') return 'ClassIn 导入'
   if (source === 'external_import') return '外部文件导入'
   if (source === 'external_api') return '外部系统'
@@ -551,7 +552,7 @@ onMounted(loadBase)
             @click="cancelBooking(selectedBooking)"
           >取消预约</button>
           <button
-            v-if="selectedBooking.status === 'completed' && selectedBooking.reconciliation?.status !== 'settled'"
+            v-if="selectedBooking.status === 'completed' && selectedBooking.reconciliation?.status === 'pending'"
             class="button button--primary"
             :disabled="saving"
             @click="reconcileBooking(selectedBooking)"
