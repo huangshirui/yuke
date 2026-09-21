@@ -76,12 +76,12 @@ Web Admin 的可复用视觉参数统一定义在：
 
 `apps/admin/src/tokens.css`
 
-Token 分为六类：Color / 颜色、Spacing / 间距、Radius / 圆角、Typography / 字号、Controls / 控件，以及 Elevation & Focus / 阴影与焦点。
+Token 分为六类：Color / 颜色、Spacing / 间距、Radius / 圆角、Typography / 字号、Controls / 控件，以及 Elevation & Focus / 阴影与焦点。Spacing primitive 直接按实际 px 值命名（例如 `--space-12: 12px`）；新布局优先使用 4px 主网格，odd 值仅用于保留既有紧凑/光学校准。
 
 规则：
 
 - 页面和组件不得新增裸写品牌色、状态色或 `rgba(...)`；新颜色必须先进入 `tokens.css`。
-- 常用 padding / margin / gap、圆角和字号优先使用 Token；**页面结构专属的一次性尺寸**（例如 Calendar 列宽、图表固定高度、特定 Popover 宽度）可以保留局部值，不为了“零数字”制造无意义 Token。
+- padding / margin / gap、圆角和字号统一使用 Token；**页面结构专属的一次性尺寸**（例如 Calendar 列宽、图表固定高度、特定 Popover 宽度）可以保留局部值，不为了“零数字”制造无意义 Token。
 - Select 统一使用自定义 Chevron，不使用浏览器原生箭头；右侧留白、箭头大小和距右边界位置由 `--select-*` Token 控制。
 - 不在单个页面重新定义控件视觉参数。
 - Token 的全局视觉变化必须先更新本文件，再修改实现。
@@ -93,10 +93,11 @@ Token 分为六类：Color / 颜色、Spacing / 间距、Radius / 圆角、Typog
 --color-border: #e3e8eb;
 --color-surface: #ffffff;
 --color-primary: #126e62;
---space-2: 8px;
---space-3: 12px;
---space-4: 16px;
---space-6: 24px;
+--space-4: 4px;
+--space-8: 8px;
+--space-12: 12px;
+--space-16: 16px;
+--space-24: 24px;
 --control-height-md: 38px;
 --control-height-touch: 42px;
 --select-padding-right: 44px;
