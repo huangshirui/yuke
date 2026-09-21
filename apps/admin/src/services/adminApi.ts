@@ -263,6 +263,7 @@ class HttpAdminApi implements AdminApi {
     if (filters.resourceId) query.set('resourceId', filters.resourceId)
     if (filters.participantId) query.set('participantId', filters.participantId)
     if (filters.slotTypeId) query.set('slotTypeId', filters.slotTypeId)
+    if (filters.membershipId) query.set('membershipId', filters.membershipId)
     const suffix = query.size ? '?' + query.toString() : ''
     return this.request<AdminBooking[]>(this.spacePath(spaceId) + '/bookings' + suffix)
   }
