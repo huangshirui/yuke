@@ -342,7 +342,7 @@ onMounted(loadBase)
 </script>
 
 <template>
-  <main class="schedule-view" :class="{ page: !props.embedded }">
+  <section class="schedule-view" :class="{ page: !props.embedded }">
     <div v-if="loading" class="empty-state">正在加载排期…</div>
     <template v-else-if="space">
       <section v-if="!props.embedded" class="page-heading page-heading--compact">
@@ -511,7 +511,7 @@ onMounted(loadBase)
         </section>
       </div>
     </template>
-  </main>
+  </section>
 </template>
 
 <style scoped>
