@@ -112,7 +112,9 @@ apply_migrations
 - 无 D1 schema 变化：保持 `false`；
 - 本次发布包含尚未执行的 migration：明确选择 `true`，先 remote migration，再 deploy Worker；
 - migration 或 deploy 任一步失败都会停止后续步骤；
-- Worker 发布成功后自动执行 `/health` smoke。
+- Worker 发布完成后，`deploy` Job 独立结束；随后单独的 `smoke` Job 检查 `/health`；
+- `smoke` 最多重试约 2 分钟，处理刚发布后可能出现的短暂边缘传播 / WAF 状态波动；
+- 只有最终获得 HTTP 200 且 payload 为 `{ data: { status: "ok", service: "yuke-api" } }` 才算 smoke 成功；403 不会被视为成功。
 
 Runtime Secrets（例如微信 Secret、Cloudflare Access AUD、Super Admin 邮箱）继续保存在 Worker Secret 中；普通 `wrangler deploy` 不应把它们写入 GitHub Secrets 或仓库配置。
 
