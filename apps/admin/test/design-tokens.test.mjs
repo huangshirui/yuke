@@ -12,7 +12,7 @@ test('admin reusable visual colors live in tokens.css', () => {
 })
 
 test('admin token file defines shared visual primitives', () => {
-  for (const token of ['--color-primary','--color-border','--space-4','--radius-10','--font-size-14','--control-height-md','--select-padding-right','--select-chevron-offset','--shadow-panel','--focus-ring']) {
+  for (const token of ['--color-primary','--color-border','--space-16','--radius-10','--font-size-14','--control-height-md','--select-padding-right','--select-chevron-offset','--shadow-panel','--focus-ring']) {
     assert.ok(tokens.includes(token), `missing ${token}`)
   }
 })
