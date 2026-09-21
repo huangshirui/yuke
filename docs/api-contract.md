@@ -472,7 +472,18 @@ MVP 仅修改 `name`。若目标名称在当前 Space 已存在，返回 `VALIDA
 
 软停用 / 启用，操作幂等。已使用的 Slot Type 不物理删除，历史 Slot / Booking 关联保留。
 
-## 13. 单次 Slot / Admin
+## 13. Slot / Admin
+
+### GET /admin/spaces/{spaceId}/resources/{resourceId}/slots?from=YYYY-MM-DD&to=YYYY-MM-DD
+
+返回 Admin 日历使用的 Slot 列表。除基础 Slot 字段外，若当前 Slot 被有效 Booking（`booked | completed`）占用，列表项附带轻量 `booking` 投影：
+
+- booking id / status
+- membershipId
+- userNickname
+- participantId / participantName
+
+该投影只服务 Admin 运营日历，避免前端为每个 Slot 额外拼接 Booking / Membership / Participant 查询；它不改变 Slot 与 Booking 的领域关系。Slot 新建、编辑、冻结等 mutation 响应可以不携带该投影，客户端应在需要最新运营状态时重新读取日历列表。
 
 ### POST /admin/spaces/{spaceId}/slots
 
@@ -577,7 +588,10 @@ Query：
 - resourceId
 - participantId
 - slotTypeId
+- membershipId
 - status
+
+`membershipId` 供用户详情页读取该 Membership 的预约历史；仅 Admin Contract 支持。
 
 返回 Space 内匹配的 Booking 及 Participant / Resource / Slot Type / Slot 摘要。Admin 响应额外包含 `membershipId`，用于在修改预约时加载该用户 Membership 下可选的 active Participant；用户侧 Booking Contract 不暴露该字段。
 
