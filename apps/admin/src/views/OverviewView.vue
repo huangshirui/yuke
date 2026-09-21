@@ -144,7 +144,7 @@ onMounted(load)
         <article class="panel overview-card overview-today">
           <div class="overview-card-heading">
             <h2>今日预约</h2>
-            <button class="link-button" @click="router.push(spacePath(spaceId, 'bookings'))">查看全部 →</button>
+            <button class="link-button" @click="router.push({ path: spacePath(spaceId, 'reservations'), query: { view: 'list' } })">查看全部 →</button>
           </div>
           <div v-if="todayBookings.length === 0" class="empty-state compact">今天还没有预约。</div>
           <button
@@ -179,7 +179,7 @@ onMounted(load)
         <article class="panel overview-card">
           <div class="overview-card-heading"><h2>常用操作</h2></div>
           <div class="quick-actions">
-            <button @click="router.push(spacePath(spaceId, 'schedule'))"><strong>新建开放时间</strong><small>设置可预约时段</small></button>
+            <button @click="router.push(spacePath(spaceId, 'reservations'))"><strong>新建开放时间</strong><small>设置可预约时段</small></button>
             <button @click="router.push(spacePath(spaceId, 'users'))"><strong>邀请用户</strong><small>生成或管理邀请码</small></button>
             <button @click="router.push(spacePath(spaceId, 'resources'))"><strong>添加预约对象</strong><small>维护预约资源</small></button>
             <button @click="router.push(spacePath(spaceId, 'settings'))"><strong>规则设置</strong><small>预约与取消规则</small></button>
