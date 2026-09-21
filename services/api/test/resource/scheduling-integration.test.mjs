@@ -3,7 +3,8 @@ import { describe, expect, it } from 'vitest'
 import { issueUserToken } from '../../src/domains/identity/token'
 import {
   changeAdminSingleSlot,
-  createAdminSlot
+  createAdminSlot,
+  listAdminSlotsByLocalDateRange
 } from '../../src/domains/resource/slot/service'
 import {
   createAdminSlotSeries,
@@ -154,6 +155,45 @@ describe('Phase 3 Scheduling Gate', () => {
     expect(byId.get(`slot_cutoff_${suffix}`)?.bookable).toBe(false)
     expect(byId.get(`slot_frozen_${suffix}`)?.bookable).toBe(false)
     expect(byId.get(`slot_booked_${suffix}`)?.bookable).toBe(false)
+  })
+
+  it('projects the occupying Booking onto Admin calendar Slots', async () => {
+    const suffix = `p3-admin-projection-${crypto.randomUUID()}`
+    const ids = await seedBookingFixture(suffix)
+    const start = Date.parse('2026-09-23T02:00:00.000Z')
+    const slotId = `slot_admin_projection_${suffix}`
+    const bookingId = `booking_admin_projection_${suffix}`
+
+    await insertSlot(ids, {
+      id: slotId,
+      startAt: start,
+      endAt: start + 30 * 60_000,
+      status: 'open',
+      localDate: '2026-09-23'
+    })
+    await insertBooking(ids, { id: bookingId, slotId })
+
+    const slots = await listAdminSlotsByLocalDateRange(
+      env.DB,
+      ids.space,
+      ids.resource,
+      '2026-09-23',
+      '2026-09-23'
+    )
+
+    expect(slots).toHaveLength(1)
+    expect(slots[0]).toMatchObject({
+      id: slotId,
+      bookable: false,
+      booking: {
+        id: bookingId,
+        status: 'booked',
+        membershipId: ids.membership,
+        userNickname: `Synthetic User ${suffix}`,
+        participantId: ids.participant,
+        participantName: `Synthetic Participant ${suffix}`
+      }
+    })
   })
 
   it('single scope converts only the selected occurrence into a persistent exception', async () => {
