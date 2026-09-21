@@ -1,11 +1,16 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { getAdminApi } from '../services/adminApi'
 import type { AdminResource, AdminScheduleSlot, AdminSlotType, AdminSpace } from '../types/admin'
 
+const props = withDefaults(defineProps<{ embedded?: boolean }>(), {
+  embedded: false
+})
+
 const api = getAdminApi()
 const route = useRoute()
+const router = useRouter()
 
 const spaceId = computed(() => String(route.params.spaceId))
 const space = ref<AdminSpace | null>(null)
@@ -14,6 +19,7 @@ const slotTypes = ref<AdminSlotType[]>([])
 const slots = ref<AdminScheduleSlot[]>([])
 const selectedResourceId = ref('')
 const weekStart = ref(startOfWeek(new Date()))
+const mobileDate = ref('')
 const loading = ref(true)
 const saving = ref(false)
 const error = ref('')
@@ -47,12 +53,26 @@ const weekDays = computed(() =>
 )
 const weekEnd = computed(() => addDays(weekStart.value, 6))
 const selectedResource = computed(() => resources.value.find((item) => item.id === selectedResourceId.value) ?? null)
+const mobileDay = computed(() =>
+  weekDays.value.find((item) => item.date === mobileDate.value) ?? weekDays.value[0]
+)
 
 function startOfWeek(date: Date) {
   const value = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
   const day = value.getUTCDay() || 7
   value.setUTCDate(value.getUTCDate() - day + 1)
   return value.toISOString().slice(0, 10)
+}
+function todayInSpace() {
+  const zone = space.value?.timezone || 'UTC'
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: zone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  }).formatToParts(new Date())
+  const read = (type: string) => parts.find((part) => part.type === type)?.value
+  return `${read('year')}-${read('month')}-${read('day')}`
 }
 function addDays(date: string, days: number) {
   const value = new Date(date + 'T00:00:00Z')
@@ -146,6 +166,9 @@ async function loadBase() {
     if (!selectedResourceId.value || !resources.value.some((item) => item.id === selectedResourceId.value)) {
       selectedResourceId.value = resources.value[0]?.id || ''
     }
+    const today = todayInSpace()
+    weekStart.value = startOfWeek(new Date(today + 'T12:00:00Z'))
+    mobileDate.value = today
     await loadSlots()
   } catch (cause) {
     showError(cause, '排期加载失败。')
@@ -167,7 +190,22 @@ async function loadSlots() {
 }
 async function changeWeek(delta: number) {
   weekStart.value = addDays(weekStart.value, delta * 7)
+  mobileDate.value = weekStart.value
   await loadSlots()
+}
+async function goToday() {
+  const today = todayInSpace()
+  weekStart.value = startOfWeek(new Date(today + 'T12:00:00Z'))
+  mobileDate.value = today
+  await loadSlots()
+}
+async function changeMobileDay(delta: number) {
+  const next = addDays(mobileDate.value || weekStart.value, delta)
+  mobileDate.value = next
+  if (next < weekStart.value || next > weekEnd.value) {
+    weekStart.value = startOfWeek(new Date(next + 'T12:00:00Z'))
+    await loadSlots()
+  }
 }
 
 function openCreate(date = weekDays.value[0]?.date, startTime = '09:00', endTime = '10:00') {
@@ -181,6 +219,16 @@ function openCreate(date = weekDays.value[0]?.date, startTime = '09:00', endTime
   form.slotTypeId = slotTypes.value[0]?.id || ''
   form.endsOn = ''
   formOpen.value = true
+}
+function openSlot(slot: AdminScheduleSlot) {
+  if (slot.booking) {
+    router.push({
+      path: '/spaces/' + encodeURIComponent(spaceId.value) + '/reservations',
+      query: { view: 'list', bookingId: slot.booking.id }
+    })
+    return
+  }
+  openEdit(slot)
 }
 function openEdit(slot: AdminScheduleSlot) {
   editingSlot.value = slot
@@ -294,10 +342,10 @@ onMounted(loadBase)
 </script>
 
 <template>
-  <main class="page">
+  <main class="schedule-view" :class="{ page: !props.embedded }">
     <div v-if="loading" class="empty-state">正在加载排期…</div>
     <template v-else-if="space">
-      <section class="page-heading page-heading--compact">
+      <section v-if="!props.embedded" class="page-heading page-heading--compact">
         <div>
           <div class="title-line"><h1>开放时间</h1></div>
           <p>按周配置预约对象的单次或周期开放时段。拖选以 30 分钟为网格，也可以在表单中输入精确时间。</p>
@@ -308,23 +356,25 @@ onMounted(loadBase)
       <div v-if="error" class="alert alert--error">{{ error }}</div>
       <div v-if="notice" class="alert alert--success">{{ notice }}</div>
 
-      <section class="panel schedule-toolbar">
-        <label class="field">
+      <section class="schedule-toolbar">
+        <label class="compact-field">
           <span>预约对象</span>
           <select v-model="selectedResourceId">
             <option v-for="resource in resources" :key="resource.id" :value="resource.id">{{ resource.name }}</option>
           </select>
         </label>
         <div class="week-nav">
-          <button class="button button--ghost" @click="changeWeek(-1)">← 上一周</button>
-          <strong>{{ weekStart }} — {{ weekEnd }}</strong>
-          <button class="button button--ghost" @click="changeWeek(1)">下一周 →</button>
+          <button class="button button--ghost" @click="goToday">今天</button>
+          <button class="button button--ghost icon-nav" aria-label="上一周" @click="changeWeek(-1)">‹</button>
+          <strong>{{ weekStart.slice(5).replace('-', '/') }}–{{ weekEnd.slice(5).replace('-', '/') }}</strong>
+          <button class="button button--ghost icon-nav" aria-label="下一周" @click="changeWeek(1)">›</button>
         </div>
+        <button class="button button--primary" :disabled="!selectedResourceId" @click="openCreate()">+ 新建时段</button>
       </section>
 
       <section v-if="!resources.length" class="panel empty-state">还没有启用中的预约对象，请先创建或启用预约对象。</section>
 
-      <section v-else class="panel schedule-panel">
+      <section v-else class="panel schedule-panel desktop-schedule">
         <div class="week-head">
           <div class="time-gutter"></div>
           <div v-for="day in weekDays" :key="day.date" class="day-head">
@@ -359,17 +409,50 @@ onMounted(loadBase)
                 :style="slotStyle(slot)"
                 role="button"
                 tabindex="0"
-                @click.stop="openEdit(slot)"
-                @keydown.enter.prevent="openEdit(slot)"
+                :aria-label="slot.booking
+                  ? slotLocalTime(slot.startAt) + ' 到 ' + slotLocalTime(slot.endAt) + '，已预约'
+                  : slotLocalTime(slot.startAt) + ' 到 ' + slotLocalTime(slot.endAt) + '，可预约'"
+                @click.stop="openSlot(slot)"
+                @keydown.enter.prevent="openSlot(slot)"
               >
                 <strong>{{ slotLocalTime(slot.startAt) }}–{{ slotLocalTime(slot.endAt) }}</strong>
-                <span>{{ slotTypeName(slot) }}</span>
-                <small>{{ slot.status === 'frozen' ? '已冻结' : slot.seriesId ? '每周重复' : '单次' }}</small>
-                <span class="slot-actions">
-                  <button class="mini-action" @click.stop="toggleFrozen(slot)">{{ slot.status === 'frozen' ? '解冻' : '冻结' }}</button>
+                <span v-if="slot.booking" class="slot-booking-line">
+                  {{ slot.booking.userNickname || '未命名用户' }} · {{ slot.booking.participantName || '未命名参与人' }}
                 </span>
+                <span v-else class="slot-availability">{{ slot.status === 'frozen' ? '暂不可预约' : '可预约' }}</span>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section v-if="resources.length" class="mobile-agenda">
+        <div class="mobile-day-nav">
+          <button class="button button--ghost icon-nav" aria-label="前一天" @click="changeMobileDay(-1)">‹</button>
+          <div>
+            <strong>{{ mobileDay?.date }}</strong>
+            <span>{{ mobileDay?.label }}</span>
+          </div>
+          <button class="button button--ghost icon-nav" aria-label="后一天" @click="changeMobileDay(1)">›</button>
+        </div>
+        <div class="agenda-list">
+          <button
+            v-for="slot in slotsFor(mobileDay?.date || mobileDate)"
+            :key="slot.id"
+            class="agenda-slot"
+            :class="{ 'agenda-slot--booked': slot.booking, 'agenda-slot--frozen': slot.status === 'frozen' }"
+            @click="openSlot(slot)"
+          >
+            <span class="agenda-time">{{ slotLocalTime(slot.startAt) }}–{{ slotLocalTime(slot.endAt) }}</span>
+            <span class="agenda-main">
+              <strong v-if="slot.booking">{{ slot.booking.userNickname || '未命名用户' }}</strong>
+              <strong v-else>{{ slot.status === 'frozen' ? '暂不可预约' : '可预约' }}</strong>
+              <small v-if="slot.booking">{{ slot.booking.participantName || '未命名参与人' }}</small>
+            </span>
+            <span class="row-chevron">›</span>
+          </button>
+          <div v-if="slotsFor(mobileDay?.date || mobileDate).length === 0" class="empty-state compact">
+            当天没有开放时段。
           </div>
         </div>
       </section>
@@ -379,6 +462,12 @@ onMounted(loadBase)
           <div class="panel-heading">
             <div><span class="eyebrow">Schedule</span><h2>{{ editingSlot ? '编辑时段' : '新建开放时段' }}</h2></div>
             <button class="button button--ghost" @click="formOpen = false">关闭</button>
+          </div>
+
+          <div v-if="editingSlot" class="slot-detail-meta">
+            <span>{{ editingSlot.seriesId ? '周期时段' : '单次时段' }}</span>
+            <span>{{ editingSlot.status === 'frozen' ? '已冻结' : '开放中' }}</span>
+            <span>{{ slotTypeName(editingSlot) }}</span>
           </div>
 
           <div class="field-grid schedule-form">
@@ -408,7 +497,14 @@ onMounted(loadBase)
             <label class="field"><span>结束日期（留空表示长期有效）</span><input v-model="form.endsOn" type="date" /></label>
           </div>
 
-          <div class="modal-actions">
+          <div class="modal-actions slot-modal-actions">
+            <button
+              v-if="editingSlot"
+              class="button button--ghost"
+              :disabled="saving"
+              @click="toggleFrozen(editingSlot)"
+            >{{ editingSlot.status === 'frozen' ? '解冻时段' : '冻结时段' }}</button>
+            <span class="modal-actions-spacer"></span>
             <button class="button button--ghost" @click="formOpen = false">取消</button>
             <button class="button button--primary" :disabled="saving" @click="saveSlot">{{ saving ? '保存中…' : '保存时段' }}</button>
           </div>
@@ -419,5 +515,13 @@ onMounted(loadBase)
 </template>
 
 <style scoped>
-.schedule-toolbar{display:flex;align-items:end;justify-content:space-between;gap:20px;margin-bottom:16px}.schedule-toolbar .field{min-width:260px}.week-nav{display:flex;align-items:center;gap:12px}.schedule-panel{overflow:auto;padding:0}.week-head,.schedule-body{display:grid;grid-template-columns:72px repeat(7,minmax(132px,1fr));min-width:1050px}.time-gutter,.day-head{height:64px;border-bottom:1px solid var(--line)}.day-head{display:grid;align-content:center;gap:3px;padding:0 12px;border-left:1px solid var(--line)}.day-head span{color:var(--muted);font-size:12px}.schedule-body{align-items:start}.time-column{display:grid}.time-label{height:36px;padding:7px 8px;color:var(--muted);font-size:11px;border-bottom:1px solid var(--line)}.day-column{position:relative;border-left:1px solid var(--line);min-height:900px}.time-cell{display:block;width:100%;height:36px;border:0;border-bottom:1px solid var(--line);background:transparent;padding:0;cursor:crosshair}.time-cell:hover,.time-cell--selected{background:var(--accent-soft)}.day-slots{position:absolute;inset:0;pointer-events:none}.slot-card{position:absolute;left:4px;right:4px;pointer-events:auto;border:1px solid #badbd5;border-left:4px solid var(--accent);border-radius:10px;background:#fff;padding:8px;text-align:left;display:grid;gap:2px;box-shadow:0 2px 8px rgba(23,32,42,.06)}.slot-card span,.slot-card small{font-size:11px;color:var(--muted)}.slot-card--frozen{border-color:#d5d9dc;border-left-color:#77838c;background:#f4f6f7}.slot-actions{margin-top:5px}.mini-action{border:0;background:transparent;padding:0;color:var(--accent);font-size:11px;cursor:pointer}.modal-backdrop{position:fixed;inset:0;background:rgba(10,20,20,.36);display:grid;place-items:center;padding:24px;z-index:20}.modal-card{width:min(720px,100%);max-height:90vh;overflow:auto;background:#fff;border-radius:16px;padding:22px;box-shadow:0 24px 70px rgba(0,0,0,.2)}.schedule-form{margin-top:14px}.repeat-panel{margin-top:18px;padding:16px;border:1px solid var(--line);border-radius:12px;display:grid;gap:14px}.field-label{font-size:13px;font-weight:600}.weekday-picker{display:flex;gap:8px;flex-wrap:wrap}.weekday-button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 11px;cursor:pointer}.weekday-button.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}.modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:20px}@media(max-width:820px){.schedule-toolbar,.week-nav{align-items:stretch;flex-direction:column}.schedule-toolbar .field{min-width:0}.modal-backdrop{align-items:end;padding:0}.modal-card{width:100%;max-width:none;max-height:92vh;border-radius:18px 18px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom))}}
+.schedule-view{min-width:0}
+.schedule-toolbar{min-height:58px;display:grid;grid-template-columns:minmax(210px,280px) 1fr auto;align-items:center;gap:14px;margin-bottom:12px;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:#fff}
+.compact-field{display:flex;align-items:center;gap:9px;min-width:0}.compact-field>span{font-size:12px;font-weight:700;color:var(--muted);white-space:nowrap}.compact-field select{min-width:0;width:100%;height:38px}
+.week-nav{display:flex;align-items:center;justify-content:center;gap:6px}.week-nav strong{min-width:88px;text-align:center;font-size:13px}.icon-nav{min-width:36px;padding-inline:10px;font-size:18px}
+.schedule-panel{overflow:auto;padding:0}.week-head,.schedule-body{display:grid;grid-template-columns:58px repeat(7,minmax(116px,1fr));min-width:890px}.time-gutter,.day-head{height:50px;border-bottom:1px solid var(--line)}.day-head{display:grid;align-content:center;gap:2px;padding:0 10px;border-left:1px solid var(--line)}.day-head strong{font-size:13px}.day-head span{color:var(--muted);font-size:11px}.schedule-body{align-items:start}.time-column{display:grid}.time-label{height:34px;padding:6px 7px;color:var(--muted);font-size:10px;border-bottom:1px solid var(--line)}.day-column{position:relative;border-left:1px solid var(--line);min-height:850px}.time-cell{display:block;width:100%;height:34px;border:0;border-bottom:1px solid var(--line);background:transparent;padding:0;cursor:crosshair}.time-cell:hover,.time-cell--selected{background:var(--accent-soft)}.day-slots{position:absolute;inset:0;pointer-events:none}.slot-card{position:absolute;left:4px;right:4px;pointer-events:auto;border:1px solid #badbd5;border-left:3px solid var(--accent);border-radius:7px;background:#fff;padding:6px 7px;text-align:left;display:grid;align-content:start;gap:2px;box-shadow:0 1px 4px rgba(23,32,42,.04);overflow:hidden}.slot-card strong{font-size:12px;line-height:1.15;white-space:nowrap}.slot-card span{font-size:10px;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.slot-booking-line{color:var(--ink)!important;font-weight:650}.slot-availability{color:var(--accent)!important}.slot-card--frozen{border-color:#d5d9dc;border-left-color:#77838c;background:#f4f6f7}
+.mobile-agenda{display:none}
+.modal-backdrop{position:fixed;inset:0;background:rgba(10,20,20,.36);display:grid;place-items:center;padding:24px;z-index:20}.modal-card{width:min(720px,100%);max-height:90vh;overflow:auto;background:#fff;border-radius:16px;padding:20px;box-shadow:0 24px 70px rgba(0,0,0,.2)}.schedule-form{margin-top:12px}.slot-detail-meta{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 4px}.slot-detail-meta span{padding:4px 8px;border-radius:999px;background:#f1f4f4;color:var(--muted);font-size:11px}.repeat-panel{margin-top:14px;padding:14px;border:1px solid var(--line);border-radius:10px;display:grid;gap:12px}.field-label{font-size:12px;font-weight:600}.weekday-picker{display:flex;gap:6px;flex-wrap:wrap}.weekday-button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 10px;cursor:pointer;font-size:12px}.weekday-button.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}.modal-actions{display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-top:16px}.modal-actions-spacer{flex:1}
+@media(max-width:820px){.schedule-toolbar{grid-template-columns:1fr auto;gap:8px}.schedule-toolbar>.button--primary{grid-column:2;grid-row:1}.week-nav{grid-column:1 / -1;justify-content:space-between;border-top:1px solid var(--line);padding-top:8px}.desktop-schedule{display:none}.mobile-agenda{display:block;border:1px solid var(--line);border-radius:12px;background:#fff;overflow:hidden}.mobile-day-nav{min-height:52px;display:grid;grid-template-columns:40px 1fr 40px;align-items:center;border-bottom:1px solid var(--line);padding:4px 8px}.mobile-day-nav>div{display:flex;align-items:center;justify-content:center;gap:8px}.mobile-day-nav strong{font-size:14px}.mobile-day-nav span{font-size:12px;color:var(--muted)}.agenda-list{display:grid}.agenda-slot{min-height:60px;border:0;border-bottom:1px solid var(--line);background:#fff;padding:9px 12px;display:grid;grid-template-columns:92px minmax(0,1fr) 16px;align-items:center;gap:10px;text-align:left;color:var(--ink)}.agenda-slot:last-child{border-bottom:0}.agenda-slot--booked{background:#f7fbfa}.agenda-slot--frozen{background:#f4f6f7}.agenda-time{font-size:12px;color:var(--muted)}.agenda-main{display:grid;gap:2px}.agenda-main strong{font-size:14px}.agenda-main small{font-size:12px;color:var(--muted)}.modal-backdrop{align-items:end;padding:0}.modal-card{width:100%;max-width:none;max-height:92vh;border-radius:18px 18px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom))}}
+@media(max-width:560px){.schedule-toolbar{grid-template-columns:minmax(0,1fr) auto}.compact-field>span{display:none}.schedule-toolbar>.button--primary{padding-inline:12px}.week-nav .button:first-child{font-size:13px}}
 </style>
