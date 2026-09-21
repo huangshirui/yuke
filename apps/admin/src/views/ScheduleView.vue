@@ -57,8 +57,13 @@ const mobileDay = computed(() =>
   weekDays.value.find((item) => item.date === mobileDate.value) ?? weekDays.value[0]
 )
 
-function startOfWeek(date: Date) {
-  const value = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()))
+function startOfWeek(date: Date | string) {
+  const source = typeof date === 'string' ? new Date(date + 'T12:00:00Z') : date
+  const value = new Date(Date.UTC(
+    source.getUTCFullYear(),
+    source.getUTCMonth(),
+    source.getUTCDate()
+  ))
   const day = value.getUTCDay() || 7
   value.setUTCDate(value.getUTCDate() - day + 1)
   return value.toISOString().slice(0, 10)
@@ -167,7 +172,7 @@ async function loadBase() {
       selectedResourceId.value = resources.value[0]?.id || ''
     }
     const today = todayInSpace()
-    weekStart.value = startOfWeek(new Date(today + 'T12:00:00Z'))
+    weekStart.value = startOfWeek(today)
     mobileDate.value = today
     await loadSlots()
   } catch (cause) {
@@ -195,7 +200,7 @@ async function changeWeek(delta: number) {
 }
 async function goToday() {
   const today = todayInSpace()
-  weekStart.value = startOfWeek(new Date(today + 'T12:00:00Z'))
+  weekStart.value = startOfWeek(today)
   mobileDate.value = today
   await loadSlots()
 }
@@ -203,7 +208,7 @@ async function changeMobileDay(delta: number) {
   const next = addDays(mobileDate.value || weekStart.value, delta)
   mobileDate.value = next
   if (next < weekStart.value || next > weekEnd.value) {
-    weekStart.value = startOfWeek(new Date(next + 'T12:00:00Z'))
+    weekStart.value = startOfWeek(next)
     await loadSlots()
   }
 }
@@ -226,6 +231,10 @@ function openSlot(slot: AdminScheduleSlot) {
       path: '/spaces/' + encodeURIComponent(spaceId.value) + '/reservations',
       query: { view: 'list', bookingId: slot.booking.id }
     })
+    return
+  }
+  if (!slot.bookable && slot.status === 'open') {
+    error.value = '这个时段已被占用，预约详情正在同步，请稍后刷新。'
     return
   }
   openEdit(slot)
@@ -327,6 +336,8 @@ async function toggleFrozen(slot: AdminScheduleSlot) {
   saving.value = true
   try {
     await api.setScheduleSlotFrozen(spaceId.value, slot.id, slot.status !== 'frozen')
+    formOpen.value = false
+    editingSlot.value = null
     await loadSlots()
     notice.value = slot.status === 'frozen' ? '时段已解冻。' : '时段已冻结；已有预约仍保留。'
   } catch (cause) {
@@ -419,7 +430,9 @@ onMounted(loadBase)
                 <span v-if="slot.booking" class="slot-booking-line">
                   {{ slot.booking.userNickname || '未命名用户' }} · {{ slot.booking.participantName || '未命名参与人' }}
                 </span>
-                <span v-else class="slot-availability">{{ slot.status === 'frozen' ? '暂不可预约' : '可预约' }}</span>
+                <span v-else class="slot-availability">
+                  {{ slot.status === 'frozen' ? '暂不可预约' : !slot.bookable ? '已占用' : '可预约' }}
+                </span>
               </div>
             </div>
           </div>
@@ -446,7 +459,7 @@ onMounted(loadBase)
             <span class="agenda-time">{{ slotLocalTime(slot.startAt) }}–{{ slotLocalTime(slot.endAt) }}</span>
             <span class="agenda-main">
               <strong v-if="slot.booking">{{ slot.booking.userNickname || '未命名用户' }}</strong>
-              <strong v-else>{{ slot.status === 'frozen' ? '暂不可预约' : '可预约' }}</strong>
+              <strong v-else>{{ slot.status === 'frozen' ? '暂不可预约' : !slot.bookable ? '已占用' : '可预约' }}</strong>
               <small v-if="slot.booking">{{ slot.booking.participantName || '未命名参与人' }}</small>
             </span>
             <span class="row-chevron">›</span>
