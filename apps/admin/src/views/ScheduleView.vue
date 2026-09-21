@@ -232,7 +232,11 @@ function bookingStateLabel(slot: AdminScheduleSlot) {
     slot.booking.status === 'completed' ? '已完成' : '已预约'
   ]
   if (slot.booking.status === 'completed') {
-    parts.push(slot.booking.reconciliationStatus === 'settled' ? '已对账' : '待对账')
+    if (slot.booking.reconciliationStatus === undefined) {
+      parts.push('对账状态同步中')
+    } else {
+      parts.push(slot.booking.reconciliationStatus === 'settled' ? '已对账' : '待对账')
+    }
   }
   if (slot.status === 'frozen') parts.push('已冻结')
   return parts.join(' · ')
