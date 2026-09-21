@@ -16,6 +16,10 @@ const response = await fetch(url, {
 })
 
 if (!response.ok) {
+  if (response.status === 403) {
+    console.error('EDGE_BLOCKED_403')
+    process.exit(42)
+  }
   throw new Error(`Health check failed: HTTP ${response.status}`)
 }
 
