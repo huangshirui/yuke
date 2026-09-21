@@ -1,11 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { CUTOFF_MINUTES, type CutoffMinutes } from '@yuke/shared'
 import { getAdminApi } from '../services/adminApi'
 import type { AdminSpace } from '../types/admin'
 
 const api = getAdminApi()
+const route = useRoute()
 const router = useRouter()
 const spaces = ref<AdminSpace[]>([])
 const loading = ref(true)
@@ -65,7 +66,7 @@ async function createSpace() {
     showCreate.value = false
     form.name = ''
     await load()
-    await router.push('/spaces/' + created.id + '/settings')
+    await router.push('/spaces/' + created.id + '/overview')
   } catch (cause) {
     error.value = cause instanceof Error ? cause.message : '创建失败。'
   } finally {
@@ -83,7 +84,10 @@ async function toggleStatus(space: AdminSpace) {
   }
 }
 
-onMounted(load)
+onMounted(async () => {
+  if (route.query.create === '1') showCreate.value = true
+  await load()
+})
 </script>
 
 <template>
