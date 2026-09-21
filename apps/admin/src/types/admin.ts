@@ -4,6 +4,7 @@ import type {
   AdminMemberSummary as SharedAdminMemberSummary,
   AdminParticipantDetail as SharedAdminParticipantDetail,
   AdminSlot as SharedAdminSlot,
+  BookingReconciliationStatus,
   BookingStatus,
   CurrentAdmin as SharedCurrentAdmin,
   CreateInviteInput as SharedCreateInviteInput,
@@ -111,4 +112,5 @@ export type BookingFilters = {
   participantId?: string
   slotTypeId?: string
   membershipId?: string
+  reconciliationStatus?: BookingReconciliationStatus
 }
