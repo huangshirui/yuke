@@ -364,7 +364,7 @@ onMounted(loadBase)
 </script>
 
 <template>
-  <main class="booking-admin-page" :class="{ page: !props.embedded }">
+  <section class="booking-admin-page" :class="{ page: !props.embedded }">
     <section v-if="!props.embedded" class="page-heading">
       <div>
         <span class="eyebrow">Bookings</span>
@@ -543,7 +543,7 @@ onMounted(loadBase)
         </div>
       </form>
     </div>
-  </main>
+  </section>
 </template>
 
 <style scoped>
