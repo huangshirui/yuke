@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { getAdminApi } from '../services/adminApi'
 import type {
   AdminBooking,
@@ -18,6 +18,7 @@ const props = withDefaults(defineProps<{ embedded?: boolean }>(), {
 
 const api = getAdminApi()
 const route = useRoute()
+const router = useRouter()
 
 const spaces = ref<AdminSpace[]>([])
 const selectedSpaceId = ref('')
@@ -140,6 +141,7 @@ async function loadBase() {
       filters.to = today
     }
     await loadSpaceContext()
+    await openRequestedBooking()
   } catch (cause) {
     error.value = friendlyError(cause, '预约管理加载失败。')
   } finally {
@@ -211,6 +213,25 @@ async function openDetail(booking: AdminBooking) {
   } catch (cause) {
     error.value = friendlyError(cause, '预约详情加载失败。')
   }
+}
+
+async function openRequestedBooking() {
+  const bookingId = String(route.query.bookingId || '')
+  if (!bookingId || !selectedSpaceId.value) return
+  clearFeedback()
+  try {
+    selectedBooking.value = await api.getBooking(selectedSpaceId.value, bookingId)
+  } catch (cause) {
+    error.value = friendlyError(cause, '预约详情加载失败。')
+  }
+}
+
+function closeBookingDetail() {
+  selectedBooking.value = null
+  if (!route.query.bookingId) return
+  const query = { ...route.query }
+  delete query.bookingId
+  router.replace({ path: route.path, query })
 }
 
 async function loadEditSlots() {
@@ -338,6 +359,7 @@ async function completeBooking(booking: AdminBooking) {
 }
 
 watch(() => route.params.spaceId, loadBase)
+watch(() => route.query.bookingId, openRequestedBooking)
 onMounted(loadBase)
 </script>
 
@@ -431,7 +453,7 @@ onMounted(loadBase)
       </div>
     </section>
 
-    <div v-if="selectedBooking" class="modal-backdrop" @click.self="selectedBooking = null">
+    <div v-if="selectedBooking" class="modal-backdrop" @click.self="closeBookingDetail">
       <section class="modal booking-detail-modal" role="dialog" aria-modal="true" aria-label="预约详情">
         <div class="modal-heading">
           <div>
@@ -439,7 +461,7 @@ onMounted(loadBase)
             <h2>预约详情</h2>
             <p>{{ formatDateTime(selectedBooking.slot.startAt) }} · {{ selectedBooking.resource.name }}</p>
           </div>
-          <button class="icon-button" aria-label="关闭预约详情" @click="selectedBooking = null">×</button>
+          <button class="icon-button" aria-label="关闭预约详情" @click="closeBookingDetail">×</button>
         </div>
         <div class="booking-detail-grid">
           <div><span>参与人</span><strong>{{ selectedBooking.participant.name }}</strong></div>
