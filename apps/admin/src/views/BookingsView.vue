@@ -538,5 +538,5 @@ onMounted(loadBase)
 .booking-detail-grid>div{display:grid;gap:5px;min-width:0}.booking-detail-grid span{font-size:12px;color:var(--muted)}
 .booking-detail-grid strong{overflow-wrap:anywhere}.booking-status--booked{background:var(--accent-soft);color:var(--accent)}
 .booking-status--completed{background:#eef1f2;color:#59656f}.booking-status--cancelled{background:#fff0ef;color:var(--danger)}
-.booking-edit-modal{width:min(680px,100%)}@media(max-width:820px){.booking-metrics,.booking-filter-grid,.booking-detail-grid{grid-template-columns:1fr}.space-picker{min-width:0;width:100%}.booking-filter-actions{align-items:stretch}.booking-filter-actions .button{flex:1}}
+.booking-edit-modal{width:min(680px,100%)}@media(max-width:820px){.booking-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.booking-filter-grid,.booking-detail-grid{grid-template-columns:1fr}.booking-filter-actions{align-items:stretch}.booking-filter-actions .button{flex:1}}@media(max-width:560px){.booking-metrics{grid-template-columns:1fr}}
 </style>
