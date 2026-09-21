@@ -91,7 +91,7 @@ export YUKE_R2_BUCKET_NAME="<刚创建的 R2 bucket 名称>"
 .github/workflows/deploy-api.yml
 ```
 
-当前策略刻意保持为 **manual-only / 仅手动触发**，不在 merge 到 `main` 后自动发布。原因是 API 可能与 D1 migration 同时变化，发布风险高于 Admin。
+当前策略刻意保持为 **manual-only / 仅手动触发**，且 Workflow 只允许从 `main` 执行，不在 merge 到 `main` 后自动发布。原因是 API 可能与 D1 migration 同时变化，发布风险高于 Admin。
 
 Job 使用 GitHub Environment `production-api`。建议在该 Environment 配置 required reviewer，并录入：
 
