@@ -3,6 +3,7 @@ import type {
 } from '@yuke/shared'
 import type { IdentityEnv } from './env'
 import {
+  getAdminPrincipal,
   requireAdminAccess,
   requireSuperAdmin,
   type AdminAuthEnv
@@ -36,6 +37,19 @@ export type AdminProvisioningEnv = IdentityEnv & AdminAuthEnv
 export function registerAdminProvisioningRoutes(
   app: Router<AdminProvisioningEnv>
 ): void {
+  app.get(
+    '/v1/admin/me',
+    async (context) => {
+      const principal = getAdminPrincipal(context)
+      return ok({
+        id: principal.id,
+        email: principal.email,
+        platformRole: principal.platformRole
+      })
+    },
+    [requireAdminAccess]
+  )
+
   app.get(
     '/v1/admin/admin-users',
     async ({ env }) => ok(await listAdminUsers(env.DB)),
