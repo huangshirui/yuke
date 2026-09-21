@@ -48,13 +48,27 @@ test('revoking an invite preserves its source-member history', async () => {
   assert.equal((await api.listInviteMembers('sp_demo_alpha', invite.id)).length, 2)
 })
 
-test('space admin assignment follows the existing adminUserId contract', async () => {
+test('current admin identity and email-based space assignment stay stable', async () => {
   const api = createMockAdminApi(memoryStorage())
-  await api.addAdmin('sp_demo_alpha', 'adm_synthetic_new')
-  assert.equal((await api.listAdmins('sp_demo_alpha')).some((item) => item.id === 'adm_synthetic_new'), true)
 
-  await api.removeAdmin('sp_demo_alpha', 'adm_synthetic_new')
-  assert.equal((await api.listAdmins('sp_demo_alpha')).some((item) => item.id === 'adm_synthetic_new'), false)
+  assert.deepEqual(await api.getCurrentAdmin(), {
+    id: 'adm_demo_super',
+    email: 'super-admin@example.invalid',
+    platformRole: 'super_admin',
+  })
+
+  const assigned = await api.assignAdminByEmail('sp_demo_alpha', 'New.Admin@Example.Invalid')
+  assert.equal(assigned.email, 'new.admin@example.invalid')
+  assert.equal(
+    (await api.listAdmins('sp_demo_alpha')).filter((item) => item.email === assigned.email).length,
+    1,
+  )
+
+  const again = await api.assignAdminByEmail('sp_demo_alpha', 'new.admin@example.invalid')
+  assert.equal(again.id, assigned.id)
+
+  await api.removeAdmin('sp_demo_alpha', assigned.id)
+  assert.equal((await api.listAdmins('sp_demo_alpha')).some((item) => item.id === assigned.id), false)
 })
 
 
