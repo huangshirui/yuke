@@ -38,6 +38,7 @@ export type BookingListFilters = {
   resourceId?: string
   participantId?: string
   slotTypeId?: string
+  membershipId?: string
 }
 
 type BookingContextRow = {
@@ -198,6 +199,9 @@ function buildListQuery(
   if (filters.slotTypeId) {
     where.push('slot_types.id = ?')
   }
+  if (filters.membershipId && !scopedToMembership) {
+    where.push('bookings.membership_id = ?')
+  }
 
   return {
     sql: `${BOOKING_DETAIL_SELECT}
@@ -221,6 +225,7 @@ function listValues(
   if (filters.resourceId) values.push(filters.resourceId)
   if (filters.participantId) values.push(filters.participantId)
   if (filters.slotTypeId) values.push(filters.slotTypeId)
+  if (filters.membershipId && !membershipId) values.push(filters.membershipId)
   return values
 }
 
