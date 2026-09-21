@@ -13,6 +13,7 @@ import type {
   InviteMemberSummary,
   InviteSummary,
   BookingFilters,
+  CurrentAdmin,
   MemberFilters,
   ResourceInput,
   SlotTypeInput,
@@ -22,6 +23,7 @@ import type {
 import { createMockAdminApi } from './mockAdminApi.mjs'
 
 export interface AdminApi {
+  getCurrentAdmin(): Promise<CurrentAdmin>
   listSpaces(): Promise<AdminSpace[]>
   createSpace(input: CreateSpaceInput): Promise<AdminSpace>
   updateSpace(spaceId: string, input: UpdateSpaceInput): Promise<AdminSpace>
@@ -30,6 +32,7 @@ export interface AdminApi {
   updateSettings(spaceId: string, input: UpdateSpaceSettingsInput): Promise<SpaceSettings>
   listAdmins(spaceId: string): Promise<AdminUserSummary[]>
   addAdmin(spaceId: string, adminUserId: string): Promise<AdminUserSummary>
+  assignAdminByEmail(spaceId: string, email: string): Promise<AdminUserSummary>
   removeAdmin(spaceId: string, adminUserId: string): Promise<void>
   listInvites(spaceId: string): Promise<InviteSummary[]>
   createInvite(spaceId: string, input: CreateInviteInput): Promise<InviteSummary>
@@ -99,6 +102,7 @@ class HttpAdminApi implements AdminApi {
     return '/admin/spaces/' + encodeURIComponent(spaceId)
   }
 
+  getCurrentAdmin() { return this.request<CurrentAdmin>('/admin/me') }
   listSpaces() { return this.request<AdminSpace[]>('/admin/spaces') }
   createSpace(input: CreateSpaceInput) {
     return this.request<AdminSpace>('/admin/spaces', {
@@ -140,6 +144,13 @@ class HttpAdminApi implements AdminApi {
     return this.request<AdminUserSummary>(this.spacePath(spaceId) + '/admins', {
       method: 'POST', body: JSON.stringify({ adminUserId }),
     })
+  }
+  async assignAdminByEmail(spaceId: string, email: string) {
+    const admin = await this.request<{ id: string }>('/admin/admin-users', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    })
+    return this.addAdmin(spaceId, admin.id)
   }
   async removeAdmin(spaceId: string, adminUserId: string) {
     await this.request<unknown>(
