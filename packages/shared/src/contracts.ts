@@ -274,6 +274,12 @@ export type AdminUserSummary = {
   identityStatus: AdminIdentityStatus
 }
 
+export type CurrentAdmin = {
+  id: Id
+  email: string
+  platformRole: 'none' | 'super_admin'
+}
+
 export type CreateAdminUserInput = {
   email: string
 }

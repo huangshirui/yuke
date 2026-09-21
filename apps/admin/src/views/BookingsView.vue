@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { computed, onMounted, reactive, ref, watch } from 'vue'
+import { useRoute } from 'vue-router'
 import { getAdminApi } from '../services/adminApi'
 import type {
   AdminBooking,
@@ -14,7 +14,6 @@ import type {
 
 const api = getAdminApi()
 const route = useRoute()
-const router = useRouter()
 
 const spaces = ref<AdminSpace[]>([])
 const selectedSpaceId = ref('')
@@ -133,18 +132,11 @@ async function loadBase() {
   clearFeedback()
   try {
     spaces.value = await api.listSpaces()
-    const querySpaceId = String(route.query.spaceId || '')
-    if (
-      querySpaceId &&
-      spaces.value.some((item) => item.id === querySpaceId)
-    ) {
-      selectedSpaceId.value = querySpaceId
-    } else if (!spaces.value.some((item) => item.id === selectedSpaceId.value)) {
-      selectedSpaceId.value =
-        spaces.value.find((item) => item.status === 'active')?.id ||
-        spaces.value[0]?.id ||
-        ''
+    const routeSpaceId = String(route.params.spaceId || '')
+    if (!spaces.value.some((item) => item.id === routeSpaceId)) {
+      throw new Error('找不到这个空间。')
     }
+    selectedSpaceId.value = routeSpaceId
     await loadSpaceContext()
   } catch (cause) {
     error.value = friendlyError(cause, '预约管理加载失败。')
@@ -171,10 +163,6 @@ async function loadSpaceContext() {
     slotTypes.value = nextTypes
     selectedBooking.value = null
     await loadBookings()
-    router.replace({
-      path: '/bookings',
-      query: { spaceId: selectedSpaceId.value }
-    })
   } catch (cause) {
     error.value = friendlyError(cause, '空间预约数据加载失败。')
   }
@@ -346,6 +334,7 @@ async function completeBooking(booking: AdminBooking) {
   }
 }
 
+watch(() => route.params.spaceId, loadBase)
 onMounted(loadBase)
 </script>
 
@@ -357,14 +346,7 @@ onMounted(loadBase)
         <h1>预约管理</h1>
         <p>查看空间预约，按条件筛选，并处理预约调整、取消与完成。</p>
       </div>
-      <label class="field space-picker">
-        <span>当前空间</span>
-        <select v-model="selectedSpaceId" @change="loadSpaceContext">
-          <option v-for="space in spaces" :key="space.id" :value="space.id">
-            {{ space.name }}{{ space.status === 'disabled' ? '（已停用）' : '' }}
-          </option>
-        </select>
-      </label>
+      <span v-if="selectedSpace" class="page-context">{{ selectedSpace.name }}</span>
     </section>
 
     <div v-if="error" class="alert alert--error">{{ error }}</div>
@@ -549,12 +531,12 @@ onMounted(loadBase)
 </template>
 
 <style scoped>
-.space-picker{min-width:280px}.booking-metrics{grid-template-columns:repeat(4,minmax(0,1fr))}
+.booking-metrics{grid-template-columns:repeat(4,minmax(0,1fr))}
 .booking-filter-grid{display:grid;grid-template-columns:repeat(3,minmax(160px,1fr));gap:14px;padding:20px 24px;border-bottom:1px solid var(--line);background:#f8fafb}
 .booking-filter-actions{display:flex;gap:8px;align-items:end}.booking-detail-panel{margin-top:20px}
 .booking-detail-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;padding:20px 24px}
 .booking-detail-grid>div{display:grid;gap:5px;min-width:0}.booking-detail-grid span{font-size:12px;color:var(--muted)}
 .booking-detail-grid strong{overflow-wrap:anywhere}.booking-status--booked{background:var(--accent-soft);color:var(--accent)}
 .booking-status--completed{background:#eef1f2;color:#59656f}.booking-status--cancelled{background:#fff0ef;color:var(--danger)}
-.booking-edit-modal{width:min(680px,100%)}@media(max-width:820px){.booking-metrics,.booking-filter-grid,.booking-detail-grid{grid-template-columns:1fr}.space-picker{min-width:0;width:100%}.booking-filter-actions{align-items:stretch}.booking-filter-actions .button{flex:1}}
+.booking-edit-modal{width:min(680px,100%)}@media(max-width:820px){.booking-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.booking-filter-grid,.booking-detail-grid{grid-template-columns:1fr}.booking-filter-actions{align-items:stretch}.booking-filter-actions .button{flex:1}}@media(max-width:560px){.booking-metrics{grid-template-columns:1fr}}
 </style>

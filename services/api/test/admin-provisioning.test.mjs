@@ -101,6 +101,16 @@ describe('AdminUser bootstrap and provisioning', () => {
 
     const again = await authenticate(token, key)
     expect(again.id).toBe(principal.id)
+
+    const meResponse = await request('/v1/admin/me', token)
+    expect(meResponse.status).toBe(200)
+    await expect(meResponse.json()).resolves.toEqual({
+      data: {
+        id: principal.id,
+        email: SUPER_EMAIL,
+        platformRole: 'super_admin'
+      }
+    })
   })
 
   it('lets Super Admin provision an email and binds that same AdminUser on first login', async () => {

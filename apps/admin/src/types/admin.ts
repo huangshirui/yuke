@@ -1,6 +1,7 @@
 import type {
   AdminBookingDetail as SharedAdminBookingDetail,
   BookingStatus,
+  CurrentAdmin as SharedCurrentAdmin,
   CreateInviteInput as SharedCreateInviteInput,
   CutoffMinutes,
   EntityStatus,
@@ -15,6 +16,7 @@ import type {
 } from '@yuke/shared'
 
 export type AdminSpace = SpaceSummary
+export type CurrentAdmin = SharedCurrentAdmin
 
 export type AdminUserSummary = SpaceAdminSummary
 
