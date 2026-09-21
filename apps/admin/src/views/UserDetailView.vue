@@ -5,6 +5,7 @@ import { getAdminApi } from '../services/adminApi'
 import type {
   AdminBooking,
   AdminMemberDetail,
+  AdminSpace,
   AdminUserSummary,
   InviteSummary,
 } from '../types/admin'
@@ -14,6 +15,7 @@ const route = useRoute()
 const router = useRouter()
 
 const member = ref<AdminMemberDetail | null>(null)
+const space = ref<AdminSpace | null>(null)
 const admins = ref<AdminUserSummary[]>([])
 const invites = ref<InviteSummary[]>([])
 const bookings = ref<AdminBooking[]>([])
@@ -28,6 +30,7 @@ const membershipId = computed(() => String(route.params.membershipId || ''))
 
 function formatDate(value: string) {
   return new Intl.DateTimeFormat('zh-CN', {
+    timeZone: space.value?.timezone || 'UTC',
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -38,6 +41,7 @@ function formatDate(value: string) {
 
 function formatBookingTime(value: string) {
   return new Intl.DateTimeFormat('zh-CN', {
+    timeZone: space.value?.timezone || 'UTC',
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -65,12 +69,14 @@ async function load() {
   error.value = ''
   notice.value = ''
   try {
-    const [nextMember, nextAdmins, nextInvites, nextBookings] = await Promise.all([
+    const [spaces, nextMember, nextAdmins, nextInvites, nextBookings] = await Promise.all([
+      api.listSpaces(),
       api.getMember(spaceId.value, membershipId.value),
       api.listAdmins(spaceId.value),
       api.listInvites(spaceId.value),
       api.listBookings(spaceId.value, { membershipId: membershipId.value }),
     ])
+    space.value = spaces.find((item) => item.id === spaceId.value) ?? null
     member.value = nextMember
     admins.value = nextAdmins
     invites.value = nextInvites
