@@ -1,8 +1,11 @@
 import type {
+  AdminMemberDetail,
+  AdminMemberSummary,
   CurrentSpaceResponse,
   JoinSpaceResponse,
   JoinSpaceInput,
   SpaceSummary,
+  UpdateAdminNoteInput,
   UpdateCurrentSpaceInput
 } from '@yuke/shared'
 import { AppError } from '../../../lib/errors'
@@ -10,10 +13,16 @@ import type { IdentityEnv } from '../../identity/env'
 import { requireCurrentUser } from '../../identity/service'
 import { findInviteByCode, type TenantDatabase } from '../invite/repository'
 import {
+  adminMembershipSpaceExists,
+  findAdminMember,
   findMembershipByUserAndSpace,
   insertMembershipFromInviteIfValid,
+  listAdminMembers,
   listSpacesForMember,
-  setCurrentSpaceIfActiveMembership
+  setCurrentSpaceIfActiveMembership,
+  updateAdminMemberNote,
+  updateAdminParticipantNote,
+  type AdminMemberFilters
 } from './repository'
 
 export type MembershipEnv = IdentityEnv
@@ -120,4 +129,86 @@ export async function changeCurrentSpace(
   return {
     currentSpaceId: input.spaceId
   }
+}
+
+
+async function requireAdminMembershipSpace(
+  db: TenantDatabase,
+  spaceId: string
+): Promise<void> {
+  if (!(await adminMembershipSpaceExists(db, spaceId))) {
+    throw new AppError('NOT_FOUND', 'Space not found')
+  }
+}
+
+export async function listVisibleAdminMembers(
+  env: MembershipEnv,
+  spaceId: string,
+  filters: AdminMemberFilters
+): Promise<AdminMemberSummary[]> {
+  const db = tenantDb(env)
+  await requireAdminMembershipSpace(db, spaceId)
+  return listAdminMembers(db, spaceId, filters)
+}
+
+export async function readAdminMember(
+  env: MembershipEnv,
+  spaceId: string,
+  membershipId: string
+): Promise<AdminMemberDetail> {
+  const db = tenantDb(env)
+  await requireAdminMembershipSpace(db, spaceId)
+  const member = await findAdminMember(db, spaceId, membershipId)
+  if (!member) {
+    throw new AppError('NOT_FOUND', 'Member not found')
+  }
+  return member
+}
+
+export async function changeAdminMemberNote(
+  env: MembershipEnv,
+  spaceId: string,
+  membershipId: string,
+  input: UpdateAdminNoteInput
+): Promise<AdminMemberDetail> {
+  const db = tenantDb(env)
+  await requireAdminMembershipSpace(db, spaceId)
+
+  const updated = await updateAdminMemberNote(db, {
+    spaceId,
+    membershipId,
+    adminNote: input.adminNote,
+    now: Date.now()
+  })
+  if (!updated) {
+    throw new AppError('NOT_FOUND', 'Member not found')
+  }
+
+  const member = await findAdminMember(db, spaceId, membershipId)
+  if (!member) {
+    throw new AppError('INTERNAL_ERROR', 'Member note update failed')
+  }
+  return member
+}
+
+export async function changeAdminParticipantNote(
+  env: MembershipEnv,
+  spaceId: string,
+  participantId: string,
+  input: UpdateAdminNoteInput
+): Promise<{ updated: true }> {
+  const db = tenantDb(env)
+  await requireAdminMembershipSpace(db, spaceId)
+
+  const updated = await updateAdminParticipantNote(db, {
+    spaceId,
+    participantId,
+    adminNote: input.adminNote,
+    now: Date.now()
+  })
+  if (!updated) {
+    throw new AppError('NOT_FOUND', 'Participant not found')
+  }
+
+  return { updated: true }
 }
