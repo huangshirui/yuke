@@ -3,12 +3,13 @@ import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { CUTOFF_MINUTES, type CutoffMinutes } from '@yuke/shared'
 import { getAdminApi } from '../services/adminApi'
-import type { AdminSpace } from '../types/admin'
+import type { AdminSpace, CurrentAdmin } from '../types/admin'
 
 const api = getAdminApi()
 const route = useRoute()
 const router = useRouter()
 const spaces = ref<AdminSpace[]>([])
+const admin = ref<CurrentAdmin | null>(null)
 const loading = ref(true)
 const error = ref('')
 const showCreate = ref(false)
@@ -22,6 +23,7 @@ const form = reactive({
 })
 
 const activeCount = computed(() => spaces.value.filter((space) => space.status === 'active').length)
+const isSuperAdmin = computed(() => admin.value?.platformRole === 'super_admin')
 const cutoffOptions = [
   ...CUTOFF_MINUTES.map((value) => ({ value, label: cutoffLabel(value) })),
   { value: null, label: '不限' },
@@ -39,7 +41,12 @@ async function load() {
   loading.value = true
   error.value = ''
   try {
-    spaces.value = await api.listSpaces()
+    const [nextSpaces, nextAdmin] = await Promise.all([
+      api.listSpaces(),
+      api.getCurrentAdmin(),
+    ])
+    spaces.value = nextSpaces
+    admin.value = nextAdmin
   } catch (cause) {
     error.value = cause instanceof Error ? cause.message : '空间加载失败。'
   } finally {
@@ -98,7 +105,7 @@ onMounted(async () => {
         <h1>空间管理</h1>
         <p>每个空间的数据和运营设置彼此隔离。停用空间会保留历史数据，但不再接受新的预约。</p>
       </div>
-      <button class="button button--primary" @click="showCreate = true">+ 新建空间</button>
+      <button v-if="isSuperAdmin" class="button button--primary" @click="showCreate = true">+ 新建空间</button>
     </section>
 
     <div v-if="error" class="alert alert--error">{{ error }}</div>
@@ -119,7 +126,8 @@ onMounted(async () => {
 
       <div v-if="loading" class="empty-state">正在加载空间…</div>
       <div v-else-if="spaces.length === 0" class="empty-state">
-        <strong>还没有空间</strong><span>创建第一个空间后即可开始配置。</span>
+        <strong>{{ isSuperAdmin ? '还没有空间' : '还没有可访问空间' }}</strong>
+        <span>{{ isSuperAdmin ? '创建第一个空间后即可开始配置。' : '请联系超级管理员为你的邮箱分配空间权限。' }}</span>
       </div>
       <div v-else class="table-wrap">
         <table>
@@ -138,7 +146,7 @@ onMounted(async () => {
               </td>
               <td class="align-right actions">
                 <button class="button button--ghost" @click="router.push('/spaces/' + space.id + '/settings')">管理</button>
-                <button class="button button--ghost" @click="toggleStatus(space)">{{ space.status === 'active' ? '停用' : '启用' }}</button>
+                <button v-if="isSuperAdmin" class="button button--ghost" @click="toggleStatus(space)">{{ space.status === 'active' ? '停用' : '启用' }}</button>
               </td>
             </tr>
           </tbody>
@@ -146,7 +154,7 @@ onMounted(async () => {
       </div>
     </section>
 
-    <div v-if="showCreate" class="modal-backdrop" @click.self="showCreate = false">
+    <div v-if="showCreate && isSuperAdmin" class="modal-backdrop" @click.self="showCreate = false">
       <section class="modal" role="dialog" aria-modal="true" aria-labelledby="create-space-title">
         <div class="modal-heading">
           <div><span class="eyebrow">New Space</span><h2 id="create-space-title">新建空间</h2></div>
