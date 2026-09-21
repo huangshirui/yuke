@@ -42,3 +42,19 @@ test('schedule refreshes use a local loading state and reject stale slot respons
   assert.match(source, /requestVersion === slotsRequestVersion/)
   assert.match(source, /LoadingOverlay v-if="loading \|\| slotsLoading" label="正在加载排期…"/)
 })
+
+
+test('schedule calendar keeps slot and booking details inside the current workspace', () => {
+  const source = view('ScheduleView.vue')
+
+  assert.doesNotMatch(source, /router\.push\(/)
+  assert.match(source, /const selectedBookingSlot = ref<AdminScheduleSlot \| null>\(null\)/)
+  assert.match(source, /selectedBooking\.value = await api\.getBooking/)
+  assert.match(source, /class="detail-drawer/)
+  assert.match(source, /function slotMainLabel\(slot: AdminScheduleSlot\)/)
+  assert.match(source, /return '空'/)
+  assert.match(source, /slot-card--booked/)
+  assert.match(source, /slot-card--pending/)
+  assert.match(source, /slot-card--settled/)
+  assert.match(source, /查看所属时段/)
+})
