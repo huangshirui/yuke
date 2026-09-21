@@ -295,6 +295,20 @@ describe('Space admin backend', () => {
     )
     expect(invalid.status).toBe(400)
 
+    // Space Admins may read administrator labels for user/invite source display,
+    // while assignment mutations remain Super Admin-only.
+    const adminsRead = await request(
+      `/v1/admin/spaces/${assignedId}/admins`,
+      regular.token
+    )
+    expect(adminsRead.status).toBe(200)
+
+    const adminsOtherSpace = await request(
+      `/v1/admin/spaces/${otherId}/admins`,
+      regular.token
+    )
+    expect(adminsOtherSpace.status).toBe(403)
+
     const forbidden = await request(
       `/v1/admin/spaces/${otherId}/settings`,
       regular.token
