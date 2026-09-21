@@ -37,7 +37,8 @@ const filters = reactive<BookingFilters>({
   status: undefined,
   resourceId: '',
   participantId: '',
-  slotTypeId: ''
+  slotTypeId: '',
+  reconciliationStatus: undefined
 })
 
 const editOpen = ref(false)
@@ -95,6 +96,19 @@ function statusLabel(status: AdminBooking['status']) {
   if (status === 'completed') return '已完成'
   if (status === 'cancelled') return '已取消'
   return '已预约'
+}
+
+function reconciliationLabel(booking: AdminBooking) {
+  if (booking.status !== 'completed') return ''
+  return booking.reconciliation?.status === 'settled' ? '已对账' : '待对账'
+}
+
+function completionSourceLabel(source: AdminBooking['completion']['source'] | undefined | null) {
+  if (source === 'classin_import') return 'ClassIn 导入'
+  if (source === 'external_import') return '外部文件导入'
+  if (source === 'external_api') return '外部系统'
+  if (source === 'manual') return '运营手动'
+  return '历史数据'
 }
 
 function formatDateTime(value: string) {
@@ -184,6 +198,7 @@ async function loadBookings() {
     if (filters.resourceId) input.resourceId = filters.resourceId
     if (filters.participantId) input.participantId = filters.participantId
     if (filters.slotTypeId) input.slotTypeId = filters.slotTypeId
+    if (filters.reconciliationStatus) input.reconciliationStatus = filters.reconciliationStatus
     bookings.value = await api.listBookings(selectedSpaceId.value, input)
   } catch (cause) {
     error.value = friendlyError(cause, '预约列表加载失败。')
@@ -200,6 +215,7 @@ async function resetFilters() {
   filters.resourceId = ''
   filters.participantId = ''
   filters.slotTypeId = ''
+  filters.reconciliationStatus = undefined
   await loadBookings()
 }
 
@@ -342,17 +358,34 @@ async function cancelBooking(booking: AdminBooking) {
 }
 
 async function completeBooking(booking: AdminBooking) {
-  if (!window.confirm('确认将该预约标记为已完成吗？')) return
+  if (!window.confirm('确认将该预约标记为已完成吗？完成后会进入“待对账”状态。')) return
   saving.value = true
   clearFeedback()
   try {
     const updated = await api.completeBooking(selectedSpaceId.value, booking.id)
     selectedBooking.value =
       selectedBooking.value?.id === booking.id ? updated : selectedBooking.value
-    notice.value = '预约已标记为完成。'
+    notice.value = '预约已完成，已进入待对账。'
     await loadBookings()
   } catch (cause) {
     error.value = friendlyError(cause, '完成预约失败。')
+  } finally {
+    saving.value = false
+  }
+}
+
+async function reconcileBooking(booking: AdminBooking) {
+  if (!window.confirm('确认这条已完成预约已经完成对账吗？')) return
+  saving.value = true
+  clearFeedback()
+  try {
+    const updated = await api.reconcileBooking(selectedSpaceId.value, booking.id)
+    selectedBooking.value =
+      selectedBooking.value?.id === booking.id ? updated : selectedBooking.value
+    notice.value = '预约已标记为已对账。'
+    await loadBookings()
+  } catch (cause) {
+    error.value = friendlyError(cause, '标记对账失败。')
   } finally {
     saving.value = false
   }
@@ -407,6 +440,13 @@ onMounted(loadBase)
             <option v-for="item in participantOptions" :key="item.id" :value="item.id">{{ item.name }}</option>
           </select>
         </label>
+        <label class="field"><span>对账状态</span>
+          <select v-model="filters.reconciliationStatus">
+            <option :value="undefined">全部</option>
+            <option value="pending">待对账</option>
+            <option value="settled">已对账</option>
+          </select>
+        </label>
         <div class="booking-filter-actions">
           <button class="button button--primary" :disabled="loading">应用筛选</button>
           <button type="button" class="button button--ghost" :disabled="loading" @click="resetFilters">清空</button>
@@ -440,9 +480,16 @@ onMounted(loadBase)
               <td>{{ booking.participant.name }}</td>
               <td>{{ booking.slotType.name }}</td>
               <td>
-                <span class="status-pill" :class="'booking-status--' + booking.status">
-                  {{ statusLabel(booking.status) }}
-                </span>
+                <div class="booking-state-stack">
+                  <span class="status-pill" :class="'booking-status--' + booking.status">
+                    {{ statusLabel(booking.status) }}
+                  </span>
+                  <span
+                    v-if="booking.status === 'completed'"
+                    class="status-pill"
+                    :class="booking.reconciliation?.status === 'settled' ? 'reconciliation--settled' : 'reconciliation--pending'"
+                  >{{ reconciliationLabel(booking) }}</span>
+                </div>
               </td>
             </tr>
             <tr v-if="bookings.length === 0">
@@ -466,8 +513,24 @@ onMounted(loadBase)
         <div class="booking-detail-grid">
           <div><span>参与人</span><strong>{{ selectedBooking.participant.name }}</strong></div>
           <div><span>时段类型</span><strong>{{ selectedBooking.slotType.name }}</strong></div>
-          <div><span>状态</span><strong>{{ statusLabel(selectedBooking.status) }}</strong></div>
+          <div><span>服务状态</span><strong>{{ statusLabel(selectedBooking.status) }}</strong></div>
           <div><span>日期</span><strong>{{ selectedBooking.slot.localDate }}</strong></div>
+          <div v-if="selectedBooking.completion">
+            <span>完成时间</span>
+            <strong>{{ formatDateTime(selectedBooking.completion.completedAt) }}</strong>
+          </div>
+          <div v-if="selectedBooking.completion">
+            <span>完成来源</span>
+            <strong>{{ completionSourceLabel(selectedBooking.completion.source) }}</strong>
+          </div>
+          <div v-if="selectedBooking.status === 'completed'">
+            <span>对账状态</span>
+            <strong>{{ reconciliationLabel(selectedBooking) }}</strong>
+          </div>
+          <div v-if="selectedBooking.reconciliation?.settledAt">
+            <span>对账时间</span>
+            <strong>{{ formatDateTime(selectedBooking.reconciliation.settledAt) }}</strong>
+          </div>
         </div>
         <div class="modal-actions booking-detail-actions">
           <button
@@ -487,6 +550,12 @@ onMounted(loadBase)
             :disabled="saving"
             @click="cancelBooking(selectedBooking)"
           >取消预约</button>
+          <button
+            v-if="selectedBooking.status === 'completed' && selectedBooking.reconciliation?.status !== 'settled'"
+            class="button button--primary"
+            :disabled="saving"
+            @click="reconcileBooking(selectedBooking)"
+          >标记已对账</button>
         </div>
       </section>
     </div>
@@ -552,6 +621,6 @@ onMounted(loadBase)
 .booking-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:16px 0}
 .booking-detail-grid>div{display:grid;gap:5px;min-width:0}.booking-detail-grid span{font-size:12px;color:var(--muted)}
 .booking-detail-grid strong{overflow-wrap:anywhere}.booking-status--booked{background:var(--accent-soft);color:var(--accent)}
-.booking-status--completed{background:#eef1f2;color:#59656f}.booking-status--cancelled{background:#fff0ef;color:var(--danger)}
+.booking-status--completed{background:#eef1f2;color:#59656f}.booking-status--cancelled{background:#fff0ef;color:var(--danger)}.booking-state-stack{display:flex;gap:5px;flex-wrap:wrap}.reconciliation--pending{background:#fff7e8;color:#9a6500}.reconciliation--settled{background:#edf7f2;color:#26715f}
 .booking-edit-modal,.booking-detail-modal{width:min(680px,100%)}.booking-detail-actions{padding-top:14px;border-top:1px solid var(--line)}@media(max-width:820px){.booking-filter-grid,.booking-detail-grid{grid-template-columns:1fr}.booking-filter-actions{align-items:stretch}.booking-filter-actions .button{flex:1}}
 </style>
