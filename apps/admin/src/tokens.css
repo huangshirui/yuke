@@ -133,6 +133,9 @@
   --control-height-md: 38px;
   --control-height-mobile-button: 40px;
   --control-height-touch: 42px;
+  --control-size-icon-nav: 32px;
+  --control-size-icon-nav-touch: 40px;
+  --icon-size-nav-chevron: 16px;
   --control-padding-x: 11px;
   --select-padding-right: 44px;
   --select-chevron-offset: 16px;

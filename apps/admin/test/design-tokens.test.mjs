@@ -12,7 +12,7 @@ test('admin reusable visual colors live in tokens.css', () => {
 })
 
 test('admin token file defines shared visual primitives', () => {
-  for (const token of ['--color-primary','--color-border','--space-16','--radius-10','--font-size-14','--control-height-md','--select-padding-right','--select-chevron-offset','--shadow-panel','--focus-ring']) {
+  for (const token of ['--color-primary','--color-border','--space-16','--radius-10','--font-size-14','--control-height-md','--control-size-icon-nav','--control-size-icon-nav-touch','--icon-size-nav-chevron','--select-padding-right','--select-chevron-offset','--shadow-panel','--focus-ring']) {
     assert.ok(tokens.includes(token), `missing ${token}`)
   }
 })
@@ -40,4 +40,15 @@ test('view scoped styles consume shared tokens instead of forking visual primiti
       assert.equal(/-?\d+px\b/.test(declaration), false, `${file} has raw spacing: ${declaration}`)
     }
   }
+})
+
+
+test('schedule date navigation uses compact svg icon buttons', () => {
+  const schedule = readFileSync(new URL('../src/views/ScheduleView.vue', import.meta.url), 'utf8')
+  assert.equal(schedule.includes('>‹</button>'), false)
+  assert.equal(schedule.includes('>›</button>'), false)
+  assert.match(schedule, /icon-nav icon-nav--previous[^>]*><AppIcon name="chevron"/)
+  assert.match(schedule, /class="button button--ghost icon-nav"[^>]*><AppIcon name="chevron"/)
+  assert.match(schedule, /width:var\(--control-size-icon-nav\)/)
+  assert.match(schedule, /control-size-icon-nav-touch/)
 })
