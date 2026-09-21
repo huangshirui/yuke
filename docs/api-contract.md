@@ -346,7 +346,9 @@ Worker 必须验证 Access JWT。管理员身份生命周期：
 ### GET /admin/spaces/{spaceId}/admins
 ### POST /admin/spaces/{spaceId}/admins
 
-仅 Super Admin。POST：
+仅 Super Admin。底层 Space 授权关系继续按稳定 `adminUserId` 保存。Web Admin 的“分配管理员”交互按邮箱输入：先调用 `POST /admin/admin-users` 幂等预置/读取 AdminUser，再用返回的 ID 调用本接口，因此运营人员不需要输入 `adm_* ` 内部 ID。
+
+POST：
 
 ```json
 { "adminUserId": "adm_xxx" }
