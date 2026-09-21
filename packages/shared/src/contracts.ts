@@ -325,6 +325,35 @@ export type InviteMemberSummary = {
   inviteCodeId: Id
 }
 
+export type AdminMemberSummary = {
+  membershipId: Id
+  nickname: string
+  joinedAt: string
+  participantCount: number
+  invitedByAdminId: Id
+  inviteCodeId: Id
+  status: EntityStatus
+  adminNote: string | null
+}
+
+export type AdminParticipantDetail = {
+  id: Id
+  name: string
+  birthMonth: string
+  status: EntityStatus
+  userNote: string | null
+  adminNote: string | null
+}
+
+export type AdminMemberDetail = AdminMemberSummary & {
+  participants: AdminParticipantDetail[]
+  bookingCount: number
+}
+
+export type UpdateAdminNoteInput = {
+  adminNote: string | null
+}
+
 export type CreateInviteInput = {
   label: string | null
   expiresAt: string
