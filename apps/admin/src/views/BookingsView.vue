@@ -617,11 +617,11 @@ onMounted(loadBase)
 </template>
 
 <style scoped>
-.booking-filter-grid{display:grid;grid-template-columns:repeat(3,minmax(150px,1fr));gap:10px;padding:14px 16px;border-bottom:var(--border-width) solid var(--color-border);background:var(--color-surface-muted)}
-.booking-filter-actions{display:flex;gap:8px;align-items:end}
-.booking-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:16px 0}
-.booking-detail-grid>div{display:grid;gap:5px;min-width:0}.booking-detail-grid span{font-size:var(--font-size-12);color:var(--color-text-secondary)}
+.booking-filter-grid{display:grid;grid-template-columns:repeat(3,minmax(150px,1fr));gap: var(--space-10);padding: var(--space-14) var(--space-16);border-bottom:var(--border-width) solid var(--color-border);background:var(--color-surface-muted)}
+.booking-filter-actions{display:flex;gap: var(--space-8);align-items:end}
+.booking-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap: var(--space-12);padding: var(--space-16) 0}
+.booking-detail-grid>div{display:grid;gap: var(--space-5);min-width:0}.booking-detail-grid span{font-size:var(--font-size-12);color:var(--color-text-secondary)}
 .booking-detail-grid strong{overflow-wrap:anywhere}.booking-status--booked{background:var(--color-primary-soft);color:var(--color-primary)}
-.booking-status--completed{background:var(--color-status-completed-bg);color:var(--color-status-completed-text)}.booking-status--cancelled{background:var(--color-status-cancelled-bg);color:var(--color-danger)}.booking-state-stack{display:flex;gap:5px;flex-wrap:wrap}.reconciliation--pending{background:var(--color-status-pending-bg);color:var(--color-status-pending-text)}.reconciliation--settled{background:var(--color-status-settled-bg);color:var(--color-status-settled-text)}
-.booking-edit-modal,.booking-detail-modal{width:min(680px,100%)}.booking-detail-actions{padding-top:14px;border-top:var(--border-width) solid var(--color-border)}@media(max-width:820px){.booking-filter-grid,.booking-detail-grid{grid-template-columns:1fr}.booking-filter-actions{align-items:stretch}.booking-filter-actions .button{flex:1}}
+.booking-status--completed{background:var(--color-status-completed-bg);color:var(--color-status-completed-text)}.booking-status--cancelled{background:var(--color-status-cancelled-bg);color:var(--color-danger)}.booking-state-stack{display:flex;gap: var(--space-5);flex-wrap:wrap}.reconciliation--pending{background:var(--color-status-pending-bg);color:var(--color-status-pending-text)}.reconciliation--settled{background:var(--color-status-settled-bg);color:var(--color-status-settled-text)}
+.booking-edit-modal,.booking-detail-modal{width:min(680px,100%)}.booking-detail-actions{padding-top: var(--space-14);border-top:var(--border-width) solid var(--color-border)}@media(max-width:820px){.booking-filter-grid,.booking-detail-grid{grid-template-columns:1fr}.booking-filter-actions{align-items:stretch}.booking-filter-actions .button{flex:1}}
 </style>
