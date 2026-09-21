@@ -482,6 +482,7 @@ MVP 仅修改 `name`。若目标名称在当前 Space 已存在，返回 `VALIDA
 - membershipId
 - userNickname
 - participantId / participantName
+- reconciliationStatus（仅 completed Booking 为 pending / settled；未完成为 null）
 
 该投影只服务 Admin 运营日历，避免前端为每个 Slot 额外拼接 Booking / Membership / Participant 查询；它不改变 Slot 与 Booking 的领域关系。Slot 新建、编辑、冻结等 mutation 响应可以不携带该投影，客户端应在需要最新运营状态时重新读取日历列表。
 
@@ -517,7 +518,11 @@ MVP 仅修改 `name`。若目标名称在当前 Space 已存在，返回 `VALIDA
 ### POST /admin/spaces/{spaceId}/slots/{slotId}/unfreeze
 ### POST /admin/spaces/{spaceId}/slots/{slotId}/cancel
 
-有有效 Booking 的 Slot 不能直接 cancel。
+有有效 Booking 的 Slot 不能直接 cancel：
+
+- `booked`：必须先取消 Booking，再取消 Slot；
+- `completed`：属于已经发生的历史服务事实，Slot 不允许取消；
+- 后端 D1 Trigger 做最终约束，不能依赖前端隐藏按钮。
 
 ## 14. 周期 Slot / Admin
 
@@ -590,10 +595,17 @@ Query：
 - slotTypeId
 - membershipId
 - status
+- reconciliationStatus：`pending | settled`
 
-`membershipId` 供用户详情页读取该 Membership 的预约历史；仅 Admin Contract 支持。
+`membershipId` 供用户详情页读取该 Membership 的预约历史；仅 Admin Contract 支持。对账筛选只匹配已经存在 Reconciliation 的 completed Booking。
 
-返回 Space 内匹配的 Booking 及 Participant / Resource / Slot Type / Slot 摘要。Admin 响应额外包含 `membershipId`，用于在修改预约时加载该用户 Membership 下可选的 active Participant；用户侧 Booking Contract 不暴露该字段。
+返回 Space 内匹配的 Booking 及 Participant / Resource / Slot Type / Slot 摘要。Admin 响应额外包含：
+
+- `membershipId`；
+- `completion`：完成时间、来源、外部引用、导入批次；
+- `reconciliation`：`pending | settled`、对账时间、来源、操作管理员、batchId、note。
+
+用户侧 Booking Contract 不暴露这些 Admin 运营字段。
 
 ### GET /admin/spaces/{spaceId}/bookings/{bookingId}
 
@@ -620,6 +632,26 @@ Admin 取消不受用户 cancellation cutoff 限制，但仅允许从 `booked` �
 ### POST /admin/spaces/{spaceId}/bookings/{bookingId}/complete
 
 仅允许从 `booked` 转为 `completed`。
+
+当前 Web Admin 调用无 Body，服务端记录：
+
+- `completion.source = manual`
+- `completedAt`
+- 自动创建 `reconciliation.status = pending`
+
+服务层已经支持未来由 ClassIn / 外部文件 / 外部 API 写入 completion source、externalReference 与 batchId，但本 PR 不实现文件导入入口。
+
+### POST /admin/spaces/{spaceId}/bookings/{bookingId}/reconcile
+
+当前无 Body，表示运营人员手动确认已对账。
+
+规则：
+
+- 仅 `completed` Booking 可对账；
+- `pending → settled`；
+- 重复调用幂等；
+- 记录 `settledAt`、`settledByAdminId` 与 `source = manual`；
+- 未来导入/API 对账可使用 `import | external_api` 来源及 batchId。
 
 ### GET /admin/spaces/{spaceId}/bookings/{bookingId}/messages
 ### POST /admin/spaces/{spaceId}/bookings/{bookingId}/messages
@@ -653,6 +685,16 @@ Message API 在 Phase 5 实现。
 管理员可维护内部备注；用户可见备注与 admin note 分离。
 
 ## 17. 对账 / Reconciliation
+
+对账状态属于 **Booking 的一对一 Reconciliation**，不属于 SlotStatus。Slot 日历只投影该状态，以便运营人员从时间轴看到“已完成 · 待对账 / 已完成 · 已对账”。
+
+当前已实现：
+
+- completed Booking 自动创建 `pending`；
+- `POST /admin/spaces/{spaceId}/bookings/{bookingId}/reconcile` 手动标记 `settled`；
+- Booking 列表按 `reconciliationStatus` 筛选。
+
+以下聚合/导出 API 仍是后续对账工作台能力：
 
 ### GET /admin/spaces/{spaceId}/reconciliation/summary
 ### GET /admin/spaces/{spaceId}/reconciliation/resources
