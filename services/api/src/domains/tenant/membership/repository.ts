@@ -1,4 +1,7 @@
 import type {
+  AdminMemberDetail,
+  AdminMemberSummary,
+  AdminParticipantDetail,
   SpaceMembershipSummary,
   SpaceSummary
 } from '@yuke/shared'
@@ -162,4 +165,225 @@ export async function listSpacesForMember(
     .all<SpaceRow>()
 
   return (result.results ?? []).map(mapSpace)
+}
+
+
+export type AdminMemberFilters = {
+  invitedByAdminId?: string
+  inviteCodeId?: string
+}
+
+type AdminMemberRow = {
+  membership_id: string
+  nickname: string
+  joined_at: number
+  participant_count: number
+  invited_by_admin_id: string
+  invite_code_id: string
+  status: 'active' | 'inactive'
+  admin_note: string | null
+}
+
+type AdminParticipantRow = {
+  id: string
+  name: string
+  birth_month: string
+  status: 'active' | 'inactive'
+  user_note: string | null
+  admin_note: string | null
+}
+
+function mapAdminMember(row: AdminMemberRow): AdminMemberSummary {
+  return {
+    membershipId: row.membership_id,
+    nickname: row.nickname,
+    joinedAt: new Date(row.joined_at).toISOString(),
+    participantCount: row.participant_count,
+    invitedByAdminId: row.invited_by_admin_id,
+    inviteCodeId: row.invite_code_id,
+    status: row.status,
+    adminNote: row.admin_note
+  }
+}
+
+function mapAdminParticipant(row: AdminParticipantRow): AdminParticipantDetail {
+  return {
+    id: row.id,
+    name: row.name,
+    birthMonth: row.birth_month,
+    status: row.status,
+    userNote: row.user_note,
+    adminNote: row.admin_note
+  }
+}
+
+function adminMemberWhere(filters: AdminMemberFilters): {
+  clauses: string[]
+  values: unknown[]
+} {
+  const clauses = ['space_memberships.space_id = ?']
+  const values: unknown[] = []
+
+  if (filters.invitedByAdminId) {
+    clauses.push('space_memberships.invited_by_admin_id = ?')
+    values.push(filters.invitedByAdminId)
+  }
+  if (filters.inviteCodeId) {
+    clauses.push('space_memberships.invite_code_id = ?')
+    values.push(filters.inviteCodeId)
+  }
+
+  return { clauses, values }
+}
+
+export async function adminMembershipSpaceExists(
+  db: TenantDatabase,
+  spaceId: string
+): Promise<boolean> {
+  const row = await db
+    .prepare('SELECT 1 AS present FROM spaces WHERE id = ? LIMIT 1')
+    .bind(spaceId)
+    .first<{ present: number }>()
+  return row?.present === 1
+}
+
+export async function listAdminMembers(
+  db: TenantDatabase,
+  spaceId: string,
+  filters: AdminMemberFilters = {}
+): Promise<AdminMemberSummary[]> {
+  const where = adminMemberWhere(filters)
+  const result = await db
+    .prepare(`
+      SELECT space_memberships.id AS membership_id,
+             users.nickname,
+             space_memberships.joined_at,
+             COUNT(participants.id) AS participant_count,
+             space_memberships.invited_by_admin_id,
+             space_memberships.invite_code_id,
+             space_memberships.status,
+             space_memberships.admin_note
+      FROM space_memberships
+      JOIN users ON users.id = space_memberships.user_id
+      LEFT JOIN participants
+        ON participants.membership_id = space_memberships.id
+       AND participants.space_id = space_memberships.space_id
+      WHERE ${where.clauses.join('\n        AND ')}
+      GROUP BY space_memberships.id
+      ORDER BY space_memberships.joined_at DESC, space_memberships.id DESC
+    `)
+    .bind(spaceId, ...where.values)
+    .all<AdminMemberRow>()
+
+  return (result.results ?? []).map(mapAdminMember)
+}
+
+export async function findAdminMember(
+  db: TenantDatabase,
+  spaceId: string,
+  membershipId: string
+): Promise<AdminMemberDetail | null> {
+  const row = await db
+    .prepare(`
+      SELECT space_memberships.id AS membership_id,
+             users.nickname,
+             space_memberships.joined_at,
+             COUNT(DISTINCT participants.id) AS participant_count,
+             space_memberships.invited_by_admin_id,
+             space_memberships.invite_code_id,
+             space_memberships.status,
+             space_memberships.admin_note
+      FROM space_memberships
+      JOIN users ON users.id = space_memberships.user_id
+      LEFT JOIN participants
+        ON participants.membership_id = space_memberships.id
+       AND participants.space_id = space_memberships.space_id
+      WHERE space_memberships.space_id = ?
+        AND space_memberships.id = ?
+      GROUP BY space_memberships.id
+      LIMIT 1
+    `)
+    .bind(spaceId, membershipId)
+    .first<AdminMemberRow>()
+
+  if (!row) return null
+
+  const [participantsResult, bookingCountRow] = await Promise.all([
+    db
+      .prepare(`
+        SELECT id,
+               name,
+               birth_month,
+               status,
+               user_note,
+               admin_note
+        FROM participants
+        WHERE space_id = ?
+          AND membership_id = ?
+        ORDER BY created_at ASC, id ASC
+      `)
+      .bind(spaceId, membershipId)
+      .all<AdminParticipantRow>(),
+    db
+      .prepare(`
+        SELECT COUNT(*) AS booking_count
+        FROM bookings
+        WHERE space_id = ?
+          AND membership_id = ?
+      `)
+      .bind(spaceId, membershipId)
+      .first<{ booking_count: number }>()
+  ])
+
+  return {
+    ...mapAdminMember(row),
+    participants: (participantsResult.results ?? []).map(mapAdminParticipant),
+    bookingCount: bookingCountRow?.booking_count ?? 0
+  }
+}
+
+export async function updateAdminMemberNote(
+  db: TenantDatabase,
+  input: {
+    spaceId: string
+    membershipId: string
+    adminNote: string | null
+    now: number
+  }
+): Promise<boolean> {
+  const result = await db
+    .prepare(`
+      UPDATE space_memberships
+      SET admin_note = ?,
+          updated_at = ?
+      WHERE space_id = ?
+        AND id = ?
+    `)
+    .bind(input.adminNote, input.now, input.spaceId, input.membershipId)
+    .run() as { meta?: { changes?: number } }
+
+  return (result.meta?.changes ?? 0) > 0
+}
+
+export async function updateAdminParticipantNote(
+  db: TenantDatabase,
+  input: {
+    spaceId: string
+    participantId: string
+    adminNote: string | null
+    now: number
+  }
+): Promise<boolean> {
+  const result = await db
+    .prepare(`
+      UPDATE participants
+      SET admin_note = ?,
+          updated_at = ?
+      WHERE space_id = ?
+        AND id = ?
+    `)
+    .bind(input.adminNote, input.now, input.spaceId, input.participantId)
+    .run() as { meta?: { changes?: number } }
+
+  return (result.meta?.changes ?? 0) > 0
 }
