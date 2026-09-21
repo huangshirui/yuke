@@ -110,4 +110,5 @@ export type BookingFilters = {
   resourceId?: string
   participantId?: string
   slotTypeId?: string
+  membershipId?: string
 }
