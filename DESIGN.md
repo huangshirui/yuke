@@ -306,6 +306,20 @@ Slot 是预约工作台的核心时间资源，但 UI 不应把所有业务状�
 
 取消 Slot 属于危险操作：有 booked Booking 时必须先取消 Booking；completed Booking 对应的历史 Slot 不允许取消。前端只是解释和引导，后端约束是最终事实源。
 
+### Calendar as operational workspace / 日历作为运营工作台
+
+预约日历是运营人员的主工作上下文，不是预约列表的跳板。默认交互必须遵循：
+
+- 日历卡片主信息只表达“空”或“用户名 · 参与人”；时间、业务状态与时段类型作为次级信息。
+- 颜色用于快速区分空闲、已预约、已完成待对账、已完成已对账等运营状态，但必须同时保留文字状态，不能只靠颜色。
+- 点击空 Slot 在当前日历上下文打开 Slot Detail；点击 booked / completed Slot 在当前日历上下文打开 Booking Detail。
+- Desktop 默认使用右侧 Detail Drawer；Mobile 使用底部 Sheet。关闭详情后必须保留当前 Space、Resource、周次 / 日期与滚动位置。
+- Booking Detail 可以在原地执行取消预约、标记完成、标记已对账等高频动作；处理完成后原位刷新日历状态。
+- Booking Detail 可通过“查看所属时段”切换到对应 Slot 信息，但不应自动跳转到预约列表页。
+- 只有用户主动选择“查看完整记录”等明确导航动作时，才允许离开当前日历工作区。
+
+该模式的目标操作路径是：**扫 → 点 → 处理 → 关闭**，而不是“扫 → 跳页 → 找记录 → 处理 → 返回 → 找回原位置”。
+
 ---
 
 ## 7. Responsive behavior / 响应式
