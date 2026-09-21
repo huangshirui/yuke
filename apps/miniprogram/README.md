@@ -19,6 +19,15 @@
 
 小程序采用轻量、原生感的通用工具风格，并统一使用“用户 / 空间 / 参与人 / 预约对象 / 时段 / 预约”等通用术语。
 
+## 用户状态与本地缓存
+
+登录后的服务端 User Profile 是头像、昵称、Space Membership 和当前 Space 的事实源。
+
+- 小程序进入需要用户状态的页面时，优先通过 `GET /v1/me` 获取服务端最新 Profile。
+- 本地 Storage 中的 `yuke.currentUser` 只作为显示降级缓存，不用于覆盖服务端的初始化状态判断。
+- 如果本地没有有效项目 Token，或者服务端返回 `UNAUTHENTICATED`，客户端重新执行 `wx.login -> /v1/auth/wechat/session` 建立会话。
+- 因此真机、开发者工具、清理 Storage 或直接打开资料页，只要使用同一个真实小程序 AppID 和微信账号，都应恢复到同一个服务端 User。
+
 ## 微信开发者工具本地配置
 
 仓库提交的 `project.config.json` 只保存团队共享的开发者工具配置，并固定使用 `touristappid` 作为公开占位值。
