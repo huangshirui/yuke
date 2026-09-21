@@ -1,13 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { CUTOFF_MINUTES, type CutoffMinutes, type SpaceSettings } from '@yuke/shared'
 import { getAdminApi } from '../services/adminApi'
 import type { AdminSpace, AdminUserSummary, InviteMemberSummary, InviteSummary } from '../types/admin'
 
 const api = getAdminApi()
 const route = useRoute()
-const router = useRouter()
 
 const space = ref<AdminSpace | null>(null)
 const settings = reactive<SpaceSettings>({
@@ -221,14 +220,6 @@ async function copyCode(code: string) {
   notice.value = '邀请码已复制。'
 }
 
-function goSection(next: string) {
-  router.push('/spaces/' + spaceId.value + '/' + next)
-}
-
-function goBookings() {
-  router.push({ path: '/bookings', query: { spaceId: spaceId.value } })
-}
-
 watch(spaceId, load)
 onMounted(load)
 </script>
@@ -238,34 +229,22 @@ onMounted(load)
     <div v-if="loading" class="empty-state">正在加载空间…</div>
 
     <template v-else-if="space">
-      <section class="page-heading page-heading--compact">
+      <section class="page-heading">
         <div>
-          <button class="back-link" @click="router.push('/spaces')">← 返回空间</button>
-          <div class="title-line">
-            <h1>{{ space.name }}</h1>
-            <span class="status-pill" :class="'status-pill--' + space.status">
-              {{ space.status === 'active' ? '运行中' : '已停用' }}
-            </span>
-          </div>
-          <p>{{ space.timezone }} · <span class="mono">{{ space.id }}</span></p>
+          <h1>{{ section === 'admins' ? '管理员管理' : section === 'invites' ? '邀请用户' : '规则设置' }}</h1>
+          <p>
+            {{ section === 'admins'
+              ? '管理可访问当前空间的管理员。'
+              : section === 'invites'
+                ? '管理用户加入当前空间的邀请入口。'
+                : '配置当前空间的预约与取消规则。' }}
+          </p>
         </div>
-        <button class="button button--ghost" :disabled="saving" @click="toggleSpaceStatus">
-          {{ space.status === 'active' ? '停用空间' : '启用空间' }}
-        </button>
+        <span class="page-context">{{ space.name }}</span>
       </section>
 
       <div v-if="error" class="alert alert--error">{{ error }}</div>
       <div v-if="notice" class="alert alert--success">{{ notice }}</div>
-
-      <nav class="tabbar tabbar--wrap" aria-label="空间管理">
-        <button :class="{ active: section === 'settings' }" @click="goSection('settings')">预约规则</button>
-        <button :class="{ active: section === 'admins' }" @click="goSection('admins')">管理员</button>
-        <button :class="{ active: section === 'invites' }" @click="goSection('invites')">邀请码</button>
-        <button @click="goSection('resources')">预约对象</button>
-        <button @click="goSection('slot-types')">时段类型</button>
-        <button @click="goSection('members')">用户</button>
-        <button @click="goBookings">预约</button>
-      </nav>
 
       <section v-if="section === 'settings'" class="panel">
         <div class="panel-heading">
