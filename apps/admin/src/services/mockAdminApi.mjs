@@ -1,6 +1,11 @@
 const KEY = 'yuke.admin.mock.v2'
 
 const seed = {
+  currentAdmin: {
+    id: 'adm_demo_super',
+    email: 'super-admin@example.invalid',
+    platformRole: 'super_admin',
+  },
   spaces: [
     { id: 'sp_demo_alpha', name: '星河预约空间', timezone: 'Asia/Shanghai', status: 'active' },
     { id: 'sp_demo_beta', name: '远山工作室', timezone: 'Asia/Shanghai', status: 'disabled' },
@@ -342,6 +347,8 @@ export function createMockAdminApi(storage = globalThis.localStorage ?? memorySt
   save()
 
   return {
+    async getCurrentAdmin() { return clone(state.currentAdmin) },
+
     async listSpaces() { return clone(state.spaces) },
 
     async createSpace(input) {
@@ -399,6 +406,21 @@ export function createMockAdminApi(storage = globalThis.localStorage ?? memorySt
       const current = list.find((item) => item.id === id)
       if (current) return clone(current)
       const admin = { id, email: 'assigned-admin@example.invalid', platformRole: 'none', status: 'active' }
+      list.push(admin)
+      save()
+      return clone(admin)
+    },
+
+    async assignAdminByEmail(spaceId, emailInput) {
+      requireSpace(spaceId)
+      const email = String(emailInput || '').trim().toLowerCase()
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        throw new Error('请输入有效的管理员邮箱。')
+      }
+      const list = state.admins[spaceId] ?? (state.admins[spaceId] = [])
+      const current = list.find((item) => item.email.toLowerCase() === email)
+      if (current) return clone(current)
+      const admin = { id: makeId('adm'), email, platformRole: 'none', status: 'active' }
       list.push(admin)
       save()
       return clone(admin)
