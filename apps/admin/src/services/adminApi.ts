@@ -54,12 +54,14 @@ export interface AdminApi {
   createSlotSeries(spaceId: string, input: import('../types/admin').CreateSlotSeriesInput): Promise<unknown>
   updateScheduleSlot(spaceId: string, slotId: string, input: import('../types/admin').UpdateScheduleSlotInput): Promise<import('../types/admin').AdminScheduleSlot | AdminSeriesEditResult>
   setScheduleSlotFrozen(spaceId: string, slotId: string, frozen: boolean): Promise<import('../types/admin').AdminScheduleSlot>
+  cancelScheduleSlot(spaceId: string, slotId: string): Promise<import('../types/admin').AdminScheduleSlot>
 
   listBookings(spaceId: string, filters?: BookingFilters): Promise<AdminBooking[]>
   getBooking(spaceId: string, bookingId: string): Promise<AdminBooking>
   updateBooking(spaceId: string, bookingId: string, input: UpdateAdminBookingInput): Promise<AdminBooking>
   cancelBooking(spaceId: string, bookingId: string): Promise<AdminBooking>
   completeBooking(spaceId: string, bookingId: string): Promise<AdminBooking>
+  reconcileBooking(spaceId: string, bookingId: string): Promise<AdminBooking>
 
   listMembers(spaceId: string, filters?: MemberFilters): Promise<AdminMemberSummary[]>
   getMember(spaceId: string, membershipId: string): Promise<AdminMemberDetail>
@@ -254,6 +256,12 @@ class HttpAdminApi implements AdminApi {
       { method: 'POST' },
     )
   }
+  cancelScheduleSlot(spaceId: string, slotId: string) {
+    return this.request<import('../types/admin').AdminScheduleSlot>(
+      this.spacePath(spaceId) + '/slots/' + encodeURIComponent(slotId) + '/cancel',
+      { method: 'POST' },
+    )
+  }
 
   listBookings(spaceId: string, filters: BookingFilters = {}) {
     const query = new URLSearchParams()
@@ -264,6 +272,7 @@ class HttpAdminApi implements AdminApi {
     if (filters.participantId) query.set('participantId', filters.participantId)
     if (filters.slotTypeId) query.set('slotTypeId', filters.slotTypeId)
     if (filters.membershipId) query.set('membershipId', filters.membershipId)
+    if (filters.reconciliationStatus) query.set('reconciliationStatus', filters.reconciliationStatus)
     const suffix = query.size ? '?' + query.toString() : ''
     return this.request<AdminBooking[]>(this.spacePath(spaceId) + '/bookings' + suffix)
   }
@@ -287,6 +296,12 @@ class HttpAdminApi implements AdminApi {
   completeBooking(spaceId: string, bookingId: string) {
     return this.request<AdminBooking>(
       this.spacePath(spaceId) + '/bookings/' + encodeURIComponent(bookingId) + '/complete',
+      { method: 'POST' },
+    )
+  }
+  reconcileBooking(spaceId: string, bookingId: string) {
+    return this.request<AdminBooking>(
+      this.spacePath(spaceId) + '/bookings/' + encodeURIComponent(bookingId) + '/reconcile',
       { method: 'POST' },
     )
   }
