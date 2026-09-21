@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import LoadingOverlay from '../components/LoadingOverlay.vue'
 import { getAdminApi } from '../services/adminApi'
 import type {
   AdminMemberSummary,
@@ -207,7 +208,8 @@ onMounted(load)
       <button :class="{ active: activeTab === 'invites' }" @click="activeTab = 'invites'">邀请记录</button>
     </nav>
 
-    <section v-if="activeTab === 'members'" class="panel">
+    <section v-if="activeTab === 'members'" class="panel loading-surface" :aria-busy="loading">
+      <LoadingOverlay v-if="loading" label="正在加载用户…" />
       <div class="filter-bar compact-filter-bar">
         <label class="field">
           <span>来源管理员</span>
@@ -229,8 +231,7 @@ onMounted(load)
         </div>
       </div>
 
-      <div v-if="loading" class="empty-state">正在加载用户…</div>
-      <div v-else class="table-wrap">
+      <div class="table-wrap">
         <table>
           <thead>
             <tr><th>用户</th><th>参与人</th><th>邀请来源</th><th>加入时间</th></tr>
@@ -252,13 +253,14 @@ onMounted(load)
               </td>
               <td>{{ formatDate(member.joinedAt) }}</td>
             </tr>
-            <tr v-if="members.length === 0"><td colspan="4" class="empty-cell">当前条件下没有用户。</td></tr>
+            <tr v-if="!loading && members.length === 0"><td colspan="4" class="empty-cell">当前条件下没有用户。</td></tr>
           </tbody>
         </table>
       </div>
     </section>
 
-    <section v-else class="panel">
+    <section v-else class="panel loading-surface" :aria-busy="loading">
+      <LoadingOverlay v-if="loading" label="正在加载邀请记录…" />
       <div class="compact-panel-heading">
         <div>
           <h2>邀请记录</h2>
@@ -282,7 +284,7 @@ onMounted(load)
                 <span v-else class="muted">已撤销</span>
               </td>
             </tr>
-            <tr v-if="invites.length === 0"><td colspan="5" class="empty-cell">还没有邀请码。点击右上角“邀请用户”创建第一个邀请入口。</td></tr>
+            <tr v-if="!loading && invites.length === 0"><td colspan="5" class="empty-cell">还没有邀请码。点击右上角“邀请用户”创建第一个邀请入口。</td></tr>
           </tbody>
         </table>
       </div>
