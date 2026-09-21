@@ -1,0 +1,153 @@
+:root {
+  color: var(--color-text-primary);
+  background: var(--color-page-background);
+  font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  /* Color / 颜色 */
+  --color-text-primary: #17202a;
+  --color-text-secondary: #68747f;
+  --color-border: #e3e8eb;
+  --color-border-strong: #b9d6d0;
+  --color-surface: #ffffff;
+  --color-white: #ffffff;
+  --color-page-background: #f5f7f8;
+  --color-surface-muted: #f8fafb;
+  --color-surface-subtle: #f9fbfb;
+  --color-surface-quiet: #f7faf9;
+  --color-hover: #f2f6f5;
+  --color-hover-soft: #fafcfc;
+  --color-primary: #126e62;
+  --color-primary-hover: #0d5b51;
+  --color-primary-soft: #e8f4f1;
+  --color-focus: #62a79e;
+  --color-icon-muted: #59656f;
+  --color-danger: #b43c3c;
+  --color-danger-soft: #fff0ef;
+  --color-danger-border: #f2cfcb;
+  --color-error-text: #8f2d2d;
+  --color-error-bg: #fff2f1;
+  --color-error-border: #f0ceca;
+  --color-success-text: #0e6558;
+  --color-success-bg: #eef9f6;
+  --color-success-border: #c7e9e1;
+
+  /* Operational status / 运营状态 */
+  --color-status-booked-bg: var(--color-primary-soft);
+  --color-status-booked-text: var(--color-primary);
+  --color-status-completed-bg: #eef1f2;
+  --color-status-completed-text: #59656f;
+  --color-status-cancelled-bg: var(--color-danger-soft);
+  --color-status-cancelled-text: var(--color-danger);
+  --color-status-pending-bg: #fff7e8;
+  --color-status-pending-text: #9a6500;
+  --color-status-settled-bg: #edf7f2;
+  --color-status-settled-text: #26715f;
+  --color-slot-border: #badbd5;
+  --color-slot-frozen-border: #d5d9dc;
+  --color-slot-frozen-accent: #77838c;
+  --color-slot-frozen-bg: #f4f6f7;
+  --color-booked-row-bg: #f7fbfa;
+  --color-neutral-pill: #f1f4f4;
+  --color-border-subtle: #f0f2f3;
+  --color-hover-subtle: #f7f9f9;
+  --color-sidebar: #132826;
+  --color-sidebar-text: #f7fbfa;
+  --color-sidebar-muted: #9bb2ae;
+  --color-sidebar-nav: #cad9d6;
+  --color-sidebar-control: #21433f;
+  --color-sidebar-active: #214b45;
+  --color-sidebar-label: #819b96;
+  --color-sidebar-badge: #bed0cd;
+  --color-sidebar-subtle: #8fa6a2;
+  --color-sidebar-error-text: #ffd8d3;
+  --color-brand-accent: #d7f26b;
+  --color-brand-ink: #17302d;
+  --color-api: #60d6c4;
+  --color-control-neutral: #f0f3f4;
+  --color-disabled-bg: #eef1f2;
+  --color-disabled-text: #67737c;
+  --color-code: #5f6b75;
+  --color-tab-bg: #e9eeef;
+  --color-input-border: #ccd5d9;
+  --color-avatar-bg: #eff8f5;
+  --color-row-chevron: #8b9b99;
+  --color-chart-secondary: #cfe9a6;
+  --color-chart-axis: #d8e0e1;
+  --color-button-subtle: #fbfcfc;
+  --color-topbar-glass: rgba(255, 255, 255, 0.92);
+  --color-overlay: rgba(12, 25, 23, 0.46);
+  --color-overlay-soft: rgba(10, 20, 20, 0.36);
+  --color-sidebar-border: rgba(255, 255, 255, 0.09);
+  --color-sidebar-divider: rgba(255, 255, 255, 0.08);
+  --color-sidebar-card: rgba(255, 255, 255, 0.04);
+  --color-sidebar-error-bg: rgba(180, 60, 60, 0.17);
+
+  /* Spacing / 间距
+   Primitive 名称直接对应 px 值；新布局优先 4px 主网格，odd 值仅用于保留既有紧凑/光学校准。 */
+  --space-2: 2px;
+  --space-3: 3px;
+  --space-4: 4px;
+  --space-5: 5px;
+  --space-6: 6px;
+  --space-7: 7px;
+  --space-8: 8px;
+  --space-9: 9px;
+  --space-10: 10px;
+  --space-11: 11px;
+  --space-12: 12px;
+  --space-13: 13px;
+  --space-14: 14px;
+  --space-15: 15px;
+  --space-16: 16px;
+  --space-17: 17px;
+  --space-18: 18px;
+  --space-19: 19px;
+  --space-20: 20px;
+  --space-21: 21px;
+  --space-22: 22px;
+  --space-24: 24px;
+  --space-26: 26px;
+  --space-28: 28px;
+  --space-30: 30px;
+  --space-32: 32px;
+  --space-34: 34px;
+  --space-36: 36px;
+  --space-40: 40px;
+  --space-42: 42px;
+  --space-44: 44px;
+
+  /* Radius / 圆角 */
+  --radius-5: 5px; --radius-7: 7px; --radius-8: 8px; --radius-9: 9px; --radius-10: 10px; --radius-11: 11px; --radius-12: 12px;
+  --radius-13: 13px; --radius-14: 14px; --radius-15: 15px; --radius-16: 16px; --radius-18: 18px; --radius-pill: 999px;
+
+  /* Typography / 字号 */
+  --font-size-9: 9px; --font-size-10: 10px; --font-size-11: 11px; --font-size-12: 12px; --font-size-13: 13px; --font-size-14: 14px;
+  --font-size-15: 15px; --font-size-16: 16px; --font-size-17: 17px; --font-size-18: 18px; --font-size-19: 19px;
+  --font-size-20: 20px; --font-size-21: 21px; --font-size-22: 22px; --font-size-25: 25px; --font-size-26: 26px;
+  --font-size-27: 27px; --font-size-28: 28px; --font-size-31: 31px; --font-size-34: 34px; --font-size-38: 38px;
+
+  /* Controls / 控件 */
+  --border-width: 1px;
+  --border-width-strong: 3px;
+  --control-height-compact: 36px;
+  --control-height-md: 38px;
+  --control-height-mobile-button: 40px;
+  --control-height-touch: 42px;
+  --control-padding-x: 11px;
+  --select-padding-right: 44px;
+  --select-chevron-offset: 16px;
+  --select-chevron-size: 5px;
+  --select-chevron-gap: 4px;
+
+  /* Elevation & focus / 阴影与焦点 */
+  --shadow-panel: 0 16px 50px rgba(23, 32, 42, 0.07);
+  --shadow-view-switch: 0 1px 5px rgba(23, 32, 42, 0.08);
+  --shadow-slot: 0 1px 4px rgba(23, 32, 42, 0.04);
+  --shadow-schedule-modal: 0 24px 70px rgba(0, 0, 0, 0.2);
+  --shadow-tab: 0 2px 8px rgba(23, 32, 42, 0.08);
+  --shadow-mobile-nav: 0 2px 7px rgba(23, 32, 42, 0.08);
+  --shadow-floating: 0 6px 22px rgba(23, 32, 42, 0.045);
+  --shadow-modal: 0 30px 90px rgba(0, 0, 0, 0.2);
+  --shadow-space-menu: 0 22px 60px rgba(7, 24, 21, 0.28);
+  --focus-ring: 0 0 0 3px rgba(18, 110, 98, 0.1);
+}

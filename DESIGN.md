@@ -70,32 +70,39 @@ Web Admin 采用：
 
 当前已确认的 Admin Shell 是设计基线，不应在后续 Issue 中随意整体改版。
 
-### 3.2 Current design tokens / 当前设计 Token
+### 3.2 Design Token System / 设计 Token 系统
 
-当前实现中的核心 Token：
+Web Admin 的可复用视觉参数统一定义在：
 
-```css
---ink: #17202a;
---muted: #68747f;
---line: #e3e8eb;
---panel: #ffffff;
+`apps/admin/src/tokens.css`
 
---accent: #126e62;
---accent-soft: #e8f4f1;
-
---danger: #b43c3c;
-
-sidebar: #132826;
-brand-accent: #d7f26b;
-page-background: #f5f7f8;
-```
+Token 分为六类：Color / 颜色、Spacing / 间距、Radius / 圆角、Typography / 字号、Controls / 控件，以及 Elevation & Focus / 阴影与焦点。Spacing primitive 直接按实际 px 值命名（例如 `--space-12: 12px`）；新布局优先使用 4px 主网格，odd 值仅用于保留既有紧凑/光学校准。
 
 规则：
 
-- 新页面优先复用现有 Token。
-- 不应为单一页面随意新增一套品牌色。
-- 如果颜色体系发生全局变化，应先更新本文件，再修改页面。
-- 状态色必须同时配合文字或图标语义。
+- 页面和组件不得新增裸写品牌色、状态色或 `rgba(...)`；新颜色必须先进入 `tokens.css`。
+- padding / margin / gap、圆角和字号统一使用 Token；**页面结构专属的一次性尺寸**（例如 Calendar 列宽、图表固定高度、特定 Popover 宽度）可以保留局部值，不为了“零数字”制造无意义 Token。
+- Select 统一使用自定义 Chevron，不使用浏览器原生箭头；右侧留白、箭头大小和距右边界位置由 `--select-*` Token 控制。
+- 不在单个页面重新定义控件视觉参数。
+- Token 的全局视觉变化必须先更新本文件，再修改实现。
+
+核心语义示例：
+
+```css
+--color-text-primary: #17202a;
+--color-border: #e3e8eb;
+--color-surface: #ffffff;
+--color-primary: #126e62;
+--space-4: 4px;
+--space-8: 8px;
+--space-12: 12px;
+--space-16: 16px;
+--space-24: 24px;
+--control-height-md: 38px;
+--control-height-touch: 42px;
+--select-padding-right: 44px;
+--select-chevron-offset: 16px;
+```
 
 ### 3.3 Typography / 字体
 
@@ -442,6 +449,7 @@ Web 与小程序共享**品牌、术语、状态语义和交互原则**，不强
 - Space / Settings / Admin / Invite 页面成为首批基准实现。
 - 小程序轻量原生工具风格已冻结，并与现有深墨绿品牌体系对齐。
 - 当前不引入第三方 UI Component Library。
+- Web Admin Design Token System 已收口到 `apps/admin/src/tokens.css`；颜色与通用控件视觉参数不得在页面侧分叉。
 - 后续页面优先复用已有 Shell、Button、Panel、Table、Field、Status、Tab 等模式。
 
 本文件随产品发展演进，但必须保持“设计规则先于页面分叉”。

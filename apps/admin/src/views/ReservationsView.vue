@@ -41,9 +41,9 @@ function switchView(view: 'calendar' | 'list') {
 </template>
 
 <style scoped>
-.operations-heading{margin-bottom:10px}
-.view-switch{display:flex;gap:3px;padding:3px;border-radius:9px;background:#e9eeef}
-.view-switch button{min-height:32px;padding:0 13px;border:0;border-radius:7px;background:transparent;color:var(--muted);font-size:13px;font-weight:700}
-.view-switch button.active{background:#fff;color:var(--ink);box-shadow:0 1px 5px rgba(23,32,42,.08)}
+.operations-heading{margin-bottom: var(--space-10)}
+.view-switch{display:flex;gap: var(--space-3);padding: var(--space-3);border-radius:var(--radius-9);background:var(--color-tab-bg)}
+.view-switch button{min-height:32px;padding: 0 var(--space-13);border:0;border-radius:var(--radius-7);background:transparent;color:var(--color-text-secondary);font-size:var(--font-size-13);font-weight:700}
+.view-switch button.active{background:var(--color-white);color:var(--color-text-primary);box-shadow:var(--shadow-view-switch)}
 @media(max-width:820px){.operations-heading{align-items:stretch}.view-switch{width:100%}.view-switch button{flex:1}}
 </style>
