@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { getAdminApi } from '../services/adminApi'
 import type {
   AdminMemberDetail,
@@ -14,7 +14,6 @@ import type {
 
 const api = getAdminApi()
 const route = useRoute()
-const router = useRouter()
 
 const space = ref<AdminSpace | null>(null)
 const resources = ref<AdminResource[]>([])
@@ -77,10 +76,6 @@ function adminLabel(adminId: string) {
 function inviteLabel(inviteId: string) {
   const invite = invites.value.find((item) => item.id === inviteId)
   return invite?.label || invite?.code || inviteId
-}
-
-function goSection(next: string) {
-  router.push('/spaces/' + spaceId.value + '/' + next)
 }
 
 async function loadSpace() {
@@ -313,31 +308,22 @@ onMounted(load)
     <div v-if="loading" class="empty-state">正在加载空间…</div>
 
     <template v-else-if="space">
-      <section class="page-heading page-heading--compact">
+      <section class="page-heading">
         <div>
-          <button class="back-link" @click="router.push('/spaces')">← 返回空间</button>
-          <div class="title-line">
-            <h1>{{ space.name }}</h1>
-            <span class="status-pill" :class="'status-pill--' + space.status">
-              {{ space.status === 'active' ? '运行中' : '已停用' }}
-            </span>
-          </div>
-          <p>{{ space.timezone }} · <span class="mono">{{ space.id }}</span></p>
+          <h1>{{ section === 'resources' ? '预约对象' : section === 'slot-types' ? '时段类型' : '用户管理' }}</h1>
+          <p>
+            {{ section === 'resources'
+              ? '维护当前空间可被预约的资源。'
+              : section === 'slot-types'
+                ? '维护时段分类，用于小程序展示与后续统计。'
+                : '查看当前空间的用户与参与人。' }}
+          </p>
         </div>
+        <span class="page-context">{{ space.name }}</span>
       </section>
 
       <div v-if="error" class="alert alert--error">{{ error }}</div>
       <div v-if="notice" class="alert alert--success">{{ notice }}</div>
-
-      <nav class="tabbar tabbar--wrap" aria-label="空间管理">
-        <button @click="goSection('settings')">预约规则</button>
-        <button @click="goSection('admins')">管理员</button>
-        <button @click="goSection('invites')">邀请码</button>
-        <button @click="router.push('/spaces/' + spaceId + '/schedule')">开放时间</button>
-        <button :class="{ active: section === 'resources' }" @click="goSection('resources')">预约对象</button>
-        <button :class="{ active: section === 'slot-types' }" @click="goSection('slot-types')">时段类型</button>
-        <button :class="{ active: section === 'members' }" @click="goSection('members')">用户</button>
-      </nav>
 
       <div v-if="sectionLoading" class="empty-state">正在加载…</div>
 
