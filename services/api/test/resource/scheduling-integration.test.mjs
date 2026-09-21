@@ -191,8 +191,62 @@ describe('Phase 3 Scheduling Gate', () => {
         membershipId: ids.membership,
         userNickname: `Synthetic User ${suffix}`,
         participantId: ids.participant,
-        participantName: `Synthetic Participant ${suffix}`
+        participantName: `Synthetic Participant ${suffix}`,
+        reconciliationStatus: null
       }
+    })
+
+    const completedAt = Date.parse('2026-09-23T03:00:00.000Z')
+    await env.DB.prepare(`
+      UPDATE bookings
+      SET status = 'completed',
+          completed_at = ?,
+          completion_source = 'manual',
+          updated_at = ?
+      WHERE id = ?
+    `).bind(completedAt, completedAt, bookingId).run()
+
+    await env.DB.prepare(`
+      INSERT INTO booking_reconciliations (
+        booking_id, space_id, status, created_at, updated_at
+      )
+      VALUES (?, ?, 'pending', ?, ?)
+    `).bind(bookingId, ids.space, completedAt, completedAt).run()
+
+    const pending = await listAdminSlotsByLocalDateRange(
+      env.DB,
+      ids.space,
+      ids.resource,
+      '2026-09-23',
+      '2026-09-23'
+    )
+    expect(pending[0].booking).toMatchObject({
+      id: bookingId,
+      status: 'completed',
+      reconciliationStatus: 'pending'
+    })
+
+    await env.DB.prepare(`
+      UPDATE booking_reconciliations
+      SET status = 'settled',
+          settlement_source = 'manual',
+          settled_at = ?,
+          settled_by_admin_id = ?,
+          updated_at = ?
+      WHERE booking_id = ?
+    `).bind(completedAt + 60_000, ids.admin, completedAt + 60_000, bookingId).run()
+
+    const settled = await listAdminSlotsByLocalDateRange(
+      env.DB,
+      ids.space,
+      ids.resource,
+      '2026-09-23',
+      '2026-09-23'
+    )
+    expect(settled[0].booking).toMatchObject({
+      id: bookingId,
+      status: 'completed',
+      reconciliationStatus: 'settled'
     })
   })
 
