@@ -22,7 +22,7 @@ const loading = ref(true)
 const saving = ref(false)
 const error = ref('')
 const notice = ref('')
-const adminUserId = ref('')
+const adminEmail = ref('')
 const showInviteForm = ref(false)
 const inviteForm = reactive({ label: '', expiresAt: defaultExpiry() })
 
@@ -128,17 +128,17 @@ async function toggleSpaceStatus() {
 
 async function addAdmin() {
   clearMessages()
-  const value = adminUserId.value.trim()
-  if (!value) {
-    error.value = '请输入管理员 ID。'
+  const email = adminEmail.value.trim().toLowerCase()
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    error.value = '请输入有效的管理员邮箱。'
     return
   }
   saving.value = true
   try {
-    await api.addAdmin(spaceId.value, value)
+    await api.assignAdminByEmail(spaceId.value, email)
     admins.value = await api.listAdmins(spaceId.value)
-    adminUserId.value = ''
-    notice.value = '管理员已分配。'
+    adminEmail.value = ''
+    notice.value = '管理员已分配。首次登录时会自动绑定对应的 Cloudflare Access 身份。'
   } catch (cause) {
     error.value = cause instanceof Error ? cause.message : '管理员分配失败。'
   } finally {
@@ -305,9 +305,9 @@ onMounted(load)
 
         <div class="inline-form">
           <label class="field field--grow">
-            <span>管理员 ID</span>
-            <input v-model="adminUserId" placeholder="adm_xxx" @keyup.enter="addAdmin" />
-            <small>当前 API Contract 仅支持按 adminUserId 分配；管理员搜索/目录接口尚未定义。</small>
+            <span>管理员邮箱</span>
+            <input v-model="adminEmail" type="email" autocomplete="off" placeholder="例如：admin@example.invalid" @keyup.enter="addAdmin" />
+            <small>输入邮箱即可分配。若该邮箱尚未预置，系统会先创建待绑定 AdminUser，再授权当前空间。</small>
           </label>
           <button class="button button--primary" :disabled="saving" @click="addAdmin">分配管理员</button>
         </div>
