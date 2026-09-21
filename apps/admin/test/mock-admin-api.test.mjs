@@ -160,6 +160,20 @@ test('booking management mock filters, moves, cancels and completes bookings', a
   assert.equal(initial.length, 1)
   assert.equal(initial[0].membershipId, 'mem_demo_01')
 
+  const memberBookings = await api.listBookings('sp_demo_alpha', { membershipId: 'mem_demo_01' })
+  assert.equal(memberBookings.length, 1)
+  assert.equal((await api.listBookings('sp_demo_alpha', { membershipId: 'mem_missing' })).length, 0)
+
+  const projectedSlots = await api.listScheduleSlots(
+    'sp_demo_alpha',
+    'res_demo_aurora',
+    '2026-09-22',
+    '2026-09-22',
+  )
+  assert.equal(projectedSlots.length, 1)
+  assert.equal(projectedSlots[0].booking?.id, initial[0].id)
+  assert.equal(projectedSlots[0].booking?.participantName, initial[0].participant.name)
+
   const moved = await api.updateBooking('sp_demo_alpha', initial[0].id, {
     slotId: 'slot_demo_alt',
     participantId: 'par_demo_01',
