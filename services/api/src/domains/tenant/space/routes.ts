@@ -104,7 +104,7 @@ export function registerSpaceRoutes(app: Router<SpaceEnv>): void {
   app.get(
     '/v1/admin/spaces/:spaceId/admins',
     async ({ env, params }) => ok(await readSpaceAdmins(db(env), params.spaceId)),
-    [requireAdminAccess, requireSuperAdmin]
+    [requireAdminAccess, requireSpaceAdmin()]
   )
 
   app.post(
