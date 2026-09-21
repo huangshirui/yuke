@@ -551,9 +551,30 @@ export function createMockAdminApi(storage = globalThis.localStorage ?? memorySt
 
     async listScheduleSlots(spaceId, resourceId, from, to) {
       requireResource(spaceId, resourceId)
-      return clone((state.slots[spaceId] ?? []).filter((slot) =>
-        slot.resourceId === resourceId && slot.localDate >= from && slot.localDate <= to
-      ))
+      const slots = (state.slots[spaceId] ?? [])
+        .filter((slot) =>
+          slot.resourceId === resourceId && slot.localDate >= from && slot.localDate <= to
+        )
+        .map((slot) => {
+          const booking = (state.bookings[spaceId] ?? []).find(
+            (item) => item.slotId === slot.id && ['booked', 'completed'].includes(item.status),
+          )
+          if (!booking) return { ...slot, booking: null }
+          const hydrated = hydrateBooking(spaceId, booking)
+          const member = requireMember(spaceId, booking.membershipId)
+          return {
+            ...slot,
+            booking: {
+              id: booking.id,
+              status: booking.status,
+              membershipId: booking.membershipId,
+              userNickname: member.nickname,
+              participantId: hydrated.participant.id,
+              participantName: hydrated.participant.name,
+            },
+          }
+        })
+      return clone(slots)
     },
 
     async createScheduleSlot(spaceId, input) {
@@ -635,6 +656,7 @@ export function createMockAdminApi(storage = globalThis.localStorage ?? memorySt
         if (filters.resourceId && booking.resource.id !== filters.resourceId) return false
         if (filters.participantId && booking.participant.id !== filters.participantId) return false
         if (filters.slotTypeId && booking.slotType.id !== filters.slotTypeId) return false
+        if (filters.membershipId && booking.membershipId !== filters.membershipId) return false
         return true
       })
       return clone(list)
