@@ -270,6 +270,27 @@ SLOT_ALREADY_BOOKED
 → 这个时间刚刚被预约了，请选择其他时间。
 ```
 
+### Slot operational state / 时段运营状态
+
+Slot 是预约工作台的核心时间资源，但 UI 不应把所有业务状态塞进一个 SlotStatus。日历展示优先级：
+
+1. 有 Booking 时，**服务事实优先**：用户 / 参与人 + 已预约或已完成；
+2. completed Booking 同时展示 **待对账 / 已对账**；
+3. Frozen 是附加运营限制，可叠加在“已预约/已完成”之后；
+4. 没有 Booking 时才显示“可预约 / 已冻结 / 已占用”等时段可用性；
+5. cancelled Slot 默认不出现在主日历，可在历史/筛选场景查看；
+6. 状态必须有文字，不只使用颜色。
+
+典型显示：
+
+```text
+10:00–10:30
+张三 · 小明
+已完成 · 已对账
+```
+
+取消 Slot 属于危险操作：有 booked Booking 时必须先取消 Booking；completed Booking 对应的历史 Slot 不允许取消。前端只是解释和引导，后端约束是最终事实源。
+
 ---
 
 ## 7. Responsive behavior / 响应式
