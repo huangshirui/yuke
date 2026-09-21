@@ -1,9 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { getAdminApi } from '../services/adminApi'
 import type {
-  AdminMemberDetail,
   AdminMemberSummary,
   AdminUserSummary,
   InviteMemberSummary,
@@ -12,12 +11,12 @@ import type {
 
 const api = getAdminApi()
 const route = useRoute()
+const router = useRouter()
 
 const members = ref<AdminMemberSummary[]>([])
 const admins = ref<AdminUserSummary[]>([])
 const invites = ref<InviteSummary[]>([])
 const inviteMembers = ref<InviteMemberSummary[]>([])
-const selectedMember = ref<AdminMemberDetail | null>(null)
 const selectedInvite = ref<InviteSummary | null>(null)
 
 const loading = ref(true)
@@ -25,8 +24,7 @@ const saving = ref(false)
 const error = ref('')
 const notice = ref('')
 const activeTab = ref<'members' | 'invites'>('members')
-const showInviteForm = ref(false)
-const memberNoteDraft = ref('')
+const inviteModalOpen = ref(false)
 
 const filters = reactive({
   invitedByAdminId: '',
@@ -38,14 +36,6 @@ const inviteForm = reactive({
 })
 
 const spaceId = computed(() => String(route.params.spaceId || ''))
-const activeInviteCount = computed(() =>
-  invites.value.filter((invite) =>
-    invite.status === 'active' && new Date(invite.expiresAt).getTime() > Date.now()
-  ).length
-)
-const participantCount = computed(() =>
-  members.value.reduce((total, member) => total + member.participantCount, 0)
-)
 
 function defaultExpiry() {
   const date = new Date()
@@ -86,7 +76,6 @@ function inviteLabel(inviteId: string) {
 async function load() {
   loading.value = true
   clearFeedback()
-  selectedMember.value = null
   selectedInvite.value = null
   try {
     const [nextMembers, nextAdmins, nextInvites] = await Promise.all([
@@ -107,7 +96,6 @@ async function load() {
 async function applyFilters() {
   loading.value = true
   clearFeedback()
-  selectedMember.value = null
   try {
     members.value = await api.listMembers(spaceId.value, {
       invitedByAdminId: filters.invitedByAdminId || undefined,
@@ -126,56 +114,18 @@ async function resetFilters() {
   await applyFilters()
 }
 
-async function openMember(member: AdminMemberSummary) {
-  clearFeedback()
-  try {
-    selectedMember.value = await api.getMember(spaceId.value, member.membershipId)
-    memberNoteDraft.value = selectedMember.value.adminNote ?? ''
-  } catch (cause) {
-    error.value = cause instanceof Error ? cause.message : '用户详情加载失败。'
-  }
-}
-
-async function saveMemberNote() {
-  if (!selectedMember.value) return
-  saving.value = true
-  clearFeedback()
-  try {
-    const value = memberNoteDraft.value.trim() || null
-    await api.updateMemberAdminNote(spaceId.value, selectedMember.value.membershipId, value)
-    selectedMember.value.adminNote = value
-    const summary = members.value.find(
-      (item) => item.membershipId === selectedMember.value?.membershipId
-    )
-    if (summary) summary.adminNote = value
-    notice.value = '用户内部备注已保存。'
-  } catch (cause) {
-    error.value = cause instanceof Error ? cause.message : '内部备注保存失败。'
-  } finally {
-    saving.value = false
-  }
-}
-
-async function saveParticipantNote(participantId: string, value: string | null) {
-  if (!selectedMember.value) return
-  saving.value = true
-  clearFeedback()
-  try {
-    const next = value?.trim() || null
-    await api.updateParticipantAdminNote(spaceId.value, participantId, next)
-    const participant = selectedMember.value.participants.find((item) => item.id === participantId)
-    if (participant) participant.adminNote = next
-    notice.value = '参与人内部备注已保存。'
-  } catch (cause) {
-    error.value = cause instanceof Error ? cause.message : '参与人备注保存失败。'
-  } finally {
-    saving.value = false
-  }
+function openMember(member: AdminMemberSummary) {
+  router.push(
+    '/spaces/' + encodeURIComponent(spaceId.value) +
+    '/users/' + encodeURIComponent(member.membershipId)
+  )
 }
 
 function startInvite() {
-  activeTab.value = 'invites'
-  showInviteForm.value = true
+  clearFeedback()
+  inviteForm.label = ''
+  inviteForm.expiresAt = defaultExpiry()
+  inviteModalOpen.value = true
 }
 
 async function createInvite() {
@@ -191,10 +141,9 @@ async function createInvite() {
       expiresAt: new Date(inviteForm.expiresAt).toISOString(),
     })
     invites.value = await api.listInvites(spaceId.value)
-    inviteForm.label = ''
-    inviteForm.expiresAt = defaultExpiry()
-    showInviteForm.value = false
-    notice.value = '邀请码已创建。'
+    inviteModalOpen.value = false
+    activeTab.value = 'invites'
+    notice.value = '邀请码已创建，可在邀请记录中复制。'
   } catch (cause) {
     error.value = cause instanceof Error ? cause.message : '邀请码创建失败。'
   } finally {
@@ -242,10 +191,10 @@ onMounted(load)
 
 <template>
   <main class="page users-page">
-    <section class="page-heading">
+    <section class="page-heading page-heading--compact">
       <div>
         <h1>用户管理</h1>
-        <p>统一管理用户、参与人以及邀请入口，并保留每个用户的加入来源。</p>
+        <p>查看用户与参与人、追踪邀请来源，并管理邀请入口。</p>
       </div>
       <button class="button button--primary" @click="startInvite">+ 邀请用户</button>
     </section>
@@ -253,19 +202,13 @@ onMounted(load)
     <div v-if="error" class="alert alert--error">{{ error }}</div>
     <div v-if="notice" class="alert alert--success">{{ notice }}</div>
 
-    <section class="overview-metrics users-metrics">
-      <article class="overview-metric"><span>用户</span><strong>{{ members.length }}</strong><small>当前筛选结果</small></article>
-      <article class="overview-metric"><span>参与人</span><strong>{{ participantCount }}</strong><small>当前筛选结果</small></article>
-      <article class="overview-metric"><span>有效邀请码</span><strong>{{ activeInviteCount }}</strong><small>可继续加入</small></article>
-    </section>
-
-    <nav class="section-tabs" aria-label="用户管理子导航">
-      <button :class="{ active: activeTab === 'members' }" @click="activeTab = 'members'">用户与参与人</button>
-      <button :class="{ active: activeTab === 'invites' }" @click="activeTab = 'invites'">邀请用户</button>
+    <nav class="section-tabs compact-tabs" aria-label="用户管理子导航">
+      <button :class="{ active: activeTab === 'members' }" @click="activeTab = 'members'">用户</button>
+      <button :class="{ active: activeTab === 'invites' }" @click="activeTab = 'invites'">邀请记录</button>
     </nav>
 
     <section v-if="activeTab === 'members'" class="panel">
-      <div class="filter-bar">
+      <div class="filter-bar compact-filter-bar">
         <label class="field">
           <span>来源管理员</span>
           <select v-model="filters.invitedByAdminId">
@@ -290,10 +233,17 @@ onMounted(load)
       <div v-else class="table-wrap">
         <table>
           <thead>
-            <tr><th>用户</th><th>参与人</th><th>邀请来源</th><th>加入时间</th><th class="align-right">操作</th></tr>
+            <tr><th>用户</th><th>参与人</th><th>邀请来源</th><th>加入时间</th></tr>
           </thead>
           <tbody>
-            <tr v-for="member in members" :key="member.membershipId">
+            <tr
+              v-for="member in members"
+              :key="member.membershipId"
+              class="clickable-row"
+              tabindex="0"
+              @click="openMember(member)"
+              @keydown.enter.prevent="openMember(member)"
+            >
               <td><strong>{{ member.nickname || '未命名用户' }}</strong></td>
               <td>{{ member.participantCount }} 个</td>
               <td>
@@ -301,82 +251,20 @@ onMounted(load)
                 <small class="muted">{{ inviteLabel(member.inviteCodeId) }}</small>
               </td>
               <td>{{ formatDate(member.joinedAt) }}</td>
-              <td class="align-right"><button class="button button--ghost" @click="openMember(member)">查看详情</button></td>
             </tr>
-            <tr v-if="members.length === 0"><td colspan="5" class="empty-cell">当前条件下没有用户。</td></tr>
+            <tr v-if="members.length === 0"><td colspan="4" class="empty-cell">当前条件下没有用户。</td></tr>
           </tbody>
         </table>
       </div>
-
-      <aside v-if="selectedMember" class="source-panel member-detail-panel">
-        <div class="source-panel__heading">
-          <div>
-            <span class="eyebrow">Member Detail</span>
-            <h3>{{ selectedMember.nickname || '未命名用户' }}</h3>
-            <p class="muted">{{ selectedMember.participantCount }} 个参与人 · {{ selectedMember.bookingCount }} 条预约记录</p>
-          </div>
-          <button class="icon-button" aria-label="关闭用户详情" @click="selectedMember = null">×</button>
-        </div>
-
-        <div class="detail-meta">
-          <div><span>来源管理员</span><strong>{{ adminLabel(selectedMember.invitedByAdminId) }}</strong></div>
-          <div><span>来源邀请码</span><strong>{{ inviteLabel(selectedMember.inviteCodeId) }}</strong></div>
-          <div><span>加入时间</span><strong>{{ formatDate(selectedMember.joinedAt) }}</strong></div>
-        </div>
-
-        <div class="note-editor">
-          <label class="field">
-            <span>用户内部备注</span>
-            <textarea v-model="memberNoteDraft" rows="3" placeholder="仅管理端可见"></textarea>
-          </label>
-          <button class="button button--primary" :disabled="saving" @click="saveMemberNote">保存用户备注</button>
-        </div>
-
-        <div class="participant-list">
-          <article v-for="participant in selectedMember.participants" :key="participant.id" class="participant-card">
-            <div class="participant-card__heading">
-              <div>
-                <strong>{{ participant.name }}</strong>
-                <small>{{ participant.birthMonth }}</small>
-              </div>
-              <span class="status-pill" :class="participant.status === 'active' ? 'status-pill--active' : 'status-pill--disabled'">
-                {{ participant.status === 'active' ? '启用' : '已停用' }}
-              </span>
-            </div>
-            <div class="participant-notes">
-              <div><span>用户备注</span><p>{{ participant.userNote || '无' }}</p></div>
-              <label class="field">
-                <span>管理员内部备注</span>
-                <textarea v-model="participant.adminNote" rows="2" placeholder="仅管理端可见"></textarea>
-                <button class="button button--ghost" :disabled="saving" @click="saveParticipantNote(participant.id, participant.adminNote)">保存参与人备注</button>
-              </label>
-            </div>
-          </article>
-        </div>
-      </aside>
     </section>
 
     <section v-else class="panel">
-      <div class="panel-heading">
+      <div class="compact-panel-heading">
         <div>
-          <h2>邀请用户</h2>
-          <p>邀请码只限制有效期、不限制使用人数。用户加入后会保留来源管理员与邀请码。</p>
+          <h2>邀请记录</h2>
+          <p>邀请码只限制有效期、不限制使用人数；加入后会保留来源。</p>
         </div>
-        <button class="button button--primary" @click="showInviteForm = !showInviteForm">{{ showInviteForm ? '收起' : '+ 新建邀请码' }}</button>
       </div>
-
-      <form v-if="showInviteForm" class="invite-form" @submit.prevent="createInvite">
-        <label class="field">
-          <span>用途标记（可选）</span>
-          <input v-model="inviteForm.label" placeholder="例如：秋季活动" />
-        </label>
-        <label class="field">
-          <span>有效期至</span>
-          <input v-model="inviteForm.expiresAt" type="datetime-local" />
-        </label>
-        <button class="button button--primary" :disabled="saving">{{ saving ? '创建中…' : '生成邀请码' }}</button>
-      </form>
-
       <div class="table-wrap">
         <table>
           <thead><tr><th>标记 / 邀请码</th><th>有效期</th><th>状态</th><th>已加入</th><th class="align-right">操作</th></tr></thead>
@@ -394,23 +282,65 @@ onMounted(load)
                 <span v-else class="muted">已撤销</span>
               </td>
             </tr>
-            <tr v-if="invites.length === 0"><td colspan="5" class="empty-cell">还没有邀请码。点击右上角创建第一个邀请入口。</td></tr>
+            <tr v-if="invites.length === 0"><td colspan="5" class="empty-cell">还没有邀请码。点击右上角“邀请用户”创建第一个邀请入口。</td></tr>
           </tbody>
         </table>
       </div>
+    </section>
 
-      <aside v-if="selectedInvite" class="source-panel">
-        <div class="source-panel__heading">
-          <div><span class="eyebrow">Invite Source</span><h3>{{ selectedInvite.label || selectedInvite.code }} 的来源用户</h3></div>
+    <div v-if="inviteModalOpen" class="modal-backdrop" @click.self="inviteModalOpen = false">
+      <form class="modal invite-modal" role="dialog" aria-modal="true" aria-label="邀请用户" @submit.prevent="createInvite">
+        <div class="modal-heading">
+          <div><h2>邀请用户</h2><p>创建一个有有效期、可多人使用的邀请入口。</p></div>
+          <button type="button" class="icon-button" aria-label="关闭邀请用户" @click="inviteModalOpen = false">×</button>
+        </div>
+        <div class="form-stack">
+          <label class="field">
+            <span>用途标记（可选）</span>
+            <input v-model="inviteForm.label" placeholder="例如：秋季活动" />
+          </label>
+          <label class="field">
+            <span>有效期至</span>
+            <input v-model="inviteForm.expiresAt" type="datetime-local" />
+            <small>有效期内可多人使用；用户加入后会记录来源管理员与邀请码。</small>
+          </label>
+          <div class="modal-actions">
+            <button type="button" class="button button--ghost" @click="inviteModalOpen = false">取消</button>
+            <button class="button button--primary" :disabled="saving">{{ saving ? '创建中…' : '创建邀请码' }}</button>
+          </div>
+        </div>
+      </form>
+    </div>
+
+    <div v-if="selectedInvite" class="modal-backdrop" @click.self="selectedInvite = null">
+      <section class="modal invite-source-modal" role="dialog" aria-modal="true" aria-label="邀请来源用户">
+        <div class="modal-heading">
+          <div>
+            <h2>{{ selectedInvite.label || selectedInvite.code }}</h2>
+            <p>通过这个邀请码加入的用户</p>
+          </div>
           <button class="icon-button" aria-label="关闭来源用户" @click="selectedInvite = null">×</button>
         </div>
         <div v-if="inviteMembers.length === 0" class="empty-state">还没有用户通过这个邀请码加入。</div>
-        <div v-else class="member-list">
-          <article v-for="member in inviteMembers" :key="member.membershipId" class="member-card">
-            <div><strong>{{ member.nickname || '未命名用户' }}</strong><small>{{ member.participantCount }} 个参与人 · {{ formatDate(member.joinedAt) }} 加入</small></div>
-          </article>
+        <div v-else class="member-list modal-member-list">
+          <button
+            v-for="member in inviteMembers"
+            :key="member.membershipId"
+            class="member-card clickable-member-card"
+            @click="openMember(member)"
+          >
+            <div>
+              <strong>{{ member.nickname || '未命名用户' }}</strong>
+              <small>{{ member.participantCount }} 个参与人 · {{ formatDate(member.joinedAt) }} 加入</small>
+            </div>
+            <span class="row-chevron">›</span>
+          </button>
         </div>
-      </aside>
-    </section>
+      </section>
+    </div>
   </main>
 </template>
+
+<style scoped>
+.compact-filter-bar{padding:12px 14px;gap:10px}.compact-panel-heading{min-height:50px;padding:8px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}.compact-panel-heading h2{margin:0;font-size:15px}.compact-panel-heading p{margin:3px 0 0;color:var(--muted);font-size:12px}.invite-modal{width:min(520px,100%)}.invite-source-modal{width:min(620px,100%)}.modal-member-list{padding:6px}.clickable-member-card{width:100%;border:0;background:#fff;color:var(--ink);display:flex;align-items:center;justify-content:space-between;text-align:left;border-radius:8px}.clickable-member-card:hover{background:#f7f9f9}.compact-tabs{margin-bottom:10px}
+</style>
