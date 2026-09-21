@@ -683,13 +683,14 @@ textarea:focus { border-color: #62a79e; box-shadow: 0 0 0 3px rgba(18,110,98,.1)
   .account-card small { font-size: 10px; }
   .space-menu {
     position: fixed;
-    left: 14px;
-    right: 14px;
-    top: 118px;
-    bottom: auto;
+    left: 12px;
+    right: 12px;
+    top: auto;
+    bottom: calc(12px + env(safe-area-inset-bottom));
     width: auto;
     max-width: none;
-    max-height: calc(100vh - 136px);
+    max-height: min(72vh, 560px);
+    border-radius: 18px;
   }
 
   .page-heading {
@@ -775,7 +776,6 @@ textarea:focus { border-color: #62a79e; box-shadow: 0 0 0 3px rgba(18,110,98,.1)
 
   .sidebar-bottom { grid-template-columns: 1fr; }
   .account-card { min-height: 48px; }
-  .space-menu { top: 166px; }
 
   .page { padding: 18px 12px 28px; }
   .page-heading h1 { font-size: 26px; }
@@ -818,7 +818,12 @@ textarea:focus { border-color: #62a79e; box-shadow: 0 0 0 3px rgba(18,110,98,.1)
   }
 
   .panel { border-radius: 13px; }
-  .panel-heading { gap: 12px; }
+  .panel-heading {
+    gap: 12px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .panel-heading > .button { width: 100%; }
   .panel-heading h2 { font-size: 18px; }
 
   .table-wrap {
