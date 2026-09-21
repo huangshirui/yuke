@@ -77,6 +77,7 @@
   --color-topbar-glass: rgba(255, 255, 255, 0.92);
   --color-overlay: rgba(12, 25, 23, 0.46);
   --color-overlay-soft: rgba(10, 20, 20, 0.36);
+  --color-loading-mask: rgba(255, 255, 255, 0.78);
   --color-sidebar-border: rgba(255, 255, 255, 0.09);
   --color-sidebar-divider: rgba(255, 255, 255, 0.08);
   --color-sidebar-card: rgba(255, 255, 255, 0.04);
@@ -136,6 +137,8 @@
   --control-size-icon-nav: 32px;
   --control-size-icon-nav-touch: 40px;
   --icon-size-nav-chevron: 16px;
+  --loading-spinner-size: 16px;
+  --loading-spinner-stroke: 2px;
   --control-padding-x: 11px;
   --select-padding-right: 44px;
   --select-chevron-offset: 16px;
