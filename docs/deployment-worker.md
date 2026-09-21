@@ -113,6 +113,7 @@ apply_migrations
 - 本次发布包含尚未执行的 migration：明确选择 `true`，先 remote migration，再 deploy Worker；
 - migration 或 deploy 任一步失败都会停止后续步骤；
 - migration 失败时 Workflow 只输出脱敏后的错误摘要（自动移除受保护的 Cloudflare / D1 / R2 配置值），便于定位 SQL / schema 问题；完整 Wrangler 输出仍不进入公开 CI Log；
+- D1 migration SQL 保持无 `--` 行注释；Cloudflare 远程 migration 的 statement splitter 对 SQL 行注释存在已知兼容性问题，本地可通过而 remote 失败。迁移意图写在领域/部署文档或 commit/PR 中；CI 会阻止带 `--` 行注释的 migration。
 - Worker 发布完成后，`deploy` Job 独立结束；随后单独的 `smoke` Job 检查 `/health`；
 - `smoke` 最多重试约 2 分钟，处理刚发布后可能出现的短暂边缘传播 / WAF 状态波动；
 - 只有最终获得 HTTP 200 且 payload 为 `{ data: { status: "ok", service: "yuke-api" } }` 才算 smoke 成功；403 不会被视为成功。
