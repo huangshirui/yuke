@@ -734,6 +734,9 @@ export async function completeBookingForAdmin(
     bookingId: string
     spaceId: string
     adminId: string
+    completionSource: BookingCompletionSource
+    externalReference: string | null
+    batchId: string | null
     now: number
     beforeJson: string
     afterJson: string
@@ -744,11 +747,58 @@ export async function completeBookingForAdmin(
       UPDATE bookings
       SET status = 'completed',
           completed_at = ?,
+          completion_source = ?,
+          completion_external_reference = ?,
+          completion_batch_id = ?,
           updated_at = ?
       WHERE id = ?
         AND space_id = ?
         AND status = 'booked'
-    `).bind(input.now, input.now, input.bookingId, input.spaceId),
+    `).bind(
+      input.now,
+      input.completionSource,
+      input.externalReference,
+      input.batchId,
+      input.now,
+      input.bookingId,
+      input.spaceId
+    ),
+    db.prepare(`
+      INSERT INTO booking_reconciliations (
+        booking_id,
+        space_id,
+        status,
+        settlement_source,
+        settled_at,
+        settled_by_admin_id,
+        batch_id,
+        note,
+        created_at,
+        updated_at
+      )
+      SELECT bookings.id,
+             bookings.space_id,
+             'pending',
+             NULL,
+             NULL,
+             NULL,
+             NULL,
+             NULL,
+             ?,
+             ?
+      FROM bookings
+      WHERE bookings.id = ?
+        AND bookings.space_id = ?
+        AND bookings.status = 'completed'
+        AND bookings.updated_at = ?
+      ON CONFLICT(booking_id) DO NOTHING
+    `).bind(
+      input.now,
+      input.now,
+      input.bookingId,
+      input.spaceId,
+      input.now
+    ),
     historyStatement(db, {
       id: `bkh_${crypto.randomUUID().replace(/-/g, '')}`,
       bookingId: input.bookingId,
@@ -760,6 +810,73 @@ export async function completeBookingForAdmin(
       afterJson: input.afterJson,
       now: input.now
     })
+  ])
+}
+
+export async function settleBookingReconciliationForAdmin(
+  db: BookingDatabase,
+  input: {
+    bookingId: string
+    spaceId: string
+    adminId: string
+    source: BookingReconciliationSource
+    batchId: string | null
+    note: string | null
+    now: number
+  }
+): Promise<void> {
+  await db.batch([
+    db.prepare(`
+      INSERT INTO booking_reconciliations (
+        booking_id,
+        space_id,
+        status,
+        settlement_source,
+        settled_at,
+        settled_by_admin_id,
+        batch_id,
+        note,
+        created_at,
+        updated_at
+      )
+      SELECT bookings.id,
+             bookings.space_id,
+             'pending',
+             NULL,
+             NULL,
+             NULL,
+             NULL,
+             NULL,
+             COALESCE(bookings.completed_at, bookings.updated_at),
+             bookings.updated_at
+      FROM bookings
+      WHERE bookings.id = ?
+        AND bookings.space_id = ?
+        AND bookings.status = 'completed'
+      ON CONFLICT(booking_id) DO NOTHING
+    `).bind(input.bookingId, input.spaceId),
+    db.prepare(`
+      UPDATE booking_reconciliations
+      SET status = 'settled',
+          settlement_source = ?,
+          settled_at = ?,
+          settled_by_admin_id = ?,
+          batch_id = ?,
+          note = ?,
+          updated_at = ?
+      WHERE booking_id = ?
+        AND space_id = ?
+        AND status = 'pending'
+    `).bind(
+      input.source,
+      input.now,
+      input.adminId,
+      input.batchId,
+      input.note,
+      input.now,
+      input.bookingId,
+      input.spaceId
+    )
   ])
 }
 
