@@ -1,12 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { getAdminApi } from '../services/adminApi'
 import type { AdminResource, AdminScheduleSlot, AdminSlotType, AdminSpace } from '../types/admin'
 
 const api = getAdminApi()
 const route = useRoute()
-const router = useRouter()
 
 const spaceId = computed(() => String(route.params.spaceId))
 const space = ref<AdminSpace | null>(null)
@@ -300,8 +299,7 @@ onMounted(loadBase)
     <template v-else-if="space">
       <section class="page-heading page-heading--compact">
         <div>
-          <button class="back-link" @click="router.push('/spaces/' + spaceId + '/resources')">← 返回空间</button>
-          <div class="title-line"><h1>开放时间</h1><span class="status-pill status-pill--active">{{ space.name }}</span></div>
+          <div class="title-line"><h1>开放时间</h1></div>
           <p>按周配置预约对象的单次或周期开放时段。拖选以 30 分钟为网格，也可以在表单中输入精确时间。</p>
         </div>
         <button class="button button--primary" :disabled="!selectedResourceId" @click="openCreate()">+ 新建时段</button>
