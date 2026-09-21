@@ -1,15 +1,43 @@
-import { mkdtempSync, rmSync } from 'node:fs'
+import {
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync
+} from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { spawnSync } from 'node:child_process'
 
 const wrangler = process.platform === 'win32' ? 'wrangler.cmd' : 'wrangler'
 const database = 'yuke-local'
+const serviceRoot = new URL('..', import.meta.url)
+const migrationsDir = new URL('../migrations/', import.meta.url)
 const persistTo = mkdtempSync(join(tmpdir(), 'yuke-d1-verify-'))
+
+function verifyRemoteParserSafety() {
+  const sqlFiles = readdirSync(migrationsDir)
+    .filter((name) => name.endsWith('.sql'))
+    .sort()
+
+  for (const name of sqlFiles) {
+    const content = readFileSync(new URL(name, migrationsDir), 'utf8')
+    const lineComment = content
+      .split(/\r?\n/)
+      .findIndex((line) => /^\s*--/.test(line))
+
+    if (lineComment >= 0) {
+      throw new Error(
+        `D1 migration ${name} contains a -- line comment at line ${lineComment + 1}. ` +
+        'Remote D1 migration statement splitting has known parser hazards around SQL line comments; ' +
+        'keep migration SQL comment-free and document intent outside the migration file.'
+      )
+    }
+  }
+}
 
 function run(args, { expectFailure = false, mustInclude = [] } = {}) {
   const result = spawnSync(wrangler, args, {
-    cwd: new URL('..', import.meta.url),
+    cwd: serviceRoot,
     encoding: 'utf8',
     env: {
       ...process.env,
@@ -50,6 +78,8 @@ function localArgs(commandArgs) {
 }
 
 try {
+  verifyRemoteParserSafety()
+
   // Fresh local database: apply every migration.
   run(localArgs(['d1', 'migrations', 'apply', database]))
 
