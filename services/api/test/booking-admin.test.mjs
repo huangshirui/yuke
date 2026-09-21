@@ -148,6 +148,20 @@ describe('Admin Booking mutations and history', () => {
     expect(list.status).toBe(200)
     expect((await list.json()).data.map((item) => item.id)).toEqual([booking.id])
 
+    const byMembership = await adminRequest(
+      `/v1/admin/spaces/${ids.space}/bookings?membershipId=${ids.membership}`,
+      adminToken
+    )
+    expect(byMembership.status).toBe(200)
+    expect((await byMembership.json()).data.map((item) => item.id)).toEqual([booking.id])
+
+    const missingMembership = await adminRequest(
+      `/v1/admin/spaces/${ids.space}/bookings?membershipId=mem_missing`,
+      adminToken
+    )
+    expect(missingMembership.status).toBe(200)
+    expect((await missingMembership.json()).data).toEqual([])
+
     const patch = await adminRequest(
       `/v1/admin/spaces/${ids.space}/bookings/${booking.id}`,
       adminToken,
@@ -269,6 +283,16 @@ describe('Admin Booking mutations and history', () => {
       })
       const booking = await createBookingViaApi(ids, slotId)
 
+      const cancelOccupiedSlot = await adminRequest(
+        `/v1/admin/spaces/${ids.space}/slots/${slotId}/cancel`,
+        adminToken,
+        { method: 'POST' }
+      )
+      expect(cancelOccupiedSlot.status).toBe(409)
+      await expect(cancelOccupiedSlot.json()).resolves.toMatchObject({
+        error: { code: 'SLOT_NOT_BOOKABLE' }
+      })
+
       const cancel = await adminRequest(
         `/v1/admin/spaces/${ids.space}/bookings/${booking.id}/cancel`,
         adminToken,
@@ -286,6 +310,16 @@ describe('Admin Booking mutations and history', () => {
         'created',
         'cancelled'
       ])
+
+      const cancelReleasedSlot = await adminRequest(
+        `/v1/admin/spaces/${ids.space}/slots/${slotId}/cancel`,
+        adminToken,
+        { method: 'POST' }
+      )
+      expect(cancelReleasedSlot.status).toBe(200)
+      await expect(cancelReleasedSlot.json()).resolves.toMatchObject({
+        data: { id: slotId, status: 'cancelled' }
+      })
     }
 
     {
@@ -308,8 +342,67 @@ describe('Admin Booking mutations and history', () => {
       )
       expect(complete.status).toBe(200)
       await expect(complete.json()).resolves.toMatchObject({
-        data: { id: booking.id, status: 'completed' }
+        data: {
+          id: booking.id,
+          status: 'completed',
+          completion: {
+            source: 'manual',
+            completedAt: expect.any(String)
+          },
+          reconciliation: {
+            status: 'pending',
+            settledAt: null,
+            source: null
+          }
+        }
       })
+
+      const pendingList = await adminRequest(
+        `/v1/admin/spaces/${ids.space}/bookings?reconciliationStatus=pending`,
+        adminToken
+      )
+      expect(pendingList.status).toBe(200)
+      expect((await pendingList.json()).data.map((item) => item.id)).toContain(booking.id)
+
+      const cancelCompletedSlot = await adminRequest(
+        `/v1/admin/spaces/${ids.space}/slots/${slotId}/cancel`,
+        adminToken,
+        { method: 'POST' }
+      )
+      expect(cancelCompletedSlot.status).toBe(409)
+
+      const reconcile = await adminRequest(
+        `/v1/admin/spaces/${ids.space}/bookings/${booking.id}/reconcile`,
+        adminToken,
+        { method: 'POST' }
+      )
+      expect(reconcile.status).toBe(200)
+      await expect(reconcile.json()).resolves.toMatchObject({
+        data: {
+          id: booking.id,
+          status: 'completed',
+          reconciliation: {
+            status: 'settled',
+            source: 'manual',
+            settledAt: expect.any(String),
+            settledByAdminId: ids.admin
+          }
+        }
+      })
+
+      const settledList = await adminRequest(
+        `/v1/admin/spaces/${ids.space}/bookings?reconciliationStatus=settled`,
+        adminToken
+      )
+      expect(settledList.status).toBe(200)
+      expect((await settledList.json()).data.map((item) => item.id)).toContain(booking.id)
+
+      const reconcileAgain = await adminRequest(
+        `/v1/admin/spaces/${ids.space}/bookings/${booking.id}/reconcile`,
+        adminToken,
+        { method: 'POST' }
+      )
+      expect(reconcileAgain.status).toBe(200)
 
       const cancelCompleted = await adminRequest(
         `/v1/admin/spaces/${ids.space}/bookings/${booking.id}/cancel`,

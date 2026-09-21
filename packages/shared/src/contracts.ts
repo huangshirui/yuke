@@ -37,6 +37,13 @@ export type InviteStatus = 'active' | 'revoked'
 export type SlotStatus = 'open' | 'frozen' | 'cancelled'
 export type SlotSeriesStatus = 'active' | 'ended' | 'cancelled'
 export type BookingStatus = 'booked' | 'cancelled' | 'completed'
+export type BookingCompletionSource =
+  | 'manual'
+  | 'classin_import'
+  | 'external_import'
+  | 'external_api'
+export type BookingReconciliationStatus = 'pending' | 'settled'
+export type BookingReconciliationSource = 'manual' | 'import' | 'external_api'
 export type SeriesEditScope = 'single' | 'this_and_future' | 'entire_series'
 export type IsoWeekday = 1 | 2 | 3 | 4 | 5 | 6 | 7
 
@@ -107,6 +114,21 @@ export type Slot = {
   bookable: boolean
 }
 
+export type AdminSlotBookingProjection = {
+  id: Id
+  status: Extract<BookingStatus, 'booked' | 'completed'>
+  membershipId: Id
+  userNickname: string
+  participantId: Id
+  participantName: string
+  reconciliationStatus: BookingReconciliationStatus | null
+}
+
+export type AdminSlot = Slot & {
+  // Admin calendar list populates this projection. Mutation responses may omit it.
+  booking?: AdminSlotBookingProjection | null
+}
+
 export type Booking = {
   id: Id
   spaceId: Id
@@ -143,8 +165,26 @@ export type BookingDetail = Booking & {
   }
 }
 
+export type BookingCompletion = {
+  completedAt: string
+  source: BookingCompletionSource | null
+  externalReference: string | null
+  batchId: string | null
+}
+
+export type BookingReconciliation = {
+  status: BookingReconciliationStatus
+  settledAt: string | null
+  source: BookingReconciliationSource | null
+  settledByAdminId: Id | null
+  batchId: string | null
+  note: string | null
+}
+
 export type AdminBookingDetail = BookingDetail & {
   membershipId: Id
+  completion: BookingCompletion | null
+  reconciliation: BookingReconciliation | null
 }
 
 export type BookingMessage = {

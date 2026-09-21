@@ -1,4 +1,5 @@
 import type {
+  BookingReconciliationStatus,
   BookingStatus,
   UpdateAdminBookingInput
 } from '@yuke/shared'
@@ -11,6 +12,7 @@ import type { BookingListFilters } from './repository'
 
 const ID_MAX_LENGTH = 128
 const BOOKING_STATUSES: readonly BookingStatus[] = ['booked', 'cancelled', 'completed']
+const RECONCILIATION_STATUSES: readonly BookingReconciliationStatus[] = ['pending', 'settled']
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
 
 function parseDate(value: string, key: string): string {
@@ -106,6 +108,17 @@ export function parseBookingListFilters(
     filters.resourceId = queryId(url, 'resourceId')
     filters.participantId = queryId(url, 'participantId')
     filters.slotTypeId = queryId(url, 'slotTypeId')
+    filters.membershipId = queryId(url, 'membershipId')
+    const reconciliationRaw = url.searchParams.get('reconciliationStatus')
+    if (reconciliationRaw !== null) {
+      if (!RECONCILIATION_STATUSES.includes(reconciliationRaw as BookingReconciliationStatus)) {
+        throw new ValidationError('reconciliationStatus has an unsupported value', {
+          path: 'reconciliationStatus',
+          allowed: RECONCILIATION_STATUSES
+        })
+      }
+      filters.reconciliationStatus = reconciliationRaw as BookingReconciliationStatus
+    }
   }
 
   return filters

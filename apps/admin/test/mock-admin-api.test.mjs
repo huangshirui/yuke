@@ -160,6 +160,20 @@ test('booking management mock filters, moves, cancels and completes bookings', a
   assert.equal(initial.length, 1)
   assert.equal(initial[0].membershipId, 'mem_demo_01')
 
+  const memberBookings = await api.listBookings('sp_demo_alpha', { membershipId: 'mem_demo_01' })
+  assert.equal(memberBookings.length, 1)
+  assert.equal((await api.listBookings('sp_demo_alpha', { membershipId: 'mem_missing' })).length, 0)
+
+  const projectedSlots = await api.listScheduleSlots(
+    'sp_demo_alpha',
+    'res_demo_aurora',
+    '2026-09-22',
+    '2026-09-22',
+  )
+  assert.equal(projectedSlots.length, 1)
+  assert.equal(projectedSlots[0].booking?.id, initial[0].id)
+  assert.equal(projectedSlots[0].booking?.participantName, initial[0].participant.name)
+
   const moved = await api.updateBooking('sp_demo_alpha', initial[0].id, {
     slotId: 'slot_demo_alt',
     participantId: 'par_demo_01',
@@ -168,9 +182,32 @@ test('booking management mock filters, moves, cancels and completes bookings', a
 
   const completed = await api.completeBooking('sp_demo_alpha', moved.id)
   assert.equal(completed.status, 'completed')
+  assert.equal(completed.completion?.source, 'manual')
+  assert.equal(completed.reconciliation?.status, 'pending')
   assert.equal((await api.listBookings('sp_demo_alpha', { status: 'completed' })).length, 1)
+  assert.equal((await api.listBookings('sp_demo_alpha', { reconciliationStatus: 'pending' })).length, 1)
+
+  const settled = await api.reconcileBooking('sp_demo_alpha', moved.id)
+  assert.equal(settled.reconciliation?.status, 'settled')
+  assert.equal((await api.listBookings('sp_demo_alpha', { reconciliationStatus: 'settled' })).length, 1)
+
+  const settledSlots = await api.listScheduleSlots(
+    'sp_demo_alpha',
+    'res_demo_aurora',
+    '2026-09-26',
+    '2026-09-26',
+  )
+  assert.equal(settledSlots[0].booking?.reconciliationStatus, 'settled')
 
   const freshApi = createMockAdminApi(memoryStorage())
+  await assert.rejects(
+    freshApi.cancelScheduleSlot('sp_demo_alpha', 'slot_demo_single'),
+    /先取消预约/
+  )
   const fresh = (await freshApi.listBookings('sp_demo_alpha', { status: 'booked' }))[0]
   assert.equal((await freshApi.cancelBooking('sp_demo_alpha', fresh.id)).status, 'cancelled')
+  assert.equal(
+    (await freshApi.cancelScheduleSlot('sp_demo_alpha', 'slot_demo_single')).status,
+    'cancelled'
+  )
 })

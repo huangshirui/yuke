@@ -1,7 +1,9 @@
 import type {
   AdminBookingDetail,
   Booking,
+  BookingCompletionSource,
   BookingDetail,
+  BookingReconciliationSource,
   CreateBookingInput,
   UpdateAdminBookingInput
 } from '@yuke/shared'
@@ -23,6 +25,7 @@ import {
   insertBookingIfEligible,
   listBookingsForAdmin,
   listBookingsForMembership,
+  settleBookingReconciliationForAdmin,
   updateBookingForAdmin,
   type BookingCreationContext,
   type BookingDatabase,
@@ -469,8 +472,13 @@ export async function completeAdminBooking(
   spaceId: string,
   bookingId: string,
   adminId: string,
-  now = Date.now()
-): Promise<BookingDetail> {
+  now = Date.now(),
+  completion: {
+    source: BookingCompletionSource
+    externalReference?: string | null
+    batchId?: string | null
+  } = { source: 'manual' }
+): Promise<AdminBookingDetail> {
   const state = await requireAdminBookingState(env, spaceId, bookingId)
   if (state.booking.status === 'completed') {
     return readAdminBooking(env, spaceId, bookingId)
@@ -484,9 +492,20 @@ export async function completeAdminBooking(
     bookingId,
     spaceId,
     adminId,
+    completionSource: completion.source,
+    externalReference: completion.externalReference ?? null,
+    batchId: completion.batchId ?? null,
     now,
     beforeJson: JSON.stringify(state.booking),
-    afterJson: JSON.stringify(after)
+    afterJson: JSON.stringify({
+      ...after,
+      completion: {
+        completedAt: new Date(now).toISOString(),
+        source: completion.source,
+        externalReference: completion.externalReference ?? null,
+        batchId: completion.batchId ?? null
+      }
+    })
   })
 
   const updated = await requireAdminBookingState(env, spaceId, bookingId)
@@ -494,4 +513,41 @@ export async function completeAdminBooking(
     throw new AppError('INTERNAL_ERROR', 'Booking completion failed')
   }
   return readAdminBooking(env, spaceId, bookingId)
+}
+
+export async function settleAdminBookingReconciliation(
+  env: BookingEnv,
+  spaceId: string,
+  bookingId: string,
+  adminId: string,
+  now = Date.now(),
+  settlement: {
+    source: BookingReconciliationSource
+    batchId?: string | null
+    note?: string | null
+  } = { source: 'manual' }
+): Promise<AdminBookingDetail> {
+  const current = await readAdminBooking(env, spaceId, bookingId)
+  if (current.status !== 'completed') {
+    throw new ValidationError('Only a completed Booking can be reconciled')
+  }
+  if (current.reconciliation?.status === 'settled') {
+    return current
+  }
+
+  await settleBookingReconciliationForAdmin(bookingDb(env), {
+    bookingId,
+    spaceId,
+    adminId,
+    source: settlement.source,
+    batchId: settlement.batchId ?? null,
+    note: settlement.note ?? null,
+    now
+  })
+
+  const updated = await readAdminBooking(env, spaceId, bookingId)
+  if (updated.reconciliation?.status !== 'settled') {
+    throw new AppError('INTERNAL_ERROR', 'Booking reconciliation failed')
+  }
+  return updated
 }

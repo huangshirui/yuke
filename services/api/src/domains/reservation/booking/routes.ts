@@ -16,6 +16,7 @@ import {
   listVisibleAdminBookings,
   readAdminBooking,
   readCurrentUserBooking,
+  settleAdminBookingReconciliation,
   updateAdminBooking,
   type BookingEnv
 } from './service'
@@ -138,6 +139,20 @@ export function registerBookingRoutes(app: Router<BookingRouteEnv>): void {
     async (context) =>
       ok(
         await completeAdminBooking(
+          context.env,
+          context.params.spaceId,
+          context.params.bookingId,
+          getAdminPrincipal(context).id
+        )
+      ),
+    [requireAdminAccess, requireSpaceAdmin()]
+  )
+
+  app.post(
+    '/v1/admin/spaces/:spaceId/bookings/:bookingId/reconcile',
+    async (context) =>
+      ok(
+        await settleAdminBookingReconciliation(
           context.env,
           context.params.spaceId,
           context.params.bookingId,

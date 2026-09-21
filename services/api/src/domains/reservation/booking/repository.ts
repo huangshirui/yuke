@@ -1,7 +1,10 @@
 import type {
   AdminBookingDetail,
   Booking,
+  BookingCompletionSource,
   BookingDetail,
+  BookingReconciliationSource,
+  BookingReconciliationStatus,
   BookingStatus,
   CutoffMinutes,
   SlotStatus
@@ -38,6 +41,8 @@ export type BookingListFilters = {
   resourceId?: string
   participantId?: string
   slotTypeId?: string
+  membershipId?: string
+  reconciliationStatus?: BookingReconciliationStatus
 }
 
 type BookingContextRow = {
@@ -62,6 +67,16 @@ type BookingRow = {
 
 type BookingDetailRow = BookingRow & {
   membership_id: string
+  completed_at: number | null
+  completion_source: BookingCompletionSource | null
+  completion_external_reference: string | null
+  completion_batch_id: string | null
+  reconciliation_status: BookingReconciliationStatus | null
+  reconciliation_settlement_source: BookingReconciliationSource | null
+  reconciliation_settled_at: number | null
+  reconciliation_settled_by_admin_id: string | null
+  reconciliation_batch_id: string | null
+  reconciliation_note: string | null
   participant_name: string
   participant_birth_month: string
   participant_status: 'active' | 'inactive'
@@ -128,7 +143,29 @@ function mapBookingDetail(row: BookingDetailRow): BookingDetail {
 function mapAdminBookingDetail(row: BookingDetailRow): AdminBookingDetail {
   return {
     ...mapBookingDetail(row),
-    membershipId: row.membership_id
+    membershipId: row.membership_id,
+    completion:
+      row.status === 'completed' && row.completed_at !== null
+        ? {
+            completedAt: new Date(row.completed_at).toISOString(),
+            source: row.completion_source,
+            externalReference: row.completion_external_reference,
+            batchId: row.completion_batch_id
+          }
+        : null,
+    reconciliation: row.reconciliation_status
+      ? {
+          status: row.reconciliation_status,
+          settledAt:
+            row.reconciliation_settled_at === null
+              ? null
+              : new Date(row.reconciliation_settled_at).toISOString(),
+          source: row.reconciliation_settlement_source,
+          settledByAdminId: row.reconciliation_settled_by_admin_id,
+          batchId: row.reconciliation_batch_id,
+          note: row.reconciliation_note
+        }
+      : null
   }
 }
 
@@ -139,8 +176,18 @@ const BOOKING_DETAIL_SELECT = `
          bookings.membership_id,
          bookings.participant_id,
          bookings.status,
+         bookings.completed_at,
+         bookings.completion_source,
+         bookings.completion_external_reference,
+         bookings.completion_batch_id,
          bookings.created_at,
          bookings.updated_at,
+         booking_reconciliations.status AS reconciliation_status,
+         booking_reconciliations.settlement_source AS reconciliation_settlement_source,
+         booking_reconciliations.settled_at AS reconciliation_settled_at,
+         booking_reconciliations.settled_by_admin_id AS reconciliation_settled_by_admin_id,
+         booking_reconciliations.batch_id AS reconciliation_batch_id,
+         booking_reconciliations.note AS reconciliation_note,
          participants.name AS participant_name,
          participants.birth_month AS participant_birth_month,
          participants.status AS participant_status,
@@ -155,6 +202,9 @@ const BOOKING_DETAIL_SELECT = `
          slots.local_date,
          slots.status AS slot_status
   FROM bookings
+  LEFT JOIN booking_reconciliations
+    ON booking_reconciliations.booking_id = bookings.id
+   AND booking_reconciliations.space_id = bookings.space_id
   JOIN participants
     ON participants.id = bookings.participant_id
    AND participants.membership_id = bookings.membership_id
@@ -198,6 +248,12 @@ function buildListQuery(
   if (filters.slotTypeId) {
     where.push('slot_types.id = ?')
   }
+  if (filters.membershipId && !scopedToMembership) {
+    where.push('bookings.membership_id = ?')
+  }
+  if (filters.reconciliationStatus && !scopedToMembership) {
+    where.push('booking_reconciliations.status = ?')
+  }
 
   return {
     sql: `${BOOKING_DETAIL_SELECT}
@@ -221,6 +277,8 @@ function listValues(
   if (filters.resourceId) values.push(filters.resourceId)
   if (filters.participantId) values.push(filters.participantId)
   if (filters.slotTypeId) values.push(filters.slotTypeId)
+  if (filters.membershipId && !membershipId) values.push(filters.membershipId)
+  if (filters.reconciliationStatus && !membershipId) values.push(filters.reconciliationStatus)
   return values
 }
 
@@ -676,6 +734,9 @@ export async function completeBookingForAdmin(
     bookingId: string
     spaceId: string
     adminId: string
+    completionSource: BookingCompletionSource
+    externalReference: string | null
+    batchId: string | null
     now: number
     beforeJson: string
     afterJson: string
@@ -686,11 +747,58 @@ export async function completeBookingForAdmin(
       UPDATE bookings
       SET status = 'completed',
           completed_at = ?,
+          completion_source = ?,
+          completion_external_reference = ?,
+          completion_batch_id = ?,
           updated_at = ?
       WHERE id = ?
         AND space_id = ?
         AND status = 'booked'
-    `).bind(input.now, input.now, input.bookingId, input.spaceId),
+    `).bind(
+      input.now,
+      input.completionSource,
+      input.externalReference,
+      input.batchId,
+      input.now,
+      input.bookingId,
+      input.spaceId
+    ),
+    db.prepare(`
+      INSERT INTO booking_reconciliations (
+        booking_id,
+        space_id,
+        status,
+        settlement_source,
+        settled_at,
+        settled_by_admin_id,
+        batch_id,
+        note,
+        created_at,
+        updated_at
+      )
+      SELECT bookings.id,
+             bookings.space_id,
+             'pending',
+             NULL,
+             NULL,
+             NULL,
+             NULL,
+             NULL,
+             ?,
+             ?
+      FROM bookings
+      WHERE bookings.id = ?
+        AND bookings.space_id = ?
+        AND bookings.status = 'completed'
+        AND bookings.updated_at = ?
+      ON CONFLICT(booking_id) DO NOTHING
+    `).bind(
+      input.now,
+      input.now,
+      input.bookingId,
+      input.spaceId,
+      input.now
+    ),
     historyStatement(db, {
       id: `bkh_${crypto.randomUUID().replace(/-/g, '')}`,
       bookingId: input.bookingId,
@@ -702,6 +810,73 @@ export async function completeBookingForAdmin(
       afterJson: input.afterJson,
       now: input.now
     })
+  ])
+}
+
+export async function settleBookingReconciliationForAdmin(
+  db: BookingDatabase,
+  input: {
+    bookingId: string
+    spaceId: string
+    adminId: string
+    source: BookingReconciliationSource
+    batchId: string | null
+    note: string | null
+    now: number
+  }
+): Promise<void> {
+  await db.batch([
+    db.prepare(`
+      INSERT INTO booking_reconciliations (
+        booking_id,
+        space_id,
+        status,
+        settlement_source,
+        settled_at,
+        settled_by_admin_id,
+        batch_id,
+        note,
+        created_at,
+        updated_at
+      )
+      SELECT bookings.id,
+             bookings.space_id,
+             'pending',
+             NULL,
+             NULL,
+             NULL,
+             NULL,
+             NULL,
+             COALESCE(bookings.completed_at, bookings.updated_at),
+             bookings.updated_at
+      FROM bookings
+      WHERE bookings.id = ?
+        AND bookings.space_id = ?
+        AND bookings.status = 'completed'
+      ON CONFLICT(booking_id) DO NOTHING
+    `).bind(input.bookingId, input.spaceId),
+    db.prepare(`
+      UPDATE booking_reconciliations
+      SET status = 'settled',
+          settlement_source = ?,
+          settled_at = ?,
+          settled_by_admin_id = ?,
+          batch_id = ?,
+          note = ?,
+          updated_at = ?
+      WHERE booking_id = ?
+        AND space_id = ?
+        AND status = 'pending'
+    `).bind(
+      input.source,
+      input.now,
+      input.adminId,
+      input.batchId,
+      input.note,
+      input.now,
+      input.bookingId,
+      input.spaceId
+    )
   ])
 }
 

@@ -125,6 +125,8 @@ const seed = {
         slotId: 'slot_demo_single',
         participantId: 'par_demo_01',
         status: 'booked',
+        completion: null,
+        reconciliation: null,
         createdAt: '2026-09-18T03:30:00.000Z',
         updatedAt: '2026-09-18T03:30:00.000Z',
         participant: {
@@ -551,9 +553,31 @@ export function createMockAdminApi(storage = globalThis.localStorage ?? memorySt
 
     async listScheduleSlots(spaceId, resourceId, from, to) {
       requireResource(spaceId, resourceId)
-      return clone((state.slots[spaceId] ?? []).filter((slot) =>
-        slot.resourceId === resourceId && slot.localDate >= from && slot.localDate <= to
-      ))
+      const slots = (state.slots[spaceId] ?? [])
+        .filter((slot) =>
+          slot.resourceId === resourceId && slot.localDate >= from && slot.localDate <= to
+        )
+        .map((slot) => {
+          const booking = (state.bookings[spaceId] ?? []).find(
+            (item) => item.slotId === slot.id && ['booked', 'completed'].includes(item.status),
+          )
+          if (!booking) return { ...slot, booking: null }
+          const hydrated = hydrateBooking(spaceId, booking)
+          const member = requireMember(spaceId, booking.membershipId)
+          return {
+            ...slot,
+            booking: {
+              id: booking.id,
+              status: booking.status,
+              membershipId: booking.membershipId,
+              userNickname: member.nickname,
+              participantId: hydrated.participant.id,
+              participantName: hydrated.participant.name,
+              reconciliationStatus: hydrated.reconciliation?.status ?? null,
+            },
+          }
+        })
+      return clone(slots)
     },
 
     async createScheduleSlot(spaceId, input) {
@@ -620,7 +644,24 @@ export function createMockAdminApi(storage = globalThis.localStorage ?? memorySt
     async setScheduleSlotFrozen(spaceId, slotId, frozen) {
       const slot = requireSlot(spaceId, slotId)
       slot.status = frozen ? 'frozen' : 'open'
-      slot.bookable = !frozen
+      const occupied = (state.bookings[spaceId] ?? []).some(
+        (item) => item.slotId === slot.id && ['booked', 'completed'].includes(item.status),
+      )
+      slot.bookable = !frozen && !occupied
+      save()
+      return clone(slot)
+    },
+
+    async cancelScheduleSlot(spaceId, slotId) {
+      const slot = requireSlot(spaceId, slotId)
+      const occupied = (state.bookings[spaceId] ?? []).some(
+        (item) => item.slotId === slot.id && ['booked', 'completed'].includes(item.status),
+      )
+      if (occupied) {
+        throw bookingError('SLOT_NOT_BOOKABLE', '这个时段存在有效预约，请先取消预约。')
+      }
+      slot.status = 'cancelled'
+      slot.bookable = false
       save()
       return clone(slot)
     },
@@ -635,6 +676,8 @@ export function createMockAdminApi(storage = globalThis.localStorage ?? memorySt
         if (filters.resourceId && booking.resource.id !== filters.resourceId) return false
         if (filters.participantId && booking.participant.id !== filters.participantId) return false
         if (filters.slotTypeId && booking.slotType.id !== filters.slotTypeId) return false
+        if (filters.membershipId && booking.membershipId !== filters.membershipId) return false
+        if (filters.reconciliationStatus && booking.reconciliation?.status !== filters.reconciliationStatus) return false
         return true
       })
       return clone(list)
@@ -698,8 +741,42 @@ export function createMockAdminApi(storage = globalThis.localStorage ?? memorySt
       const booking = requireBooking(spaceId, bookingId)
       if (booking.status === 'cancelled') throw new Error('已取消预约不能完成。')
       if (booking.status === 'booked') {
+        const now = new Date().toISOString()
         booking.status = 'completed'
-        booking.updatedAt = new Date().toISOString()
+        booking.completion = {
+          completedAt: now,
+          source: 'manual',
+          externalReference: null,
+          batchId: null,
+        }
+        booking.reconciliation = {
+          status: 'pending',
+          settledAt: null,
+          source: null,
+          settledByAdminId: null,
+          batchId: null,
+          note: null,
+        }
+        booking.updatedAt = now
+      }
+      save()
+      return clone(hydrateBooking(spaceId, booking))
+    },
+
+    async reconcileBooking(spaceId, bookingId) {
+      const booking = requireBooking(spaceId, bookingId)
+      if (booking.status !== 'completed') throw new Error('只有已完成预约才能对账。')
+      if (booking.reconciliation?.status !== 'settled') {
+        const now = new Date().toISOString()
+        booking.reconciliation = {
+          status: 'settled',
+          settledAt: now,
+          source: 'manual',
+          settledByAdminId: state.currentAdmin.id,
+          batchId: null,
+          note: null,
+        }
+        booking.updatedAt = now
       }
       save()
       return clone(hydrateBooking(spaceId, booking))

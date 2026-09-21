@@ -14,6 +14,7 @@ describe('D1 migration gate', () => {
       'admin_users',
       'booking_history',
       'booking_messages',
+      'booking_reconciliations',
       'bookings',
       'd1_migrations',
       'invite_codes',
@@ -45,6 +46,27 @@ describe('D1 migration gate', () => {
       "SELECT name FROM pragma_table_info('admin_users') WHERE name = 'identity_status'"
     ).all()
     expect(adminColumns.results).toEqual([{ name: 'identity_status' }])
+
+    const reconciliationMigration = await env.DB.prepare(
+      "SELECT name FROM d1_migrations WHERE name = '0004_booking_fulfillment_reconciliation.sql'"
+    ).first()
+    expect(reconciliationMigration?.name).toBe('0004_booking_fulfillment_reconciliation.sql')
+
+    const bookingCompletionColumns = await env.DB.prepare(`
+      SELECT name
+      FROM pragma_table_info('bookings')
+      WHERE name IN (
+        'completion_source',
+        'completion_external_reference',
+        'completion_batch_id'
+      )
+      ORDER BY name
+    `).all()
+    expect(bookingCompletionColumns.results).toEqual([
+      { name: 'completion_batch_id' },
+      { name: 'completion_external_reference' },
+      { name: 'completion_source' }
+    ])
   })
 
   it('creates the critical capacity index and overlap trigger', async () => {

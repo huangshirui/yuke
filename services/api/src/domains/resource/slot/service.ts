@@ -1,4 +1,4 @@
-import type { CreateSlotInput, Slot, SlotStatus } from '@yuke/shared'
+import type { AdminSlot, CreateSlotInput, Slot, SlotStatus } from '@yuke/shared'
 import { AppError, ValidationError } from '../../../lib/errors'
 import {
   findResourceById,
@@ -9,8 +9,8 @@ import {
   findSlotById,
   findSpaceTimezone,
   insertSlot,
-  listSlotsByLocalDateRange,
-  listSlotsByResourceRange,
+  listAdminSlotsByLocalDateRange as listAdminSlotsByLocalDateRangeFromRepository,
+  listAdminSlotsByResourceRange as listAdminSlotsByResourceRangeFromRepository,
   updateSlot,
   type SlotDatabase,
   type SlotRecord
@@ -224,8 +224,8 @@ export async function listAdminSlots(
   resourceId: string,
   startAt: number,
   endAt: number
-): Promise<Slot[]> {
-  return listSlotsByResourceRange(db, spaceId, resourceId, startAt, endAt)
+): Promise<AdminSlot[]> {
+  return listAdminSlotsByResourceRangeFromRepository(db, spaceId, resourceId, startAt, endAt)
 }
 
 export async function listAdminSlotsByLocalDateRange(
@@ -234,6 +234,6 @@ export async function listAdminSlotsByLocalDateRange(
   resourceId: string,
   from: string,
   to: string
-): Promise<Slot[]> {
-  return listSlotsByLocalDateRange(db, spaceId, resourceId, from, to)
+): Promise<AdminSlot[]> {
+  return listAdminSlotsByLocalDateRangeFromRepository(db, spaceId, resourceId, from, to)
 }
