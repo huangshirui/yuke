@@ -117,7 +117,8 @@ export type AdminSlotBookingProjection = {
 }
 
 export type AdminSlot = Slot & {
-  booking: AdminSlotBookingProjection | null
+  // Admin calendar list populates this projection. Mutation responses may omit it.
+  booking?: AdminSlotBookingProjection | null
 }
 
 export type Booking = {
