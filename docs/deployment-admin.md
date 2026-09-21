@@ -87,8 +87,9 @@ Gateway 只接受 `/api/v1/admin` 与其子路径：
 
 部署策略：
 
-- `workflow_dispatch` 可随时手动发布；
-- `main` 上 `apps/admin/**`、`packages/shared/**`、workspace lockfile 等相关文件变化时具备自动发布能力；
+- `workflow_dispatch` 可手动发布，但只允许从 `main` 执行；
+- 自动发布不直接监听 `push`，而是等待 `main` 的 `CI` workflow 成功完成后再判断是否需要发布，避免生产发布抢跑 CI；
+- 自动发布只在最近一个 `main` commit 改到 `apps/admin/**`、`packages/shared/**`、workspace lockfile / Node 版本或 Admin deploy workflow 时执行；
 - 自动发布只有在 Repository Variable `ADMIN_PRODUCTION_DEPLOY_ENABLED=true` 时启用；
 - Job 使用 GitHub Environment `production-admin`；
 - `production-admin` Environment Secrets：
@@ -105,7 +106,7 @@ Gateway 只接受 `/api/v1/admin` 与其子路径：
 2. 保持 `ADMIN_PRODUCTION_DEPLOY_ENABLED` 未开启；
 3. 从 Actions 手动运行一次 `Deploy Admin Production`；
 4. 完成登录态 smoke；
-5. 再设置 Repository Variable `ADMIN_PRODUCTION_DEPLOY_ENABLED=true`，此后相关变更 merge 到 `main` 自动发布。
+5. 再设置 Repository Variable `ADMIN_PRODUCTION_DEPLOY_ENABLED=true`，此后相关变更 merge 到 `main` 且 CI 通过后自动发布。
 
 ### 本机 fallback
 
