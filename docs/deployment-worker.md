@@ -93,7 +93,13 @@ export YUKE_R2_BUCKET_NAME="<刚创建的 R2 bucket 名称>"
 
 当前策略刻意保持为 **manual-only / 仅手动触发**，且 Workflow 只允许从 `main` 执行，不在 merge 到 `main` 后自动发布。原因是 API 可能与 D1 migration 同时变化，发布风险高于 Admin。
 
-Job 使用 GitHub Environment `production-api`。建议在该 Environment 配置 required reviewer，并录入：
+Job 使用 GitHub Environment `production-api`。建议在该 Environment 配置 required reviewer。
+
+生产使用的 Cloudflare API Token 至少需要覆盖本发布流程实际执行的资源操作：
+- Workers Scripts Edit：发布 `yuke-api`；
+- D1 Edit：执行 remote D1 query / migration；只具备 Workers 权限不能执行 D1 migration。
+
+并录入：
 
 - `CLOUDFLARE_API_TOKEN`
 - `CLOUDFLARE_ACCOUNT_ID`
