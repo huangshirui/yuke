@@ -1,4 +1,4 @@
-const { compressAvatar } = require('../../lib/session')
+const { compressAvatar, ensureCurrentUser } = require('../../lib/session')
 const { loadUser, saveUser } = require('../../lib/storage')
 const { routeToEntry } = require('../../lib/navigation')
 
@@ -13,11 +13,28 @@ Page({
   },
 
   async onLoad(options) {
-    const user = loadUser(wx)
+    const editMode = options?.mode === 'edit'
+    this.setData({ editMode })
+
+    let user
+    try {
+      user = await ensureCurrentUser({
+        wxApi: wx,
+        api: getApp().globalData.api,
+        storage: wx
+      })
+    } catch {
+      user = loadUser(wx)
+    }
+
+    if (!editMode && user?.profileInitialized === true) {
+      routeToEntry(wx, user)
+      return
+    }
+
     this.setData({
       nickname: user?.nickname || '',
-      hasSavedAvatar: Boolean(user?.avatarUrl),
-      editMode: options?.mode === 'edit'
+      hasSavedAvatar: Boolean(user?.avatarUrl)
     })
 
     if (user?.avatarUrl) {

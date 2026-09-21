@@ -1,4 +1,4 @@
-const { saveSession, saveUser } = require('./storage')
+const { saveSession, saveUser, loadToken, clearSession } = require('./storage')
 
 function wxLogin(wxApi) {
   return new Promise((resolve, reject) => {
@@ -30,6 +30,23 @@ async function refreshCurrentUser({ api, storage }) {
   return user
 }
 
+async function ensureCurrentUser({ wxApi, api, storage }) {
+  const token = loadToken(storage)
+
+  if (token) {
+    try {
+      return await refreshCurrentUser({ api, storage })
+    } catch (error) {
+      if (error?.code !== 'UNAUTHENTICATED') {
+        throw error
+      }
+      clearSession(storage)
+    }
+  }
+
+  return bootstrapSession({ wxApi, api, storage })
+}
+
 function compressAvatar(wxApi, src) {
   return new Promise((resolve, reject) => {
     wxApi.compressImage({
@@ -51,5 +68,6 @@ module.exports = {
   wxLogin,
   bootstrapSession,
   refreshCurrentUser,
+  ensureCurrentUser,
   compressAvatar
 }
