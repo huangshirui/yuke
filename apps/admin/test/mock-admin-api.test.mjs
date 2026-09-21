@@ -200,6 +200,14 @@ test('booking management mock filters, moves, cancels and completes bookings', a
   assert.equal(settledSlots[0].booking?.reconciliationStatus, 'settled')
 
   const freshApi = createMockAdminApi(memoryStorage())
+  await assert.rejects(
+    freshApi.cancelScheduleSlot('sp_demo_alpha', 'slot_demo_single'),
+    /先取消预约/
+  )
   const fresh = (await freshApi.listBookings('sp_demo_alpha', { status: 'booked' }))[0]
   assert.equal((await freshApi.cancelBooking('sp_demo_alpha', fresh.id)).status, 'cancelled')
+  assert.equal(
+    (await freshApi.cancelScheduleSlot('sp_demo_alpha', 'slot_demo_single')).status,
+    'cancelled'
+  )
 })
