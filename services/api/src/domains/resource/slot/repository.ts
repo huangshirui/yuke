@@ -1,4 +1,4 @@
-import type { AdminSlot, Slot } from '@yuke/shared'
+import type { AdminSlot, BookingReconciliationStatus, Slot } from '@yuke/shared'
 import type { D1StatementLike } from '../catalog/repository'
 
 export type SlotDatabase = {
@@ -56,6 +56,7 @@ type AdminSlotRow = SlotRow & {
   user_nickname: string | null
   booking_participant_id: string | null
   participant_name: string | null
+  reconciliation_status: BookingReconciliationStatus | null
 }
 
 function mapAdminSlot(row: AdminSlotRow): AdminSlotRecord {
@@ -70,7 +71,8 @@ function mapAdminSlot(row: AdminSlotRow): AdminSlotRecord {
           membershipId: row.booking_membership_id,
           userNickname: row.user_nickname ?? '',
           participantId: row.booking_participant_id,
-          participantName: row.participant_name ?? ''
+          participantName: row.participant_name ?? '',
+          reconciliationStatus: row.reconciliation_status
         }
       : null
   }
@@ -94,11 +96,15 @@ const ADMIN_SLOT_SELECT = `
          active_booking.membership_id AS booking_membership_id,
          users.nickname AS user_nickname,
          active_booking.participant_id AS booking_participant_id,
-         participants.name AS participant_name
+         participants.name AS participant_name,
+         booking_reconciliations.status AS reconciliation_status
   FROM slots
   LEFT JOIN bookings AS active_booking
     ON active_booking.slot_id = slots.id
    AND active_booking.status IN ('booked', 'completed')
+  LEFT JOIN booking_reconciliations
+    ON booking_reconciliations.booking_id = active_booking.id
+   AND booking_reconciliations.space_id = active_booking.space_id
   LEFT JOIN space_memberships
     ON space_memberships.id = active_booking.membership_id
    AND space_memberships.space_id = slots.space_id
