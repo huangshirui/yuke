@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import LoadingOverlay from '../components/LoadingOverlay.vue'
 import { getAdminApi } from '../services/adminApi'
 import { spacePath } from '../services/adminShell'
 import type {
@@ -130,9 +131,8 @@ onMounted(load)
     </section>
 
     <div v-if="error" class="alert alert--error">{{ error }}</div>
-    <div v-if="loading" class="empty-state">正在加载运营概览…</div>
-
-    <template v-else-if="space">
+    <div class="overview-content loading-surface" :aria-busy="loading">
+      <LoadingOverlay v-if="loading" label="正在加载运营概览…" />
       <section class="overview-metrics">
         <article class="overview-metric"><span>今日预约</span><strong>{{ todayBookings.length }}</strong><small>当前有效预约</small></article>
         <article class="overview-metric"><span>注册用户</span><strong>{{ activeMembers.length }}</strong><small>当前空间用户</small></article>
@@ -146,7 +146,7 @@ onMounted(load)
             <h2>今日预约</h2>
             <button class="link-button" @click="router.push({ path: spacePath(spaceId, 'reservations'), query: { view: 'list' } })">查看全部 →</button>
           </div>
-          <div v-if="todayBookings.length === 0" class="empty-state compact">今天还没有预约。</div>
+          <div v-if="!loading && todayBookings.length === 0" class="empty-state compact">今天还没有预约。</div>
           <button
             v-for="booking in todayBookings.slice(0, 6)"
             :key="booking.id"
@@ -200,7 +200,7 @@ onMounted(load)
             <h2>最新用户</h2>
             <button class="link-button" @click="router.push(spacePath(spaceId, 'users'))">查看全部 →</button>
           </div>
-          <div v-if="latestMembers.length === 0" class="empty-state compact">还没有用户加入。</div>
+          <div v-if="!loading && latestMembers.length === 0" class="empty-state compact">还没有用户加入。</div>
           <div v-for="member in latestMembers" :key="member.membershipId" class="latest-user-row">
             <span class="user-avatar">{{ member.nickname.slice(0, 1) || 'U' }}</span>
             <strong>{{ member.nickname || '未命名用户' }}</strong>
@@ -208,6 +208,6 @@ onMounted(load)
           </div>
         </article>
       </section>
-    </template>
+    </div>
   </main>
 </template>
