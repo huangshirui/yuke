@@ -182,7 +182,22 @@ test('booking management mock filters, moves, cancels and completes bookings', a
 
   const completed = await api.completeBooking('sp_demo_alpha', moved.id)
   assert.equal(completed.status, 'completed')
+  assert.equal(completed.completion?.source, 'manual')
+  assert.equal(completed.reconciliation?.status, 'pending')
   assert.equal((await api.listBookings('sp_demo_alpha', { status: 'completed' })).length, 1)
+  assert.equal((await api.listBookings('sp_demo_alpha', { reconciliationStatus: 'pending' })).length, 1)
+
+  const settled = await api.reconcileBooking('sp_demo_alpha', moved.id)
+  assert.equal(settled.reconciliation?.status, 'settled')
+  assert.equal((await api.listBookings('sp_demo_alpha', { reconciliationStatus: 'settled' })).length, 1)
+
+  const settledSlots = await api.listScheduleSlots(
+    'sp_demo_alpha',
+    'res_demo_aurora',
+    '2026-09-26',
+    '2026-09-26',
+  )
+  assert.equal(settledSlots[0].booking?.reconciliationStatus, 'settled')
 
   const freshApi = createMockAdminApi(memoryStorage())
   const fresh = (await freshApi.listBookings('sp_demo_alpha', { status: 'booked' }))[0]
