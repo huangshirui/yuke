@@ -43,6 +43,7 @@ erDiagram
   SLOT ||--o{ BOOKING : receives
   BOOKING ||--o{ BOOKING_MESSAGE : discusses
   BOOKING ||--o{ BOOKING_HISTORY : audits
+  BOOKING ||--o| BOOKING_RECONCILIATION : reconciles
 ```
 
 ## 3. 时间模型
@@ -136,23 +137,79 @@ UNIQUE(slot_id) WHERE status IN ('booked', 'completed')
 
 取消 Booking 后，它不再占用 Slot，因此可重新预约。
 
-### 5.2 Slot 状态
+### 5.2 Slot 是核心时间资源：四层状态模型
 
-Slot 状态：
+Slot 本身只保存生命周期状态：
 
-- `open`：可以被预约。
-- `frozen`：保留时间占用，但不接受新预约。
-- `cancelled`：该 Slot 已撤销，不再占用 Resource 时间。
+- `open`：Slot 处于开放生命周期；
+- `frozen`：Slot 仍占用 Resource 时间，但不接受新预约；
+- `cancelled`：Slot 已撤销，不再占用 Resource 时间；这是终态，不重新启用。
 
-Booking 状态：
+`open` 不等于“当前一定可预约”。一个 Slot 在运营上同时有四个彼此独立的维度：
 
-- `booked`
-- `cancelled`
-- `completed`
+1. **Lifecycle / 生命周期**：`open | frozen | cancelled`；
+2. **Occupancy / 占用**：由关联 Booking 决定，当前有效占用为 `booked | completed`；
+3. **Temporal / 时间位置**：例如预约截止前、已过 booking cutoff、进行中、已过去；该状态按当前时间动态推导，不落成 Slot 枚举；
+4. **Availability / 可预约性**：`bookable` 是综合 Space、Resource、Slot lifecycle、occupancy、cutoff 后的派生结果。
 
-“是否已被预约”不复制保存为 Slot 状态，避免 Slot 与 Booking 双状态漂移。
+因此“已预约”“已完成”“已对账”都**不是 SlotStatus**，而是 Booking / Reconciliation 的事实，再投影到 Slot 运营视图。这样避免把多个正交维度组合成 `booked_frozen`、`completed_settled` 等不可维护的状态枚举。
 
-### 5.3 截止规则
+### 5.3 Slot 取消与历史不可变规则
+
+Slot 不使用物理删除承载业务状态；Web Admin 的“取消时段”实际把 Slot 置为 `cancelled`。
+
+核心不变量：
+
+- 空闲的 `open | frozen` Slot 可以取消；
+- Slot 上存在 `booked` Booking 时，**必须先取消 Booking，再取消 Slot**；
+- Slot 上存在 `completed` Booking 时，该 Slot 已成为历史服务事实的一部分，**不能取消/删除**；
+- 数据库 Trigger `trg_slots_prevent_cancel_with_active_booking` 对 `booked | completed` 做最终保护；
+- Booking `cancelled` 后不再占用 capacity，因此 Slot 若仍为 `open` 可再次被预约，或由管理员取消。
+
+Booking 状态保持：
+
+- `booked`：已预约、服务尚未完成；
+- `cancelled`：预约已取消，不再占用 Slot；
+- `completed`：服务已经发生，持续占用该 Slot 的历史事实。
+
+### 5.4 Completion / Fulfillment 与 Reconciliation
+
+Yu言在线的核心业务主链定义为：
+
+```text
+Slot → Booking → Completion / Fulfillment → Reconciliation
+```
+
+当前 MVP 不单独创建 Fulfillment 实体，由 `Booking.status = completed` 承担服务完成事实，同时记录完成来源：
+
+- `manual`：运营人员手动完成；
+- `classin_import`：未来由 ClassIn 上课记录导入；
+- `external_import`：其他外部文件导入；
+- `external_api`：外部系统 API 驱动。
+
+同时保留 `completion_external_reference` 与 `completion_batch_id`，用于未来追溯外部记录和导入批次。
+
+完成与对账是两个独立维度。Booking 完成后创建一条一对一的 `booking_reconciliations`：
+
+```text
+Booking booked
+  ├─→ cancelled
+  └─→ completed
+          │
+          └─ Reconciliation pending → settled
+```
+
+规则：
+
+- 对账对象是 **Booking，不是 Slot**；
+- Booking 从 `booked` 变为 `completed` 时自动进入 `pending` 对账；
+- 只有 `completed` Booking 可以标记 `settled`；
+- 对账记录保存来源、时间、操作管理员、可选 batchId / note；
+- 当前支持手动对账；模型预留 `import | external_api` 来源；
+- Slot 日历通过 Booking Projection 显示“已完成 · 待对账 / 已完成 · 已对账”，但这些状态不复制保存到 Slot；
+- migration 0004 会把升级前已经 `completed` 的 Booking 回填为 `pending`，避免历史完成记录没有对账状态。
+
+### 5.5 截止规则
 
 Space Settings 保存两个独立配置：
 
@@ -226,7 +283,7 @@ Space Settings 保存两个独立配置：
 
 ## 10. 对账
 
-MVP 对账不保存单价/金额，只针对 Booking 做计数与导出。
+对账以 **Booking 为结算事实单元**，Slot / Slot Type 只是时间与分类维度。MVP 不保存单价/金额；Booking 完成后进入 `pending`，运营人员可标记为 `settled`。后续统计与导出都基于 Booking + Reconciliation 聚合。
 
 可按以下维度组合：
 
@@ -234,7 +291,8 @@ MVP 对账不保存单价/金额，只针对 Booking 做计数与导出。
 - Participant
 - Slot Type
 - Booking Status
+- Reconciliation Status
 - Date Range
 - Space 全局
 
-金额由线下根据 Slot Type 计算。
+金额由线下根据 Slot Type 计算。未来 ClassIn / 其他外部文件可以用于批量确认 Completion；对账导入可通过 batchId/source 追溯，但不把“完成”与“已对账”合并成一个状态。
