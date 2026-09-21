@@ -148,6 +148,20 @@ describe('Admin Booking mutations and history', () => {
     expect(list.status).toBe(200)
     expect((await list.json()).data.map((item) => item.id)).toEqual([booking.id])
 
+    const byMembership = await adminRequest(
+      `/v1/admin/spaces/${ids.space}/bookings?membershipId=${ids.membership}`,
+      adminToken
+    )
+    expect(byMembership.status).toBe(200)
+    expect((await byMembership.json()).data.map((item) => item.id)).toEqual([booking.id])
+
+    const missingMembership = await adminRequest(
+      `/v1/admin/spaces/${ids.space}/bookings?membershipId=mem_missing`,
+      adminToken
+    )
+    expect(missingMembership.status).toBe(200)
+    expect((await missingMembership.json()).data).toEqual([])
+
     const patch = await adminRequest(
       `/v1/admin/spaces/${ids.space}/bookings/${booking.id}`,
       adminToken,
