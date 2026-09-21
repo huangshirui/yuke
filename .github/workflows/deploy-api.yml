@@ -175,59 +175,21 @@ jobs:
           rm -f "$log"
           echo "yuke-api production deployment completed."
 
-  smoke:
-    needs: deploy
-    if: ${{ needs.deploy.result == 'success' }}
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version-file: .nvmrc
-
-      - name: Production health smoke with edge propagation retry
+      - name: Manual production health confirmation required
         shell: bash
         run: |
-          set -u
-          attempts=12
-          delay_seconds=10
-          edge_blocked_attempts=0
-          hard_failures=0
+          {
+            echo "### Production API deployment"
+            echo ""
+            echo "Migration / D1 access checks and Worker deployment completed successfully."
+            echo ""
+            echo "Automated public /health smoke is intentionally disabled because GitHub-hosted runners are blocked by Cloudflare edge policy."
+            echo ""
+            echo "Manual confirmation required after this workflow:"
+            echo ""
+            echo '    curl -i https://api.yuke.verinasci.com/health'
+            echo ""
+            echo 'Expected: HTTP 200 and JSON payload with data.status = "ok" and data.service = "yuke-api".'
+          } >> "$GITHUB_STEP_SUMMARY"
 
-          for ((attempt=1; attempt<=attempts; attempt++)); do
-            echo "Production health smoke attempt $attempt/$attempts"
-
-            if node services/api/scripts/smoke-production.mjs; then
-              echo "Production health smoke passed."
-              exit 0
-            else
-              status=$?
-              if (( status == 42 )); then
-                edge_blocked_attempts=$((edge_blocked_attempts + 1))
-              else
-                hard_failures=$((hard_failures + 1))
-              fi
-            fi
-
-            if (( attempt < attempts )); then
-              echo "Health endpoint is not ready yet; retrying in ${delay_seconds}s."
-              sleep "$delay_seconds"
-            fi
-          done
-
-          if (( edge_blocked_attempts == attempts && hard_failures == 0 )); then
-            echo "::warning::Production deployment succeeded, but the GitHub-hosted runner was blocked by Cloudflare with HTTP 403 on every /health attempt. Smoke is inconclusive, not failed."
-            {
-              echo "### Production health smoke"
-              echo ""
-              echo "Deployment completed successfully, but all ${attempts} public /health probes from the GitHub-hosted runner were blocked with HTTP 403."
-              echo ""
-              echo "Result: **inconclusive due to edge policy**. This is not treated as an API deployment failure."
-            } >> "$GITHUB_STEP_SUMMARY"
-            exit 0
-          fi
-
-          echo "::error::Production API deployment completed, but /health had a real health/payload failure within the retry window."
-          exit 1
+          echo "::notice::Deployment completed. Confirm production /health manually from a trusted client."

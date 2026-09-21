@@ -120,11 +120,13 @@ apply_migrations
 - migration 或 deploy 任一步失败都会停止后续步骤；
 - migration 失败时 Workflow 只输出脱敏后的错误摘要（自动移除受保护的 Cloudflare / D1 / R2 配置值），便于定位 SQL / schema 问题；完整 Wrangler 输出仍不进入公开 CI Log；
 - D1 migration SQL 保持无 `--` 行注释；Cloudflare 远程 migration 的 statement splitter 对 SQL 行注释存在已知兼容性问题，本地可通过而 remote 失败。迁移意图写在领域/部署文档或 commit/PR 中；CI 会阻止带 `--` 行注释的 migration。
-- Worker 发布完成后，`deploy` Job 独立结束；随后单独的 `smoke` Job 检查 `/health`；
-- `smoke` 最多重试约 2 分钟，处理刚发布后可能出现的短暂边缘传播 / WAF 状态波动；
-- 只有最终获得 HTTP 200 且 payload 为 `{ data: { status: "ok", service: "yuke-api" } }` 才算 **smoke passed**；
-- 如果 12 次全部只得到 HTTP 403，则判定为 **edge-policy blocked / smoke inconclusive**：不把 403 当成健康成功，但也不再把已经成功完成 migration + Worker deploy 的发布判为失败；Workflow 会给出 warning 和 Job Summary；
-- 如果出现非 403 的 HTTP 错误、连接错误或 payload 不匹配，则仍然把 smoke 判为真实失败。
+- Worker 发布完成后，Workflow 即以部署结果结束，不再从 GitHub-hosted runner 自动请求公网 `/health`；
+- 原因：GitHub-hosted runner 长期会被当前 Cloudflare Edge/WAF 策略返回 HTTP 403，而受信任的本地客户端访问同一 `/health` 可正常返回 200。该差异属于边缘访问策略，不应覆盖 migration / Worker deploy 的真实发布结果；
+- Workflow 会在 Job Summary 中明确提示 **Manual production health confirmation required**；
+- 发布完成后由运营/开发人员从受信任客户端执行人工确认：
+  `curl -i https://api.yuke.verinasci.com/health`
+- 人工确认的成功标准仍然严格：HTTP 200，且 payload 为 `{ data: { status: "ok", service: "yuke-api" } }`；
+- `services/api/scripts/smoke-production.mjs` 保留为本机人工检查工具，不再被 production deploy Workflow 自动执行。
 
 Runtime Secrets（例如微信 Secret、Cloudflare Access AUD、Super Admin 邮箱）继续保存在 Worker Secret 中；普通 `wrangler deploy` 不应把它们写入 GitHub Secrets 或仓库配置。
 
@@ -162,9 +164,13 @@ pnpm --filter @yuke/api deploy:production
 
 生产配置声明 `api.yuke.verinasci.com` 为 Worker Custom Domain。若该 hostname 已有冲突 DNS / Worker route，需要先在 Cloudflare 控制台处理冲突，再重试。
 
-### A4 · Smoke
+### A4 · Manual health confirmation
+
+发布 Workflow 完成后，使用受信任客户端手工确认；可以直接 `curl`，也可以运行保留的本机 smoke script：
 
 ```bash
+curl -i https://api.yuke.verinasci.com/health
+# 或
 pnpm --filter @yuke/api smoke:production
 ```
 
