@@ -93,10 +93,6 @@ jobs:
             .replace(/[0-9a-f]{32}/gi, '<redacted-hex-id>')
             .replace(/[0-9a-f]{8}-[0-9a-f-]{27,36}/gi, '<redacted-uuid>')
 
-          output = output
-            .replace(/[0-9a-f]{32}/gi, '<redacted-hex-id>')
-            .replace(/[0-9a-f]{8}-[0-9a-f-]{27,36}/gi, '<redacted-uuid>')
-
           const safeLines = output
             .split(/\r?\n/)
             .filter((line) =>
@@ -143,12 +139,16 @@ jobs:
             output = output.split(value).join('<redacted>')
           }
 
+          output = output
+            .replace(/[0-9a-f]{32}/gi, '<redacted-hex-id>')
+            .replace(/[0-9a-f]{8}-[0-9a-f-]{27,36}/gi, '<redacted-uuid>')
+
           const safeLines = output
             .split(/\r?\n/)
             .filter((line) =>
               /error|failed|sqlite|migration|duplicate|constraint|no such|already exists|d1_|code|message|authoriz|permission|forbidden|denied|not allowed|not permitted|7500|10000/i.test(line)
             )
-            .slice(-40)
+            .slice(-60)
 
           const summary = safeLines.join('\n').slice(0, 8000)
           console.error(summary || 'Wrangler failed without a matching diagnostic line.')
