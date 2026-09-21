@@ -58,6 +58,61 @@ jobs:
           YUKE_R2_BUCKET_NAME: ${{ secrets.YUKE_R2_BUCKET_NAME }}
         run: pnpm --filter @yuke/api production:config
 
+
+      - name: Verify remote D1 access
+        if: ${{ inputs.apply_migrations }}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          YUKE_D1_DATABASE_NAME: ${{ secrets.YUKE_D1_DATABASE_NAME }}
+          YUKE_D1_DATABASE_ID: ${{ secrets.YUKE_D1_DATABASE_ID }}
+          YUKE_R2_BUCKET_NAME: ${{ secrets.YUKE_R2_BUCKET_NAME }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          log="$RUNNER_TEMP/yuke-api-d1-probe.log"
+          if ! pnpm --filter @yuke/api exec wrangler d1 execute DB --remote --config .wrangler/production.toml --command "SELECT 1 AS ok;" >"$log" 2>&1; then
+            echo "::error::Remote D1 access probe failed. Showing a redacted diagnostic summary:"
+            node - "$log" <<'NODE'
+          const fs = require('fs')
+          const path = process.argv[2]
+          let output = fs.readFileSync(path, 'utf8')
+          const sensitiveValues = [
+            process.env.CLOUDFLARE_API_TOKEN,
+            process.env.CLOUDFLARE_ACCOUNT_ID,
+            process.env.YUKE_D1_DATABASE_NAME,
+            process.env.YUKE_D1_DATABASE_ID,
+            process.env.YUKE_R2_BUCKET_NAME
+          ].filter(Boolean)
+
+          for (const value of sensitiveValues) {
+            output = output.split(value).join('<redacted>')
+          }
+
+          output = output
+            .replace(/[0-9a-f]{32}/gi, '<redacted-hex-id>')
+            .replace(/[0-9a-f]{8}-[0-9a-f-]{27,36}/gi, '<redacted-uuid>')
+
+          output = output
+            .replace(/[0-9a-f]{32}/gi, '<redacted-hex-id>')
+            .replace(/[0-9a-f]{8}-[0-9a-f-]{27,36}/gi, '<redacted-uuid>')
+
+          const safeLines = output
+            .split(/\r?\n/)
+            .filter((line) =>
+              /error|failed|sqlite|migration|duplicate|constraint|no such|already exists|d1_|code|message|authoriz|permission|forbidden|denied|not allowed|not permitted|7500|10000/i.test(line)
+            )
+            .slice(-60)
+
+          const summary = safeLines.join('\n').slice(0, 10000)
+          console.error(summary || 'Wrangler failed without a matching diagnostic line.')
+          NODE
+            rm -f "$log"
+            exit 1
+          fi
+          rm -f "$log"
+          echo "Remote D1 access probe passed."
+
       - name: Apply D1 migrations
         if: ${{ inputs.apply_migrations }}
         env:
@@ -91,7 +146,7 @@ jobs:
           const safeLines = output
             .split(/\r?\n/)
             .filter((line) =>
-              /error|failed|sqlite|migration|duplicate|constraint|no such|already exists|d1_/i.test(line)
+              /error|failed|sqlite|migration|duplicate|constraint|no such|already exists|d1_|code|message|authoriz|permission|forbidden|denied|not allowed|not permitted|7500|10000/i.test(line)
             )
             .slice(-40)
 
