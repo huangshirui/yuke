@@ -146,20 +146,23 @@ sans-serif
 - Space Switcher 主控件只显示空间名称，不显示图标、ID 或时区；
 - 默认入口恢复上次可访问 Space 并进入“概览”；
 - /spaces 仅作为 Super Admin 的低频空间管理入口；
-- Page desktop padding：约 28–30px；
+- Page desktop padding：约 20–24px；页面顶部优先 18–20px，避免 Page heading 吞噬工作区；
+- Desktop 页面 H1 约 24–26px，Mobile 约 21–23px；后台以高信息密度为目标，不使用营销页式大标题；
+- Desktop 正文 / Button 通常 13–14px，Mobile 正文 / Button 通常 14px；Mobile 通过点击目标尺寸保证可用性，而不是简单放大所有字体；
 - 主工作区使用 Card / Panel，而不是把每个字段拆成单独卡片
 
 ### 4.2 Page hierarchy
 
 标准页面顺序：
 
-1. Page heading
+1. Compact Page heading
 2. Primary action
-3. Optional summary / metrics
-4. Main panel / table / form
-5. Contextual detail / drawer / sub-panel
+3. Main work surface / table / calendar / form
+4. Optional secondary information
 
-不要把次要说明放在主操作之前。
+运营型页面默认不放 Summary / Metrics 卡片；统计信息应进入“概览”或专门的数据视图，除非数字本身直接决定当前任务。
+
+不要把次要说明放在主操作之前。Page heading 的说明必须短；熟悉后不再需要的帮助信息应改为 Tooltip / Info，而不是永久占据一整行。
 
 ---
 
@@ -218,15 +221,27 @@ sans-serif
 
 Tabs 不应用于跨业务模块的全局导航。
 
+### Detail navigation / 详情交互
+
+Admin 不使用 Inline Expansion / 行内展开详情。详情必须落在以下三种模式之一：
+
+- **Detail Page**：长期存在、有身份、有历史或子实体的对象，例如用户；
+- **Modal / Dialog**：新建轻量实体、快速处理预约、编辑时段、简短确认；
+- **Popover**：空间切换、简单菜单、轻量选择。
+
+列表行本身可以点击进入 Detail Page；不要同时要求用户再点击一个冗余的“查看详情”按钮。
+
 ### Modals
 
 适合：
 
-- 新建轻量实体
-- 简短确认
-- 不需要大量上下文的编辑
+- 新建轻量实体；
+- 快速处理预约；
+- 新建 / 编辑开放时段；
+- 简短确认；
+- 不需要大量上下文的编辑。
 
-复杂配置应进入独立页面或 Panel，不堆进大 Modal。
+复杂、长期存在的实体详情应进入独立页面，不堆成行内 Panel。
 
 ---
 
@@ -266,6 +281,7 @@ Admin 为桌面优先，但必须保证手机浏览器可完成全部核心运�
 窄屏：
 
 - 固定桌面 Sidebar 转为顶部结构：品牌 → 当前 Space / 账号 → 横向功能导航；
+- 预约工作台 Desktop 默认周历；Mobile 默认单日 Agenda / Day View，不把 7 列周历强行压缩到手机宽度；
 - Current Space Switcher 在移动端使用覆盖式弹层，仍只展示空间名称；
 - 功能导航横向滚动，不因小屏隐藏核心功能；
 - Dashboard 指标先两列、窄手机改单列，主要运营卡片全部改单列；
@@ -399,7 +415,7 @@ Web 与小程序共享**品牌、术语、状态语义和交互原则**，不强
 截至 2026-09-21：
 
 - Web Admin 采用 Current Space 驱动的运营控制台 Shell。
-- 导航分为运营、资源配置、空间设置、数据；“对账”保留入口并标记即将开放。
+- 导航分为运营、资源配置、空间设置、数据；运营区收敛为“概览 / 预约 / 用户管理”，“预约”内部提供“日历 / 列表”两种视图；“对账”保留入口并标记即将开放。
 - Space Switcher 与管理员身份统一下沉至侧边栏底部。
 - Web Admin 同时具备桌面与移动端响应式基线。
 - Space / Settings / Admin / Invite 页面成为首批基准实现。
