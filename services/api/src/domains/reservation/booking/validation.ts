@@ -106,6 +106,7 @@ export function parseBookingListFilters(
     filters.resourceId = queryId(url, 'resourceId')
     filters.participantId = queryId(url, 'participantId')
     filters.slotTypeId = queryId(url, 'slotTypeId')
+    filters.membershipId = queryId(url, 'membershipId')
   }
 
   return filters
