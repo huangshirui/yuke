@@ -181,6 +181,7 @@ sans-serif
 - Secondary / Ghost：普通操作。
 - Danger：撤销、删除语义、停用等高风险操作。
 - Link button：查看详情、进入关联数据等轻量导航。
+- 日期 / 分页类 Icon-only 导航按钮：Desktop 使用紧凑 32×32px；Mobile 保留 40×40px 点击目标；统一使用 SVG Chevron，不使用字体字符 `‹ / ›`。
 
 按钮文案优先使用明确动词，例如：
 
