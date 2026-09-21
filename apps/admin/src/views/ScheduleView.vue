@@ -226,6 +226,18 @@ function openCreate(date = weekDays.value[0]?.date, startTime = '09:00', endTime
   form.endsOn = ''
   formOpen.value = true
 }
+function bookingStateLabel(slot: AdminScheduleSlot) {
+  if (!slot.booking) return ''
+  const parts = [
+    slot.booking.status === 'completed' ? '已完成' : '已预约'
+  ]
+  if (slot.booking.status === 'completed') {
+    parts.push(slot.booking.reconciliationStatus === 'settled' ? '已对账' : '待对账')
+  }
+  if (slot.status === 'frozen') parts.push('已冻结')
+  return parts.join(' · ')
+}
+
 function openSlot(slot: AdminScheduleSlot) {
   if (slot.booking) {
     router.push({
@@ -348,6 +360,23 @@ async function toggleFrozen(slot: AdminScheduleSlot) {
   }
 }
 
+async function cancelSlot(slot: AdminScheduleSlot) {
+  if (!window.confirm('取消时段后将不再开放。若时段已有预约，必须先取消预约；已完成记录不会被删除。确认取消这个时段吗？')) return
+  clearFeedback()
+  saving.value = true
+  try {
+    await api.cancelScheduleSlot(spaceId.value, slot.id)
+    formOpen.value = false
+    editingSlot.value = null
+    await loadSlots()
+    notice.value = '时段已取消。'
+  } catch (cause) {
+    showError(cause, '时段取消失败；如已有预约，请先取消预约。')
+  } finally {
+    saving.value = false
+  }
+}
+
 watch(selectedResourceId, () => loadSlots().catch((cause) => showError(cause, '时段加载失败。')))
 watch(spaceId, loadBase)
 onMounted(loadBase)
@@ -431,6 +460,7 @@ onMounted(loadBase)
                 <span v-if="slot.booking" class="slot-booking-line">
                   {{ slot.booking.userNickname || '未命名用户' }} · {{ slot.booking.participantName || '未命名参与人' }}
                 </span>
+                <small v-if="slot.booking" class="slot-operational-state">{{ bookingStateLabel(slot) }}</small>
                 <span v-else class="slot-availability">
                   {{ slot.status === 'frozen' ? '暂不可预约' : !slot.bookable ? '已占用' : '可预约' }}
                 </span>
@@ -462,6 +492,7 @@ onMounted(loadBase)
               <strong v-if="slot.booking">{{ slot.booking.userNickname || '未命名用户' }}</strong>
               <strong v-else>{{ slot.status === 'frozen' ? '暂不可预约' : !slot.bookable ? '已占用' : '可预约' }}</strong>
               <small v-if="slot.booking">{{ slot.booking.participantName || '未命名参与人' }}</small>
+              <small v-if="slot.booking" class="agenda-state">{{ bookingStateLabel(slot) }}</small>
             </span>
             <span class="row-chevron">›</span>
           </button>
@@ -518,6 +549,12 @@ onMounted(loadBase)
               :disabled="saving"
               @click="toggleFrozen(editingSlot)"
             >{{ editingSlot.status === 'frozen' ? '解冻时段' : '冻结时段' }}</button>
+            <button
+              v-if="editingSlot && !editingSlot.booking"
+              class="button button--danger-ghost"
+              :disabled="saving"
+              @click="cancelSlot(editingSlot)"
+            >取消时段</button>
             <span class="modal-actions-spacer"></span>
             <button class="button button--ghost" @click="formOpen = false">取消</button>
             <button class="button button--primary" :disabled="saving" @click="saveSlot">{{ saving ? '保存中…' : '保存时段' }}</button>
@@ -533,9 +570,9 @@ onMounted(loadBase)
 .schedule-toolbar{min-height:58px;display:grid;grid-template-columns:minmax(210px,280px) 1fr auto;align-items:center;gap:14px;margin-bottom:12px;padding:8px 10px;border:1px solid var(--line);border-radius:12px;background:#fff}
 .compact-field{display:flex;align-items:center;gap:9px;min-width:0}.compact-field>span{font-size:12px;font-weight:700;color:var(--muted);white-space:nowrap}.compact-field select{min-width:0;width:100%;height:38px}
 .week-nav{display:flex;align-items:center;justify-content:center;gap:6px}.week-nav strong{min-width:88px;text-align:center;font-size:13px}.icon-nav{min-width:36px;padding-inline:10px;font-size:18px}
-.schedule-panel{overflow:auto;padding:0}.week-head,.schedule-body{display:grid;grid-template-columns:58px repeat(7,minmax(116px,1fr));min-width:890px}.time-gutter,.day-head{height:50px;border-bottom:1px solid var(--line)}.day-head{display:grid;align-content:center;gap:2px;padding:0 10px;border-left:1px solid var(--line)}.day-head strong{font-size:13px}.day-head span{color:var(--muted);font-size:11px}.schedule-body{align-items:start}.time-column{display:grid}.time-label{height:34px;padding:6px 7px;color:var(--muted);font-size:10px;border-bottom:1px solid var(--line)}.day-column{position:relative;border-left:1px solid var(--line);min-height:850px}.time-cell{display:block;width:100%;height:34px;border:0;border-bottom:1px solid var(--line);background:transparent;padding:0;cursor:crosshair}.time-cell:hover,.time-cell--selected{background:var(--accent-soft)}.day-slots{position:absolute;inset:0;pointer-events:none}.slot-card{position:absolute;left:4px;right:4px;pointer-events:auto;border:1px solid #badbd5;border-left:3px solid var(--accent);border-radius:7px;background:#fff;padding:6px 7px;text-align:left;display:grid;align-content:start;gap:2px;box-shadow:0 1px 4px rgba(23,32,42,.04);overflow:hidden}.slot-card strong{font-size:12px;line-height:1.15;white-space:nowrap}.slot-card span{font-size:10px;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.slot-booking-line{color:var(--ink)!important;font-weight:650}.slot-availability{color:var(--accent)!important}.slot-card--frozen{border-color:#d5d9dc;border-left-color:#77838c;background:#f4f6f7}
+.schedule-panel{overflow:auto;padding:0}.week-head,.schedule-body{display:grid;grid-template-columns:58px repeat(7,minmax(116px,1fr));min-width:890px}.time-gutter,.day-head{height:50px;border-bottom:1px solid var(--line)}.day-head{display:grid;align-content:center;gap:2px;padding:0 10px;border-left:1px solid var(--line)}.day-head strong{font-size:13px}.day-head span{color:var(--muted);font-size:11px}.schedule-body{align-items:start}.time-column{display:grid}.time-label{height:34px;padding:6px 7px;color:var(--muted);font-size:10px;border-bottom:1px solid var(--line)}.day-column{position:relative;border-left:1px solid var(--line);min-height:850px}.time-cell{display:block;width:100%;height:34px;border:0;border-bottom:1px solid var(--line);background:transparent;padding:0;cursor:crosshair}.time-cell:hover,.time-cell--selected{background:var(--accent-soft)}.day-slots{position:absolute;inset:0;pointer-events:none}.slot-card{position:absolute;left:4px;right:4px;pointer-events:auto;border:1px solid #badbd5;border-left:3px solid var(--accent);border-radius:7px;background:#fff;padding:6px 7px;text-align:left;display:grid;align-content:start;gap:2px;box-shadow:0 1px 4px rgba(23,32,42,.04);overflow:hidden}.slot-card strong{font-size:12px;line-height:1.15;white-space:nowrap}.slot-card span{font-size:10px;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.slot-card small{font-size:9px;line-height:1.2}.slot-booking-line{color:var(--ink)!important;font-weight:650}.slot-operational-state{color:var(--muted)}.slot-availability{color:var(--accent)!important}.slot-card--frozen{border-color:#d5d9dc;border-left-color:#77838c;background:#f4f6f7}
 .mobile-agenda{display:none}
 .modal-backdrop{position:fixed;inset:0;background:rgba(10,20,20,.36);display:grid;place-items:center;padding:24px;z-index:20}.modal-card{width:min(720px,100%);max-height:90vh;overflow:auto;background:#fff;border-radius:16px;padding:20px;box-shadow:0 24px 70px rgba(0,0,0,.2)}.schedule-form{margin-top:12px}.slot-detail-meta{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0 4px}.slot-detail-meta span{padding:4px 8px;border-radius:999px;background:#f1f4f4;color:var(--muted);font-size:11px}.repeat-panel{margin-top:14px;padding:14px;border:1px solid var(--line);border-radius:10px;display:grid;gap:12px}.field-label{font-size:12px;font-weight:600}.weekday-picker{display:flex;gap:6px;flex-wrap:wrap}.weekday-button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 10px;cursor:pointer;font-size:12px}.weekday-button.active{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}.modal-actions{display:flex;justify-content:flex-end;align-items:center;gap:8px;margin-top:16px}.modal-actions-spacer{flex:1}
-@media(max-width:820px){.schedule-toolbar{grid-template-columns:1fr auto;gap:8px}.schedule-toolbar>.button--primary{grid-column:2;grid-row:1}.week-nav{grid-column:1 / -1;justify-content:space-between;border-top:1px solid var(--line);padding-top:8px}.desktop-schedule{display:none}.mobile-agenda{display:block;border:1px solid var(--line);border-radius:12px;background:#fff;overflow:hidden}.mobile-day-nav{min-height:52px;display:grid;grid-template-columns:40px 1fr 40px;align-items:center;border-bottom:1px solid var(--line);padding:4px 8px}.mobile-day-nav>div{display:flex;align-items:center;justify-content:center;gap:8px}.mobile-day-nav strong{font-size:14px}.mobile-day-nav span{font-size:12px;color:var(--muted)}.agenda-list{display:grid}.agenda-slot{min-height:60px;border:0;border-bottom:1px solid var(--line);background:#fff;padding:9px 12px;display:grid;grid-template-columns:92px minmax(0,1fr) 16px;align-items:center;gap:10px;text-align:left;color:var(--ink)}.agenda-slot:last-child{border-bottom:0}.agenda-slot--booked{background:#f7fbfa}.agenda-slot--frozen{background:#f4f6f7}.agenda-time{font-size:12px;color:var(--muted)}.agenda-main{display:grid;gap:2px}.agenda-main strong{font-size:14px}.agenda-main small{font-size:12px;color:var(--muted)}.modal-backdrop{align-items:end;padding:0}.modal-card{width:100%;max-width:none;max-height:92vh;border-radius:18px 18px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom))}}
+@media(max-width:820px){.schedule-toolbar{grid-template-columns:1fr auto;gap:8px}.schedule-toolbar>.button--primary{grid-column:2;grid-row:1}.week-nav{grid-column:1 / -1;justify-content:space-between;border-top:1px solid var(--line);padding-top:8px}.desktop-schedule{display:none}.mobile-agenda{display:block;border:1px solid var(--line);border-radius:12px;background:#fff;overflow:hidden}.mobile-day-nav{min-height:52px;display:grid;grid-template-columns:40px 1fr 40px;align-items:center;border-bottom:1px solid var(--line);padding:4px 8px}.mobile-day-nav>div{display:flex;align-items:center;justify-content:center;gap:8px}.mobile-day-nav strong{font-size:14px}.mobile-day-nav span{font-size:12px;color:var(--muted)}.agenda-list{display:grid}.agenda-slot{min-height:60px;border:0;border-bottom:1px solid var(--line);background:#fff;padding:9px 12px;display:grid;grid-template-columns:92px minmax(0,1fr) 16px;align-items:center;gap:10px;text-align:left;color:var(--ink)}.agenda-slot:last-child{border-bottom:0}.agenda-slot--booked{background:#f7fbfa}.agenda-slot--frozen{background:#f4f6f7}.agenda-time{font-size:12px;color:var(--muted)}.agenda-main{display:grid;gap:2px}.agenda-main strong{font-size:14px}.agenda-main small{font-size:12px;color:var(--muted)}.agenda-state{font-size:11px!important}.modal-backdrop{align-items:end;padding:0}.modal-card{width:100%;max-width:none;max-height:92vh;border-radius:18px 18px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom))}}
 @media(max-width:560px){.schedule-toolbar{grid-template-columns:minmax(0,1fr) auto}.compact-field>span{display:none}.schedule-toolbar>.button--primary{padding-inline:12px}.week-nav .button:first-child{font-size:13px}}
 </style>
