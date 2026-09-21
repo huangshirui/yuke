@@ -9,8 +9,8 @@ import {
   findSlotById,
   findSpaceTimezone,
   insertSlot,
-  listAdminSlotsByLocalDateRange,
-  listAdminSlotsByResourceRange,
+  listAdminSlotsByLocalDateRange as listAdminSlotsByLocalDateRangeFromRepository,
+  listAdminSlotsByResourceRange as listAdminSlotsByResourceRangeFromRepository,
   updateSlot,
   type SlotDatabase,
   type SlotRecord
@@ -225,7 +225,7 @@ export async function listAdminSlots(
   startAt: number,
   endAt: number
 ): Promise<AdminSlot[]> {
-  return listAdminSlotsByResourceRange(db, spaceId, resourceId, startAt, endAt)
+  return listAdminSlotsByResourceRangeFromRepository(db, spaceId, resourceId, startAt, endAt)
 }
 
 export async function listAdminSlotsByLocalDateRange(
@@ -235,5 +235,5 @@ export async function listAdminSlotsByLocalDateRange(
   from: string,
   to: string
 ): Promise<AdminSlot[]> {
-  return listAdminSlotsByLocalDateRange(db, spaceId, resourceId, from, to)
+  return listAdminSlotsByLocalDateRangeFromRepository(db, spaceId, resourceId, from, to)
 }
