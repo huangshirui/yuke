@@ -123,25 +123,30 @@ sans-serif
 
 ### 4.1 Application shell
 
-桌面端：
+桌面端采用 **Current Space 驱动的侧边运营控制台**：
 
 ```text
 ┌──────────────────────────────────────────────┐
-│ Sidebar          │ Topbar                    │
-│                  ├───────────────────────────│
-│ Primary nav      │ Page heading              │
+│ Sidebar          │ Page heading              │
+│ Brand            │                           │
+│ Current Space    │ Main work area            │
+│ grouped nav      │                           │
 │                  │                           │
-│                  │ Main work area            │
-│                  │                           │
+│ Space switcher   │                           │
+│ Admin identity   │                           │
 └──────────────────────────────────────────────┘
 ```
 
 当前基线：
 
-- Sidebar：约 232px
-- Topbar：约 72px
-- Page 最大内容宽度：约 1320px
-- Page desktop padding：约 34px
+- Sidebar：约 248px；
+- 不保留固定全局 Topbar，页面主体直接从 Page heading 开始；
+- 主导航始终表达当前 Space 的运营功能；
+- Space Switcher 与当前管理员身份位于 Sidebar 底部；
+- Space Switcher 主控件只显示空间名称，不显示图标、ID 或时区；
+- 默认入口恢复上次可访问 Space 并进入“概览”；
+- /spaces 仅作为 Super Admin 的低频空间管理入口；
+- Page desktop padding：约 28–30px；
 - 主工作区使用 Card / Panel，而不是把每个字段拆成单独卡片
 
 ### 4.2 Page hierarchy
@@ -256,14 +261,18 @@ SLOT_ALREADY_BOOKED
 
 ### Web Admin
 
-Admin 为桌面优先。
+Admin 为桌面优先，但必须保证手机浏览器可完成全部核心运营任务。
 
 窄屏：
 
-- Sidebar 可转为顶部/横向导航。
-- 表格允许横向滚动。
-- 双列表单转单列。
-- Header 操作在必要时换行。
+- 固定桌面 Sidebar 转为顶部结构：品牌 → 当前 Space / 账号 → 横向功能导航；
+- Current Space Switcher 在移动端使用覆盖式弹层，仍只展示空间名称；
+- 功能导航横向滚动，不因小屏隐藏核心功能；
+- Dashboard 指标先两列、窄手机改单列，主要运营卡片全部改单列；
+- 表格允许横向滚动，不把高密度管理表格强行压缩成不可读卡片；
+- 筛选、双列表单与详情元数据转单列；
+- Modal / Drawer 在手机上使用底部弹层式布局并考虑 safe-area；
+- 页面级主要操作允许换行或独占一行；
 - 不因为移动端而删除重要功能。
 
 当前参考断点约为：
@@ -387,9 +396,12 @@ Web 与小程序共享**品牌、术语、状态语义和交互原则**，不强
 
 ## 11. Current status / 当前状态
 
-截至 2026-09-20：
+截至 2026-09-21：
 
-- Web Admin 视觉方向已确认。
+- Web Admin 采用 Current Space 驱动的运营控制台 Shell。
+- 导航分为运营、资源配置、空间设置、数据；“对账”保留入口并标记即将开放。
+- Space Switcher 与管理员身份统一下沉至侧边栏底部。
+- Web Admin 同时具备桌面与移动端响应式基线。
 - Space / Settings / Admin / Invite 页面成为首批基准实现。
 - 小程序轻量原生工具风格已冻结，并与现有深墨绿品牌体系对齐。
 - 当前不引入第三方 UI Component Library。
