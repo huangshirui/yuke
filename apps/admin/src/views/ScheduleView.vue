@@ -138,8 +138,9 @@ function slotStyle(slot: AdminScheduleSlot) {
   const end = zonedParts(slot.endAt)
   const startMinute = start.hour * 60 + start.minute
   const endMinute = end.hour * 60 + end.minute
-  const top = Math.max(0, ((startMinute - 8 * 60) / 30) * 36)
-  const height = Math.max(34, ((endMinute - startMinute) / 30) * 36)
+  const rowHeight = 34
+  const top = Math.max(0, ((startMinute - 8 * 60) / 30) * rowHeight)
+  const height = Math.max(rowHeight, ((endMinute - startMinute) / 30) * rowHeight)
   return { top: top + 'px', height: height + 'px' }
 }
 function slotsFor(date: string) {
