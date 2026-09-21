@@ -1,4 +1,4 @@
-const KEY = 'yuke.admin.mock.v2'
+const KEY = 'yuke.admin.mock.v3'
 
 const seed = {
   currentAdmin: {
