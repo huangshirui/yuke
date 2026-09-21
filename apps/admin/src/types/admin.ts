@@ -3,6 +3,7 @@ import type {
   AdminMemberDetail as SharedAdminMemberDetail,
   AdminMemberSummary as SharedAdminMemberSummary,
   AdminParticipantDetail as SharedAdminParticipantDetail,
+  AdminSlot as SharedAdminSlot,
   BookingStatus,
   CurrentAdmin as SharedCurrentAdmin,
   CreateInviteInput as SharedCreateInviteInput,
@@ -65,18 +66,8 @@ export type AdminMemberSummary = SharedAdminMemberSummary
 export type AdminParticipantDetail = SharedAdminParticipantDetail
 export type AdminMemberDetail = SharedAdminMemberDetail
 
-export type AdminScheduleSlot = {
-  id: string
-  spaceId: string
-  resourceId: string
-  slotTypeId: string
+export type AdminScheduleSlot = SharedAdminSlot & {
   slotTypeName?: string
-  seriesId: string | null
-  startAt: string
-  endAt: string
-  localDate: string
-  status: 'open' | 'frozen' | 'cancelled'
-  bookable: boolean
 }
 
 export type CreateScheduleSlotInput = {
