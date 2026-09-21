@@ -85,6 +85,7 @@
 
   /* Spacing / 间距
    Primitive 名称直接对应 px 值；新布局优先 4px 主网格，odd 值仅用于保留既有紧凑/光学校准。 */
+  --space-1: 1px;
   --space-2: 2px;
   --space-3: 3px;
   --space-4: 4px;
