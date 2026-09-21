@@ -2,6 +2,7 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { CUTOFF_MINUTES, type CutoffMinutes } from '@yuke/shared'
+import LoadingOverlay from '../components/LoadingOverlay.vue'
 import { getAdminApi } from '../services/adminApi'
 import type { AdminSpace, CurrentAdmin } from '../types/admin'
 
@@ -111,12 +112,13 @@ onMounted(async () => {
     <div v-if="error" class="alert alert--error">{{ error }}</div>
 
     <section class="metric-row">
-      <article class="metric-card"><span>空间总数</span><strong>{{ spaces.length }}</strong></article>
-      <article class="metric-card"><span>运行中</span><strong>{{ activeCount }}</strong></article>
-      <article class="metric-card"><span>已停用</span><strong>{{ spaces.length - activeCount }}</strong></article>
+      <article class="metric-card"><span>空间总数</span><strong>{{ loading ? '—' : spaces.length }}</strong></article>
+      <article class="metric-card"><span>运行中</span><strong>{{ loading ? '—' : activeCount }}</strong></article>
+      <article class="metric-card"><span>已停用</span><strong>{{ loading ? '—' : spaces.length - activeCount }}</strong></article>
     </section>
 
-    <section class="panel">
+    <section class="panel loading-surface" :aria-busy="loading">
+      <LoadingOverlay v-if="loading" label="正在加载空间…" />
       <div class="panel-heading">
         <div>
           <h2>全部空间</h2>
@@ -124,12 +126,11 @@ onMounted(async () => {
         </div>
       </div>
 
-      <div v-if="loading" class="empty-state">正在加载空间…</div>
-      <div v-else-if="spaces.length === 0" class="empty-state">
+      <div v-if="!loading && spaces.length === 0" class="empty-state">
         <strong>{{ isSuperAdmin ? '还没有空间' : '还没有可访问空间' }}</strong>
         <span>{{ isSuperAdmin ? '创建第一个空间后即可开始配置。' : '请联系超级管理员为你的邮箱分配空间权限。' }}</span>
       </div>
-      <div v-else class="table-wrap">
+      <div v-if="loading || spaces.length > 0" class="table-wrap">
         <table>
           <thead><tr><th>空间</th><th>时区</th><th>状态</th><th class="align-right">操作</th></tr></thead>
           <tbody>

@@ -52,3 +52,20 @@ test('schedule date navigation uses compact svg icon buttons', () => {
   assert.match(schedule, /width:var\(--control-size-icon-nav\)/)
   assert.match(schedule, /control-size-icon-nav-touch/)
 })
+
+
+test('all shared CSS variables used by admin styles are defined', () => {
+  const sources = [
+    styles,
+    ...readdirSync(new URL('../src/views/', import.meta.url))
+      .filter((name) => name.endsWith('.vue'))
+      .map((name) => readFileSync(new URL('../src/views/' + name, import.meta.url), 'utf8')),
+    ...readdirSync(new URL('../src/components/', import.meta.url))
+      .filter((name) => name.endsWith('.vue'))
+      .map((name) => readFileSync(new URL('../src/components/' + name, import.meta.url), 'utf8')),
+  ].join('\n')
+  const defined = new Set([...tokens.matchAll(/--([a-zA-Z0-9-]+)\s*:/g)].map((match) => match[1]))
+  const used = new Set([...sources.matchAll(/var\(--([a-zA-Z0-9-]+)\)/g)].map((match) => match[1]))
+  const missing = [...used].filter((name) => !defined.has(name) && !name.startsWith('schedule-')).sort()
+  assert.deepEqual(missing, [])
+})

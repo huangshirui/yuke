@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import LoadingOverlay from '../components/LoadingOverlay.vue'
 import { getAdminApi } from '../services/adminApi'
 import type {
   AdminBooking,
@@ -411,7 +412,8 @@ onMounted(loadBase)
     <div v-if="error" class="alert alert--error">{{ error }}</div>
     <div v-if="notice" class="alert alert--success">{{ notice }}</div>
 
-    <section class="panel">
+    <section class="panel loading-surface" :aria-busy="loading">
+      <LoadingOverlay v-if="loading" label="正在加载预约…" />
       <form class="booking-filter-grid" @submit.prevent="loadBookings">
         <label class="field"><span>开始日期</span><input v-model="filters.from" type="date" /></label>
         <label class="field"><span>结束日期</span><input v-model="filters.to" type="date" /></label>
@@ -454,8 +456,7 @@ onMounted(loadBase)
         </div>
       </form>
 
-      <div v-if="loading" class="empty-state">正在加载预约…</div>
-      <div v-else class="table-wrap">
+      <div class="table-wrap">
         <table>
           <thead>
             <tr>
@@ -493,7 +494,7 @@ onMounted(loadBase)
                 </div>
               </td>
             </tr>
-            <tr v-if="bookings.length === 0">
+            <tr v-if="!loading && bookings.length === 0">
               <td colspan="4" class="empty-cell">当前筛选条件下没有预约。</td>
             </tr>
           </tbody>

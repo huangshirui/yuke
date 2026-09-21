@@ -2,6 +2,7 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { CUTOFF_MINUTES, type CutoffMinutes, type SpaceSettings } from '@yuke/shared'
+import LoadingOverlay from '../components/LoadingOverlay.vue'
 import { getAdminApi } from '../services/adminApi'
 import type { AdminSpace, AdminUserSummary, InviteMemberSummary, InviteSummary } from '../types/admin'
 
@@ -226,9 +227,6 @@ onMounted(load)
 
 <template>
   <main class="page">
-    <div v-if="loading" class="empty-state">正在加载空间…</div>
-
-    <template v-else-if="space">
       <section class="page-heading">
         <div>
           <h1>{{ section === 'admins' ? '管理员管理' : section === 'invites' ? '邀请用户' : '规则设置' }}</h1>
@@ -240,13 +238,14 @@ onMounted(load)
                 : '配置当前空间的预约与取消规则。' }}
           </p>
         </div>
-        <span class="page-context">{{ space.name }}</span>
+        <span v-if="space" class="page-context">{{ space.name }}</span>
       </section>
 
       <div v-if="error" class="alert alert--error">{{ error }}</div>
       <div v-if="notice" class="alert alert--success">{{ notice }}</div>
 
-      <section v-if="section === 'settings'" class="panel">
+      <section v-if="section === 'settings'" class="panel loading-surface" :aria-busy="loading">
+        <LoadingOverlay v-if="loading" label="正在加载规则…" />
         <div class="panel-heading">
           <div>
             <span class="eyebrow">Space Settings</span>
@@ -273,7 +272,8 @@ onMounted(load)
         </form>
       </section>
 
-      <section v-if="section === 'admins'" class="panel">
+      <section v-if="section === 'admins'" class="panel loading-surface" :aria-busy="loading">
+        <LoadingOverlay v-if="loading" label="正在加载管理员…" />
         <div class="panel-heading">
           <div>
             <span class="eyebrow">Access</span>
@@ -302,13 +302,14 @@ onMounted(load)
                 <td class="mono">{{ admin.id }}</td>
                 <td class="align-right"><button class="button button--danger-ghost" :disabled="saving" @click="removeAdmin(admin)">移除</button></td>
               </tr>
-              <tr v-if="admins.length === 0"><td colspan="5" class="empty-cell">当前没有空间管理员。</td></tr>
+              <tr v-if="!loading && admins.length === 0"><td colspan="5" class="empty-cell">当前没有空间管理员。</td></tr>
             </tbody>
           </table>
         </div>
       </section>
 
-      <section v-if="section === 'invites'" class="panel">
+      <section v-if="section === 'invites'" class="panel loading-surface" :aria-busy="loading">
+        <LoadingOverlay v-if="loading" label="正在加载邀请码…" />
         <div class="panel-heading">
           <div>
             <span class="eyebrow">Invitations</span>
@@ -351,7 +352,7 @@ onMounted(load)
                   <span v-else class="muted">已撤销</span>
                 </td>
               </tr>
-              <tr v-if="invites.length === 0"><td colspan="5" class="empty-cell">还没有邀请码。</td></tr>
+              <tr v-if="!loading && invites.length === 0"><td colspan="5" class="empty-cell">还没有邀请码。</td></tr>
             </tbody>
           </table>
         </div>
@@ -370,6 +371,5 @@ onMounted(load)
           </div>
         </aside>
       </section>
-    </template>
   </main>
 </template>

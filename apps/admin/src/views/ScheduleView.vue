@@ -2,6 +2,7 @@
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import AppIcon from '../components/AppIcon.vue'
+import LoadingOverlay from '../components/LoadingOverlay.vue'
 import { getAdminApi } from '../services/adminApi'
 import type { AdminResource, AdminScheduleSlot, AdminSlotType, AdminSpace } from '../types/admin'
 
@@ -22,6 +23,7 @@ const selectedResourceId = ref('')
 const weekStart = ref(startOfWeek(new Date()))
 const mobileDate = ref('')
 const loading = ref(true)
+const slotsLoading = ref(false)
 const saving = ref(false)
 const error = ref('')
 const notice = ref('')
@@ -40,7 +42,15 @@ const form = reactive({
 })
 
 const drag = reactive({ day: -1, startMinute: -1, currentMinute: -1 })
-const gridMinutes = Array.from({ length: 25 }, (_, index) => 8 * 60 + index * 30)
+const GRID_START_MINUTE = 7 * 60
+const GRID_END_MINUTE = 24 * 60
+const GRID_STEP_MINUTES = 30
+const GRID_ROW_HEIGHT = 34
+const gridMinutes = Array.from(
+  { length: (GRID_END_MINUTE - GRID_START_MINUTE) / GRID_STEP_MINUTES },
+  (_, index) => GRID_START_MINUTE + index * GRID_STEP_MINUTES,
+)
+let slotsRequestVersion = 0
 
 const weekDays = computed(() =>
   Array.from({ length: 7 }, (_, index) => {
@@ -138,10 +148,12 @@ function slotStyle(slot: AdminScheduleSlot) {
   const start = zonedParts(slot.startAt)
   const end = zonedParts(slot.endAt)
   const startMinute = start.hour * 60 + start.minute
-  const endMinute = end.hour * 60 + end.minute
-  const rowHeight = 34
-  const top = Math.max(0, ((startMinute - 8 * 60) / 30) * rowHeight)
-  const height = Math.max(rowHeight, ((endMinute - startMinute) / 30) * rowHeight)
+  const startDay = Date.UTC(start.year, start.month - 1, start.day)
+  const endDay = Date.UTC(end.year, end.month - 1, end.day)
+  const dayOffset = Math.max(0, Math.round((endDay - startDay) / 86_400_000))
+  const endMinute = end.hour * 60 + end.minute + dayOffset * 24 * 60
+  const top = Math.max(0, ((startMinute - GRID_START_MINUTE) / GRID_STEP_MINUTES) * GRID_ROW_HEIGHT)
+  const height = Math.max(GRID_ROW_HEIGHT, ((endMinute - startMinute) / GRID_STEP_MINUTES) * GRID_ROW_HEIGHT)
   return { top: top + 'px', height: height + 'px' }
 }
 function slotsFor(date: string) {
@@ -184,16 +196,26 @@ async function loadBase() {
   }
 }
 async function loadSlots() {
+  const requestVersion = ++slotsRequestVersion
   if (!selectedResourceId.value) {
     slots.value = []
+    slotsLoading.value = false
     return
   }
-  slots.value = await api.listScheduleSlots(
-    spaceId.value,
-    selectedResourceId.value,
-    weekStart.value,
-    weekEnd.value
-  )
+  slotsLoading.value = true
+  try {
+    const nextSlots = await api.listScheduleSlots(
+      spaceId.value,
+      selectedResourceId.value,
+      weekStart.value,
+      weekEnd.value
+    )
+    if (requestVersion === slotsRequestVersion) slots.value = nextSlots
+  } catch (cause) {
+    if (requestVersion === slotsRequestVersion) showError(cause, '时段加载失败。')
+  } finally {
+    if (requestVersion === slotsRequestVersion) slotsLoading.value = false
+  }
 }
 async function changeWeek(delta: number) {
   weekStart.value = addDays(weekStart.value, delta * 7)
@@ -382,15 +404,17 @@ async function cancelSlot(slot: AdminScheduleSlot) {
   }
 }
 
-watch(selectedResourceId, () => loadSlots().catch((cause) => showError(cause, '时段加载失败。')))
+watch(selectedResourceId, () => { if (!loading.value) void loadSlots() })
 watch(spaceId, loadBase)
 onMounted(loadBase)
 </script>
 
 <template>
-  <section class="schedule-view" :class="{ page: !props.embedded }">
-    <div v-if="loading" class="empty-state">正在加载排期…</div>
-    <template v-else-if="space">
+  <section
+    class="schedule-view"
+    :class="{ page: !props.embedded }"
+    :style="{ '--schedule-row-height': GRID_ROW_HEIGHT + 'px', '--schedule-grid-height': gridMinutes.length * GRID_ROW_HEIGHT + 'px' }"
+  >
       <section v-if="!props.embedded" class="page-heading page-heading--compact">
         <div>
           <div class="title-line"><h1>开放时间</h1></div>
@@ -405,7 +429,8 @@ onMounted(loadBase)
       <section class="schedule-toolbar">
         <label class="compact-field">
           <span>预约对象</span>
-          <select v-model="selectedResourceId">
+          <select v-model="selectedResourceId" :disabled="loading && !resources.length">
+            <option v-if="loading && !resources.length" value="" disabled>正在加载预约对象…</option>
             <option v-for="resource in resources" :key="resource.id" :value="resource.id">{{ resource.name }}</option>
           </select>
         </label>
@@ -418,9 +443,10 @@ onMounted(loadBase)
         <button class="button button--primary" :disabled="!selectedResourceId" @click="openCreate()">+ 新建时段</button>
       </section>
 
-      <section v-if="!resources.length" class="panel empty-state">还没有启用中的预约对象，请先创建或启用预约对象。</section>
+      <section v-if="!loading && !resources.length" class="panel empty-state">还没有启用中的预约对象，请先创建或启用预约对象。</section>
 
-      <section v-else class="panel schedule-panel desktop-schedule">
+      <section v-else class="panel schedule-panel desktop-schedule loading-surface" :aria-busy="loading || slotsLoading">
+        <LoadingOverlay v-if="loading || slotsLoading" label="正在加载排期…" />
         <div class="week-head">
           <div class="time-gutter"></div>
           <div v-for="day in weekDays" :key="day.date" class="day-head">
@@ -430,6 +456,7 @@ onMounted(loadBase)
         <div class="schedule-body">
           <div class="time-column">
             <div v-for="minute in gridMinutes" :key="minute" class="time-label">{{ minutesLabel(minute) }}</div>
+            <span class="time-boundary-label">{{ minutesLabel(GRID_END_MINUTE) }}</span>
           </div>
           <div
             v-for="(day, dayIndex) in weekDays"
@@ -475,7 +502,8 @@ onMounted(loadBase)
         </div>
       </section>
 
-      <section v-if="resources.length" class="mobile-agenda">
+      <section v-if="loading || resources.length" class="mobile-agenda loading-surface" :aria-busy="loading || slotsLoading">
+        <LoadingOverlay v-if="loading || slotsLoading" label="正在加载排期…" />
         <div class="mobile-day-nav">
           <button class="button button--ghost icon-nav icon-nav--previous" aria-label="前一天" @click="changeMobileDay(-1)"><AppIcon name="chevron" /></button>
           <div>
@@ -566,7 +594,6 @@ onMounted(loadBase)
           </div>
         </section>
       </div>
-    </template>
   </section>
 </template>
 
@@ -575,7 +602,7 @@ onMounted(loadBase)
 .schedule-toolbar{min-height:58px;display:grid;grid-template-columns:minmax(210px,280px) 1fr auto;align-items:center;gap: var(--space-14);margin-bottom: var(--space-12);padding: var(--space-8) var(--space-10);border:var(--border-width) solid var(--color-border);border-radius:var(--radius-12);background:var(--color-white)}
 .compact-field{display:flex;align-items:center;gap: var(--space-9);min-width:0}.compact-field>span{font-size:var(--font-size-12);font-weight:700;color:var(--color-text-secondary);white-space:nowrap}.compact-field select{min-width:0;width:100%;height:var(--control-height-md)}
 .week-nav{display:flex;align-items:center;justify-content:center;gap: var(--space-6)}.week-nav strong{min-width:88px;text-align:center;font-size:var(--font-size-13)}.week-nav>.button:first-child{min-height:var(--control-size-icon-nav);padding-inline:var(--space-12)}.icon-nav{width:var(--control-size-icon-nav);min-width:var(--control-size-icon-nav);height:var(--control-size-icon-nav);min-height:var(--control-size-icon-nav);padding:0;display:grid;place-items:center}.icon-nav :deep(.app-icon){width:var(--icon-size-nav-chevron);height:var(--icon-size-nav-chevron)}.icon-nav--previous :deep(.app-icon){transform:rotate(180deg)}
-.schedule-panel{overflow:auto;padding: 0}.week-head,.schedule-body{display:grid;grid-template-columns:58px repeat(7,minmax(116px,1fr));min-width:890px}.time-gutter,.day-head{height:50px;border-bottom:var(--border-width) solid var(--color-border)}.day-head{display:grid;align-content:center;gap: var(--space-2);padding: 0 var(--space-10);border-left:var(--border-width) solid var(--color-border)}.day-head strong{font-size:var(--font-size-13)}.day-head span{color:var(--color-text-secondary);font-size:var(--font-size-11)}.schedule-body{align-items:start}.time-column{display:grid}.time-label{height:34px;padding: var(--space-6) var(--space-7);color:var(--color-text-secondary);font-size:var(--font-size-10);border-bottom:var(--border-width) solid var(--color-border)}.day-column{position:relative;border-left:var(--border-width) solid var(--color-border);min-height:850px}.time-cell{display:block;width:100%;height:34px;border:0;border-bottom:var(--border-width) solid var(--color-border);background:transparent;padding: 0;cursor:crosshair}.time-cell:hover,.time-cell--selected{background:var(--color-primary-soft)}.day-slots{position:absolute;inset:0;pointer-events:none}.slot-card{position:absolute;left:4px;right:4px;pointer-events:auto;border:var(--border-width) solid var(--color-slot-border);border-left:var(--border-width-strong) solid var(--color-primary);border-radius:var(--radius-7);background:var(--color-white);padding: var(--space-6) var(--space-7);text-align:left;display:grid;align-content:start;gap: var(--space-2);box-shadow:var(--shadow-slot);overflow:hidden}.slot-card strong{font-size:var(--font-size-12);line-height:1.15;white-space:nowrap}.slot-card span{font-size:var(--font-size-10);line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.slot-card small{font-size:var(--font-size-9);line-height:1.2}.slot-booking-line{color:var(--color-text-primary)!important;font-weight:650}.slot-operational-state{color:var(--color-text-secondary)}.slot-availability{color:var(--color-primary)!important}.slot-card--frozen{border-color:var(--color-slot-frozen-border);border-left-color:var(--color-slot-frozen-accent);background:var(--color-slot-frozen-bg)}
+.schedule-panel{overflow:auto;padding: 0}.week-head,.schedule-body{display:grid;grid-template-columns:58px repeat(7,minmax(116px,1fr));min-width:890px}.time-gutter,.day-head{height:50px;border-bottom:var(--border-width) solid var(--color-border)}.day-head{display:grid;align-content:center;gap: var(--space-2);padding: 0 var(--space-10);border-left:var(--border-width) solid var(--color-border)}.day-head strong{font-size:var(--font-size-13)}.day-head span{color:var(--color-text-secondary);font-size:var(--font-size-11)}.schedule-body{align-items:start}.time-column{display:grid;position:relative}.time-label{height:var(--schedule-row-height);padding: var(--space-6) var(--space-7);color:var(--color-text-secondary);font-size:var(--font-size-10);border-bottom:var(--border-width) solid var(--color-border)}.time-boundary-label{position:absolute;right:var(--space-7);bottom:0;transform:translateY(50%);z-index:1;padding-left:var(--space-4);background:var(--color-white);color:var(--color-text-secondary);font-size:var(--font-size-10)}.day-column{position:relative;border-left:var(--border-width) solid var(--color-border);min-height:var(--schedule-grid-height)}.time-cell{display:block;width:100%;height:var(--schedule-row-height);border:0;border-bottom:var(--border-width) solid var(--color-border);background:transparent;padding: 0;cursor:crosshair}.time-cell:hover,.time-cell--selected{background:var(--color-primary-soft)}.day-slots{position:absolute;inset:0;pointer-events:none}.slot-card{position:absolute;left:4px;right:4px;pointer-events:auto;border:var(--border-width) solid var(--color-slot-border);border-left:var(--border-width-strong) solid var(--color-primary);border-radius:var(--radius-7);background:var(--color-white);padding: var(--space-6) var(--space-7);text-align:left;display:grid;align-content:start;gap: var(--space-2);box-shadow:var(--shadow-slot);overflow:hidden}.slot-card strong{font-size:var(--font-size-12);line-height:1.15;white-space:nowrap}.slot-card span{font-size:var(--font-size-10);line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.slot-card small{font-size:var(--font-size-9);line-height:1.2}.slot-booking-line{color:var(--color-text-primary)!important;font-weight:650}.slot-operational-state{color:var(--color-text-secondary)}.slot-availability{color:var(--color-primary)!important}.slot-card--frozen{border-color:var(--color-slot-frozen-border);border-left-color:var(--color-slot-frozen-accent);background:var(--color-slot-frozen-bg)}
 .mobile-agenda{display:none}
 .modal-backdrop{position:fixed;inset:0;background:var(--color-overlay-soft);display:grid;place-items:center;padding: var(--space-24);z-index:20}.modal-card{width:min(720px,100%);max-height:90vh;overflow:auto;background:var(--color-white);border-radius:var(--radius-16);padding: var(--space-20);box-shadow:var(--shadow-schedule-modal)}.schedule-form{margin-top: var(--space-12)}.slot-detail-meta{display:flex;gap: var(--space-8);flex-wrap:wrap;margin: var(--space-10) 0 var(--space-4)}.slot-detail-meta span{padding: var(--space-4) var(--space-8);border-radius:var(--radius-pill);background:var(--color-neutral-pill);color:var(--color-text-secondary);font-size:var(--font-size-11)}.repeat-panel{margin-top: var(--space-14);padding: var(--space-14);border:var(--border-width) solid var(--color-border);border-radius:var(--radius-10);display:grid;gap: var(--space-12)}.field-label{font-size:var(--font-size-12);font-weight:600}.weekday-picker{display:flex;gap: var(--space-6);flex-wrap:wrap}.weekday-button{border:var(--border-width) solid var(--color-border);background:var(--color-white);border-radius:var(--radius-pill);padding: var(--space-6) var(--space-10);cursor:pointer;font-size:var(--font-size-12)}.weekday-button.active{background:var(--color-primary-soft);border-color:var(--color-primary);color:var(--color-primary)}.modal-actions{display:flex;justify-content:flex-end;align-items:center;gap: var(--space-8);margin-top: var(--space-16)}.modal-actions-spacer{flex:1}
 @media(max-width:820px){.week-nav>.button:first-child{min-height:var(--control-size-icon-nav-touch)}.week-nav .icon-nav,.mobile-day-nav .icon-nav{width:var(--control-size-icon-nav-touch);min-width:var(--control-size-icon-nav-touch);height:var(--control-size-icon-nav-touch);min-height:var(--control-size-icon-nav-touch)}.schedule-toolbar{grid-template-columns:1fr auto;gap: var(--space-8)}.schedule-toolbar>.button--primary{grid-column:2;grid-row:1}.week-nav{grid-column:1 / -1;justify-content:space-between;border-top:var(--border-width) solid var(--color-border);padding-top: var(--space-8)}.desktop-schedule{display:none}.mobile-agenda{display:block;border:var(--border-width) solid var(--color-border);border-radius:var(--radius-12);background:var(--color-white);overflow:hidden}.mobile-day-nav{min-height:52px;display:grid;grid-template-columns:40px 1fr 40px;align-items:center;border-bottom:var(--border-width) solid var(--color-border);padding: var(--space-4) var(--space-8)}.mobile-day-nav>div{display:flex;align-items:center;justify-content:center;gap: var(--space-8)}.mobile-day-nav strong{font-size:var(--font-size-14)}.mobile-day-nav span{font-size:var(--font-size-12);color:var(--color-text-secondary)}.agenda-list{display:grid}.agenda-slot{min-height:60px;border:0;border-bottom:var(--border-width) solid var(--color-border);background:var(--color-white);padding: var(--space-9) var(--space-12);display:grid;grid-template-columns:92px minmax(0,1fr) 16px;align-items:center;gap: var(--space-10);text-align:left;color:var(--color-text-primary)}.agenda-slot:last-child{border-bottom:0}.agenda-slot--booked{background:var(--color-booked-row-bg)}.agenda-slot--frozen{background:var(--color-slot-frozen-bg)}.agenda-time{font-size:var(--font-size-12);color:var(--color-text-secondary)}.agenda-main{display:grid;gap: var(--space-2)}.agenda-main strong{font-size:var(--font-size-14)}.agenda-main small{font-size:var(--font-size-12);color:var(--color-text-secondary)}.agenda-state{font-size:var(--font-size-11)!important}.modal-backdrop{align-items:end;padding: 0}.modal-card{width:100%;max-width:none;max-height:92vh;border-radius:var(--radius-18) var(--radius-18) 0 0;padding: var(--space-18) var(--space-16) calc(var(--space-18) + env(safe-area-inset-bottom))}}

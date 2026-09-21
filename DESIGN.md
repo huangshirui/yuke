@@ -265,6 +265,10 @@ Admin 不使用 Inline Expansion / 行内展开详情。详情必须落在以下
 
 原则：
 
+- **Static shell first / 固定结构优先**：进入页面时立即渲染 Page heading、Tabs、筛选器、Panel heading、Table header、Calendar grid 等稳定结构；不得先用“正在加载…”空白页替换整个工作区。
+- 数据读取中的 Loading 采用数据区域内的局部 Overlay / Spinner；刷新筛选、切换日期或切换周时也保持稳定结构，数据完成后原位填充。
+- Empty State 只能在请求完成且确认数据为空后出现，不能在 Loading 期间短暂闪现“暂无数据”。
+- 刷新同一上下文时优先保留已有数据并覆盖 Loading；切换到不同日期/上下文、旧数据会产生误导时，可以清空旧数据，但固定结构仍保持可见。
 - 保存期间阻止重复提交。
 - 操作成功提供短反馈。
 - API Error 使用用户能理解的中文提示。
@@ -279,6 +283,9 @@ SLOT_ALREADY_BOOKED
 ```
 
 ### Slot operational state / 时段运营状态
+
+Admin 周历默认展示 **07:00–24:00**，以 30 分钟为交互网格；这是日历工作区的默认可视范围，不改变 Slot 本身可使用精确开始/结束时间的领域语义。切换周/日期时应先更新固定日历网格与日期标题，并在数据区显示 Loading Overlay，待 Slot 数据返回后原位填充。
+
 
 Slot 是预约工作台的核心时间资源，但 UI 不应把所有业务状态塞进一个 SlotStatus。日历展示优先级：
 
