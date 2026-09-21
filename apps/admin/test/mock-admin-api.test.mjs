@@ -136,6 +136,23 @@ test('weekly scheduling mock enforces overlap and frozen visibility', async () =
 })
 
 
+test('admin shell mock exposes current identity and assigns admins by email', async () => {
+  const api = createMockAdminApi(memoryStorage())
+
+  const current = await api.getCurrentAdmin()
+  assert.equal(current.email, 'super-admin@example.invalid')
+  assert.equal(current.platformRole, 'super_admin')
+
+  const assigned = await api.assignAdminByEmail('sp_demo_alpha', 'NEW-ADMIN@example.invalid')
+  assert.equal(assigned.email, 'new-admin@example.invalid')
+
+  const admins = await api.listAdmins('sp_demo_alpha')
+  assert.ok(admins.some((item) => item.email === 'new-admin@example.invalid'))
+
+  const same = await api.assignAdminByEmail('sp_demo_alpha', 'new-admin@example.invalid')
+  assert.equal(same.id, assigned.id)
+})
+
 test('booking management mock filters, moves, cancels and completes bookings', async () => {
   const api = createMockAdminApi(memoryStorage())
 
