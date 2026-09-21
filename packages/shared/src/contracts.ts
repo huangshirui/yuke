@@ -107,6 +107,19 @@ export type Slot = {
   bookable: boolean
 }
 
+export type AdminSlotBookingProjection = {
+  id: Id
+  status: Extract<BookingStatus, 'booked' | 'completed'>
+  membershipId: Id
+  userNickname: string
+  participantId: Id
+  participantName: string
+}
+
+export type AdminSlot = Slot & {
+  booking: AdminSlotBookingProjection | null
+}
+
 export type Booking = {
   id: Id
   spaceId: Id
