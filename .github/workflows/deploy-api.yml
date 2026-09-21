@@ -91,5 +91,37 @@ jobs:
           rm -f "$log"
           echo "yuke-api production deployment completed."
 
-      - name: Production health smoke
-        run: pnpm --filter @yuke/api smoke:production
+  smoke:
+    needs: deploy
+    if: ${{ needs.deploy.result == 'success' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+
+      - name: Production health smoke with edge propagation retry
+        shell: bash
+        run: |
+          set -u
+          attempts=12
+          delay_seconds=10
+
+          for ((attempt=1; attempt<=attempts; attempt++)); do
+            echo "Production health smoke attempt $attempt/$attempts"
+
+            if node services/api/scripts/smoke-production.mjs; then
+              exit 0
+            fi
+
+            if (( attempt < attempts )); then
+              echo "Health endpoint is not ready yet; retrying in ${delay_seconds}s."
+              sleep "$delay_seconds"
+            fi
+          done
+
+          echo "::error::Production API deployment completed, but /health did not become healthy within the retry window."
+          exit 1
