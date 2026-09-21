@@ -77,6 +77,39 @@ Gateway 只接受 `/api/v1/admin` 与其子路径：
 
 ## 3. Production build / deploy
 
+### GitHub Actions（推荐）
+
+生产 Admin 使用独立 Workflow：
+
+```text
+.github/workflows/deploy-admin.yml
+```
+
+部署策略：
+
+- `workflow_dispatch` 可手动发布，但只允许从 `main` 执行；
+- 自动发布不直接监听 `push`，而是等待 `main` 的 `CI` workflow 成功完成后再判断是否需要发布，避免生产发布抢跑 CI；
+- 自动发布只在最近一个 `main` commit 改到 `apps/admin/**`、`packages/shared/**`、workspace lockfile / Node 版本或 Admin deploy workflow 时执行；
+- 自动发布只有在 Repository Variable `ADMIN_PRODUCTION_DEPLOY_ENABLED=true` 时启用；
+- Job 使用 GitHub Environment `production-admin`；
+- `production-admin` Environment Secrets：
+  - `CLOUDFLARE_API_TOKEN`
+  - `CLOUDFLARE_ACCOUNT_ID`
+- Workflow 固定使用 `VITE_ADMIN_DATA_MODE=api`；
+- Wrangler deploy 输出不进入公开 CI Log，避免暴露 Cloudflare deployment/resource metadata；
+- production concurrency 为 `production-admin`，不会取消已经开始的生产发布；
+- 发布后执行匿名 edge reachability smoke。由于 Cloudflare Access 可能拦截未登录请求，HTTP 2xx / 3xx / 401 / 403 都代表 edge 可达；真实 Admin API smoke 仍需登录后验证。
+
+首次启用建议：
+
+1. 建立 GitHub Environment `production-admin` 并录入上述 Secrets；
+2. 保持 `ADMIN_PRODUCTION_DEPLOY_ENABLED` 未开启；
+3. 从 Actions 手动运行一次 `Deploy Admin Production`；
+4. 完成登录态 smoke；
+5. 再设置 Repository Variable `ADMIN_PRODUCTION_DEPLOY_ENABLED=true`，此后相关变更 merge 到 `main` 且 CI 通过后自动发布。
+
+### 本机 fallback
+
 Git Bash：
 
 ```bash

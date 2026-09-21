@@ -1,0 +1,95 @@
+name: Deploy API Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      apply_migrations:
+        description: "Apply pending D1 migrations before deploying yuke-api"
+        required: true
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-api
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: ${{ github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    environment: production-api
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Test API
+        run: pnpm --filter @yuke/api test
+
+      - name: Verify production deployment inputs
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          YUKE_D1_DATABASE_NAME: ${{ secrets.YUKE_D1_DATABASE_NAME }}
+          YUKE_D1_DATABASE_ID: ${{ secrets.YUKE_D1_DATABASE_ID }}
+          YUKE_R2_BUCKET_NAME: ${{ secrets.YUKE_R2_BUCKET_NAME }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          for name in CLOUDFLARE_API_TOKEN CLOUDFLARE_ACCOUNT_ID YUKE_D1_DATABASE_NAME YUKE_D1_DATABASE_ID YUKE_R2_BUCKET_NAME; do
+            test -n "${!name}" || { echo "::error::Missing production-api secret: $name"; exit 1; }
+          done
+
+      - name: Render controlled production config
+        env:
+          YUKE_D1_DATABASE_NAME: ${{ secrets.YUKE_D1_DATABASE_NAME }}
+          YUKE_D1_DATABASE_ID: ${{ secrets.YUKE_D1_DATABASE_ID }}
+          YUKE_R2_BUCKET_NAME: ${{ secrets.YUKE_R2_BUCKET_NAME }}
+        run: pnpm --filter @yuke/api production:config
+
+      - name: Apply D1 migrations
+        if: ${{ inputs.apply_migrations }}
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          log="$RUNNER_TEMP/yuke-api-migrations.log"
+          if ! pnpm --filter @yuke/api exec wrangler d1 migrations apply DB --remote --config .wrangler/production.toml >"$log" 2>&1; then
+            rm -f "$log"
+            echo "::error::Remote D1 migration failed. Wrangler output is intentionally suppressed in this public repository; reproduce locally with the production runbook."
+            exit 1
+          fi
+          rm -f "$log"
+          echo "Remote D1 migrations completed."
+
+      - name: Deploy yuke-api
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          log="$RUNNER_TEMP/yuke-api-wrangler.log"
+          if ! pnpm --filter @yuke/api exec wrangler deploy --config .wrangler/production.toml >"$log" 2>&1; then
+            rm -f "$log"
+            echo "::error::Cloudflare API deployment failed. Wrangler output is intentionally suppressed in this public repository; reproduce locally with the production runbook."
+            exit 1
+          fi
+          rm -f "$log"
+          echo "yuke-api production deployment completed."
+
+      - name: Production health smoke
+        run: pnpm --filter @yuke/api smoke:production
