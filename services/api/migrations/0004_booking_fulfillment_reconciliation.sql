@@ -1,6 +1,3 @@
--- Booking fulfillment provenance and reconciliation state.
--- Completion remains part of Booking lifecycle; reconciliation is a separate one-to-one business process.
-
 ALTER TABLE bookings ADD COLUMN completion_source TEXT
   CHECK (
     completion_source IS NULL OR
@@ -50,7 +47,6 @@ CREATE TABLE booking_reconciliations (
 CREATE INDEX idx_booking_reconciliations_space_status
   ON booking_reconciliations(space_id, status);
 
--- Existing completed Bookings become explicitly pending reconciliation.
 INSERT INTO booking_reconciliations (
   booking_id,
   space_id,
