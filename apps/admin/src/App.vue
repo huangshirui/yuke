@@ -101,11 +101,8 @@ onMounted(loadShell)
           <RouterLink :to="currentPath('overview')" class="nav-item">
             <AppIcon name="overview" /><span>概览</span>
           </RouterLink>
-          <RouterLink :to="currentPath('bookings')" class="nav-item">
-            <AppIcon name="bookings" /><span>预约管理</span>
-          </RouterLink>
-          <RouterLink :to="currentPath('schedule')" class="nav-item">
-            <AppIcon name="schedule" /><span>开放时间</span>
+          <RouterLink :to="currentPath('reservations')" class="nav-item">
+            <AppIcon name="bookings" /><span>预约</span>
           </RouterLink>
           <RouterLink :to="currentPath('users')" class="nav-item">
             <AppIcon name="users" /><span>用户管理</span>
