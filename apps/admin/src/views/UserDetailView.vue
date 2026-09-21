@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import LoadingOverlay from '../components/LoadingOverlay.vue'
 import { getAdminApi } from '../services/adminApi'
 import type {
   AdminBooking,
@@ -147,7 +148,29 @@ onMounted(load)
 
     <div v-if="error" class="alert alert--error">{{ error }}</div>
     <div v-if="notice" class="alert alert--success">{{ notice }}</div>
-    <div v-if="loading" class="empty-state">正在加载用户详情…</div>
+    <section v-if="loading" class="detail-loading-shell loading-surface" aria-busy="true">
+      <LoadingOverlay label="正在加载用户详情…" />
+      <div class="detail-section-grid">
+        <article class="panel detail-section">
+          <div class="compact-panel-heading"><h2>加入信息</h2></div>
+          <div class="detail-loading-block"></div>
+        </article>
+        <article class="panel detail-section">
+          <div class="compact-panel-heading"><h2>内部备注</h2><small>仅管理端可见</small></div>
+          <div class="detail-loading-block"></div>
+        </article>
+      </div>
+      <section class="panel detail-section">
+        <div class="compact-panel-heading"><h2>参与人</h2></div>
+        <div class="detail-loading-block"></div>
+      </section>
+      <section class="panel detail-section">
+        <div class="compact-panel-heading"><h2>预约记录</h2></div>
+        <div class="table-wrap">
+          <table><thead><tr><th>时间</th><th>参与人</th><th>预约对象</th><th>状态</th></tr></thead></table>
+        </div>
+      </section>
+    </section>
 
     <template v-else-if="member">
       <section class="detail-section-grid">
@@ -229,5 +252,6 @@ onMounted(load)
 </template>
 
 <style scoped>
+.detail-loading-shell{min-height:420px}.detail-loading-block{min-height:120px}
 .detail-section-grid{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap: var(--space-12);margin-bottom: var(--space-12)}.detail-section{padding: 0;margin-bottom: var(--space-12)}.compact-panel-heading{min-height:46px;padding: 0 var(--space-16);border-bottom:var(--border-width) solid var(--color-border);display:flex;align-items:center;justify-content:space-between;gap: var(--space-12)}.compact-panel-heading h2{margin: 0;font-size:var(--font-size-15)}.compact-panel-heading small{color:var(--color-text-secondary);font-size:var(--font-size-11)}.detail-list{margin: 0;padding: var(--space-8) var(--space-16)}.detail-list>div{min-height:38px;display:grid;grid-template-columns:96px minmax(0,1fr);align-items:center;border-bottom:var(--border-width) solid var(--color-border-subtle)}.detail-list>div:last-child{border-bottom:0}.detail-list dt{font-size:var(--font-size-12);color:var(--color-text-secondary)}.detail-list dd{margin: 0;font-size:var(--font-size-13);font-weight:650;overflow-wrap:anywhere}.compact-editor{padding: var(--space-14) var(--space-16);display:grid;gap: var(--space-10)}.compact-editor textarea{width:100%;resize:vertical}.compact-editor .button{justify-self:end}.participant-detail-list{display:grid}.participant-detail-row{display:grid;grid-template-columns:minmax(150px,.7fr) minmax(180px,.8fr) minmax(260px,1.4fr);gap: var(--space-14);padding: var(--space-14) var(--space-16);border-bottom:var(--border-width) solid var(--color-border)}.participant-detail-row:last-child{border-bottom:0}.participant-identity{display:flex;align-items:center;gap: var(--space-8);flex-wrap:wrap}.participant-identity>span:not(.status-pill){font-size:var(--font-size-12);color:var(--color-text-secondary)}.participant-user-note>span{font-size:var(--font-size-11);color:var(--color-text-secondary)}.participant-user-note p{margin: var(--space-5) 0 0;font-size:var(--font-size-13);line-height:1.45}.participant-admin-note .button{justify-self:start;margin-top: var(--space-4)}@media(max-width:820px){.detail-section-grid{grid-template-columns:1fr}.participant-detail-row{grid-template-columns:1fr}.compact-editor .button{width:100%}}
 </style>
