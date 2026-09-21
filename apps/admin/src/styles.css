@@ -624,3 +624,209 @@ textarea:focus { border-color: #62a79e; box-shadow: 0 0 0 3px rgba(18,110,98,.1)
   .quick-actions { grid-template-columns: 1fr; }
   .trend-chart { gap: 6px; padding-inline: 12px; }
 }
+
+
+/* Mobile Admin shell refinements */
+@media (max-width: 820px) {
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    background: #132826;
+  }
+  .brand { order: 1; }
+  .sidebar-bottom {
+    order: 2;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
+    align-items: stretch;
+    padding-top: 0;
+    margin: 4px 0 10px;
+  }
+  .primary-nav {
+    order: 3;
+    margin: 0 -2px;
+    padding: 2px 0 0;
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+  }
+  .nav-group {
+    display: flex;
+    gap: 4px;
+    padding-right: 6px;
+    border-right: 1px solid rgba(255,255,255,.08);
+  }
+  .nav-group:last-child { border-right: 0; padding-right: 0; }
+  .nav-item {
+    scroll-snap-align: start;
+    min-height: 40px;
+    padding-inline: 10px;
+    font-size: 13px;
+  }
+  .nav-item .app-icon { width: 17px; height: 17px; }
+  .nav-item--disabled .coming-badge { display: none; }
+
+  .space-switcher-button,
+  .account-card {
+    min-height: 54px;
+    height: 100%;
+  }
+  .account-card {
+    border-radius: 11px;
+    background: rgba(255,255,255,.04);
+    padding-inline: 10px;
+  }
+  .account-card .avatar { flex-basis: 34px; width: 34px; height: 34px; }
+  .account-card strong { font-size: 11px; }
+  .account-card small { font-size: 10px; }
+  .space-menu {
+    position: fixed;
+    left: 14px;
+    right: 14px;
+    top: 118px;
+    bottom: auto;
+    width: auto;
+    max-width: none;
+    max-height: calc(100vh - 136px);
+  }
+
+  .page-heading {
+    gap: 14px;
+  }
+  .page-heading > .button,
+  .page-heading > .page-context,
+  .page-heading > .date-chip {
+    align-self: flex-start;
+  }
+
+  .metric-row,
+  .overview-metrics,
+  .users-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .metric-card,
+  .overview-metric {
+    min-height: 104px;
+    padding: 16px;
+  }
+  .overview-metric strong { font-size: 27px; }
+
+  .overview-grid { grid-template-columns: 1fr; }
+  .overview-card-heading { min-height: 54px; padding-inline: 15px; }
+  .today-booking-row {
+    grid-template-columns: 92px minmax(0, 1fr) 18px;
+    padding-inline: 14px;
+    gap: 10px;
+  }
+  .today-resource { display: none; }
+  .trend-chart { height: 210px; padding-inline: 14px; }
+  .quick-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+
+  .panel-heading { padding: 18px 16px; }
+  th, td { padding: 13px 14px; }
+  .summary-strip { overflow-x: auto; white-space: nowrap; }
+  .inline-form,
+  .invite-form {
+    display: grid;
+    grid-template-columns: 1fr;
+    align-items: stretch;
+    padding: 16px;
+  }
+  .invite-form .field { min-width: 0; }
+
+  .section-tabs {
+    width: 100%;
+    overflow-x: auto;
+  }
+  .section-tabs button { flex: 1 0 auto; }
+
+  .source-panel { margin: 14px 12px 16px; }
+  .detail-meta,
+  .participant-notes,
+  .note-editor {
+    grid-template-columns: 1fr;
+  }
+
+  .modal-backdrop {
+    align-items: end;
+    padding: 0;
+  }
+  .modal,
+  .modal-card,
+  .booking-edit-modal {
+    width: 100%;
+    max-width: none;
+    max-height: 92vh;
+    border-radius: 18px 18px 0 0;
+    padding: 18px 16px calc(18px + env(safe-area-inset-bottom));
+  }
+
+  .schedule-panel {
+    border-radius: 12px;
+  }
+}
+
+@media (max-width: 560px) {
+  .brand-logo-wrap { width: 40px; height: 40px; flex-basis: 40px; }
+  .brand strong { font-size: 15px; }
+  .brand small { font-size: 11px; }
+
+  .sidebar-bottom { grid-template-columns: 1fr; }
+  .account-card { min-height: 48px; }
+  .space-menu { top: 166px; }
+
+  .page { padding: 18px 12px 28px; }
+  .page-heading h1 { font-size: 26px; }
+  .page-heading p { font-size: 13px; }
+
+  .metric-row,
+  .overview-metrics,
+  .users-metrics {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .overview-metric {
+    min-height: 92px;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+  }
+  .overview-metric > span,
+  .overview-metric small { grid-column: 1; }
+  .overview-metric strong { grid-column: 2; grid-row: 1 / span 2; }
+
+  .today-booking-row {
+    grid-template-columns: 78px minmax(0, 1fr) 14px;
+    min-height: 62px;
+    padding: 9px 12px;
+  }
+  .today-time { font-size: 11px; }
+  .trend-chart { height: 190px; gap: 5px; }
+  .quick-actions { grid-template-columns: 1fr; }
+
+  .filter-actions,
+  .modal-actions,
+  .booking-filter-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  .filter-actions .button,
+  .modal-actions .button,
+  .booking-filter-actions .button {
+    width: 100%;
+  }
+
+  .panel { border-radius: 13px; }
+  .panel-heading { gap: 12px; }
+  .panel-heading h2 { font-size: 18px; }
+
+  .table-wrap {
+    margin-inline: -1px;
+    -webkit-overflow-scrolling: touch;
+  }
+  table { min-width: 680px; }
+
+  .space-menu-heading { min-height: 48px; }
+  .space-menu-item { min-height: 44px; }
+}
