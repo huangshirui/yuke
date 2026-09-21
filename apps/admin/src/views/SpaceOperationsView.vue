@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
+import LoadingOverlay from '../components/LoadingOverlay.vue'
 import { getAdminApi } from '../services/adminApi'
 import type {
   AdminMemberDetail,
@@ -305,9 +306,6 @@ onMounted(load)
 
 <template>
   <main class="page">
-    <div v-if="loading" class="empty-state">正在加载空间…</div>
-
-    <template v-else-if="space">
       <section class="page-heading">
         <div>
           <h1>{{ section === 'resources' ? '预约对象' : section === 'slot-types' ? '时段类型' : '用户管理' }}</h1>
@@ -319,15 +317,14 @@ onMounted(load)
                 : '查看当前空间的用户与参与人。' }}
           </p>
         </div>
-        <span class="page-context">{{ space.name }}</span>
+        <span v-if="space" class="page-context">{{ space.name }}</span>
       </section>
 
       <div v-if="error" class="alert alert--error">{{ error }}</div>
       <div v-if="notice" class="alert alert--success">{{ notice }}</div>
 
-      <div v-if="sectionLoading" class="empty-state">正在加载…</div>
-
-      <section v-else-if="section === 'resources'" class="panel">
+      <section v-if="section === 'resources'" class="panel loading-surface" :aria-busy="loading || sectionLoading">
+        <LoadingOverlay v-if="loading || sectionLoading" label="正在加载预约对象…" />
         <div class="panel-heading">
           <div>
             <span class="eyebrow">Resources</span>
@@ -371,7 +368,7 @@ onMounted(load)
                   </div>
                 </td>
               </tr>
-              <tr v-if="resources.length === 0">
+              <tr v-if="!loading && !sectionLoading && resources.length === 0">
                 <td colspan="5" class="empty-cell">还没有预约对象。创建后才能配置可预约时段。</td>
               </tr>
             </tbody>
@@ -379,7 +376,8 @@ onMounted(load)
         </div>
       </section>
 
-      <section v-else-if="section === 'slot-types'" class="panel">
+      <section v-else-if="section === 'slot-types'" class="panel loading-surface" :aria-busy="loading || sectionLoading">
+        <LoadingOverlay v-if="loading || sectionLoading" label="正在加载时段类型…" />
         <div class="panel-heading">
           <div>
             <span class="eyebrow">Slot Types</span>
@@ -422,7 +420,7 @@ onMounted(load)
                   </div>
                 </td>
               </tr>
-              <tr v-if="slotTypes.length === 0">
+              <tr v-if="!loading && !sectionLoading && slotTypes.length === 0">
                 <td colspan="4" class="empty-cell">还没有时段类型。至少创建一个启用类型后再配置时段。</td>
               </tr>
             </tbody>
@@ -430,7 +428,8 @@ onMounted(load)
         </div>
       </section>
 
-      <section v-else class="panel">
+      <section v-else class="panel loading-surface" :aria-busy="loading || sectionLoading">
+        <LoadingOverlay v-if="loading || sectionLoading" label="正在加载用户…" />
         <div class="panel-heading">
           <div>
             <span class="eyebrow">Members</span>
@@ -479,7 +478,7 @@ onMounted(load)
                 <td>{{ formatDate(member.joinedAt) }}</td>
                 <td class="align-right"><button class="button button--ghost" @click="openMember(member)">查看详情</button></td>
               </tr>
-              <tr v-if="members.length === 0">
+              <tr v-if="!loading && !sectionLoading && members.length === 0">
                 <td colspan="5" class="empty-cell">当前筛选条件下没有用户。</td>
               </tr>
             </tbody>
@@ -547,7 +546,6 @@ onMounted(load)
           </div>
         </aside>
       </section>
-    </template>
 
     <div v-if="showResourceForm" class="modal-backdrop" @click.self="showResourceForm = false">
       <form class="modal" role="dialog" aria-modal="true" aria-label="预约对象编辑" @submit.prevent="saveResource">
