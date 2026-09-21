@@ -12,6 +12,10 @@ import type {
   BookingFilters
 } from '../types/admin'
 
+const props = withDefaults(defineProps<{ embedded?: boolean }>(), {
+  embedded: false
+})
+
 const api = getAdminApi()
 const route = useRoute()
 
@@ -65,13 +69,6 @@ const participantOptions = computed(() => {
 const activeEditParticipants = computed(() =>
   (editMember.value?.participants ?? []).filter((item) => item.status === 'active')
 )
-
-const metrics = computed(() => ({
-  total: bookings.value.length,
-  booked: bookings.value.filter((item) => item.status === 'booked').length,
-  completed: bookings.value.filter((item) => item.status === 'completed').length,
-  cancelled: bookings.value.filter((item) => item.status === 'cancelled').length
-}))
 
 function clearFeedback() {
   error.value = ''
@@ -137,6 +134,11 @@ async function loadBase() {
       throw new Error('找不到这个空间。')
     }
     selectedSpaceId.value = routeSpaceId
+    if (!filters.from && !filters.to) {
+      const today = currentDateInSpace()
+      filters.from = today
+      filters.to = today
+    }
     await loadSpaceContext()
   } catch (cause) {
     error.value = friendlyError(cause, '预约管理加载失败。')
@@ -189,8 +191,9 @@ async function loadBookings() {
 }
 
 async function resetFilters() {
-  filters.from = ''
-  filters.to = ''
+  const today = currentDateInSpace()
+  filters.from = today
+  filters.to = today
   filters.status = undefined
   filters.resourceId = ''
   filters.participantId = ''
@@ -339,8 +342,8 @@ onMounted(loadBase)
 </script>
 
 <template>
-  <main class="page booking-admin-page">
-    <section class="page-heading">
+  <main class="booking-admin-page" :class="{ page: !props.embedded }">
+    <section v-if="!props.embedded" class="page-heading">
       <div>
         <span class="eyebrow">Bookings</span>
         <h1>预约管理</h1>
@@ -352,21 +355,7 @@ onMounted(loadBase)
     <div v-if="error" class="alert alert--error">{{ error }}</div>
     <div v-if="notice" class="alert alert--success">{{ notice }}</div>
 
-    <div class="metric-row booking-metrics">
-      <article class="metric-card"><span>当前结果</span><strong>{{ metrics.total }}</strong></article>
-      <article class="metric-card"><span>已预约</span><strong>{{ metrics.booked }}</strong></article>
-      <article class="metric-card"><span>已完成</span><strong>{{ metrics.completed }}</strong></article>
-      <article class="metric-card"><span>已取消</span><strong>{{ metrics.cancelled }}</strong></article>
-    </div>
-
     <section class="panel">
-      <div class="panel-heading">
-        <div>
-          <h2>预约列表</h2>
-          <p>{{ selectedSpace?.name || '请选择空间' }} · 筛选条件直接对应 Booking API。</p>
-        </div>
-      </div>
-
       <form class="booking-filter-grid" @submit.prevent="loadBookings">
         <label class="field"><span>开始日期</span><input v-model="filters.from" type="date" /></label>
         <label class="field"><span>结束日期</span><input v-model="filters.to" type="date" /></label>
@@ -411,11 +400,17 @@ onMounted(loadBase)
               <th>参与人</th>
               <th>类型</th>
               <th>状态</th>
-              <th class="align-right">操作</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="booking in bookings" :key="booking.id">
+            <tr
+              v-for="booking in bookings"
+              :key="booking.id"
+              class="clickable-row"
+              tabindex="0"
+              @click="openDetail(booking)"
+              @keydown.enter.prevent="openDetail(booking)"
+            >
               <td>
                 <strong>{{ formatDateTime(booking.slot.startAt) }}</strong>
                 <div class="secondary-cell">{{ booking.resource.name }}</div>
@@ -427,53 +422,52 @@ onMounted(loadBase)
                   {{ statusLabel(booking.status) }}
                 </span>
               </td>
-              <td class="align-right">
-                <div class="actions">
-                  <button class="button button--ghost" @click="openDetail(booking)">详情</button>
-                  <button
-                    v-if="booking.status === 'booked'"
-                    class="button button--ghost"
-                    @click="openEdit(booking)"
-                  >修改</button>
-                  <button
-                    v-if="booking.status === 'booked'"
-                    class="button button--ghost"
-                    :disabled="saving"
-                    @click="completeBooking(booking)"
-                  >完成</button>
-                  <button
-                    v-if="booking.status === 'booked'"
-                    class="button button--danger-ghost"
-                    :disabled="saving"
-                    @click="cancelBooking(booking)"
-                  >取消</button>
-                </div>
-              </td>
             </tr>
             <tr v-if="bookings.length === 0">
-              <td colspan="5" class="empty-cell">当前筛选条件下没有预约。</td>
+              <td colspan="4" class="empty-cell">当前筛选条件下没有预约。</td>
             </tr>
           </tbody>
         </table>
       </div>
     </section>
 
-    <aside v-if="selectedBooking" class="panel booking-detail-panel">
-      <div class="panel-heading">
-        <div>
-          <span class="eyebrow">Booking Detail</span>
-          <h2>{{ selectedBooking.resource.name }}</h2>
-          <p>{{ formatDateTime(selectedBooking.slot.startAt) }} · {{ selectedBooking.slotType.name }}</p>
+    <div v-if="selectedBooking" class="modal-backdrop" @click.self="selectedBooking = null">
+      <section class="modal booking-detail-modal" role="dialog" aria-modal="true" aria-label="预约详情">
+        <div class="modal-heading">
+          <div>
+            <span class="eyebrow">Booking Detail</span>
+            <h2>预约详情</h2>
+            <p>{{ formatDateTime(selectedBooking.slot.startAt) }} · {{ selectedBooking.resource.name }}</p>
+          </div>
+          <button class="icon-button" aria-label="关闭预约详情" @click="selectedBooking = null">×</button>
         </div>
-        <button class="icon-button" aria-label="关闭详情" @click="selectedBooking = null">×</button>
-      </div>
-      <div class="booking-detail-grid">
-        <div><span>参与人</span><strong>{{ selectedBooking.participant.name }}</strong></div>
-        <div><span>状态</span><strong>{{ statusLabel(selectedBooking.status) }}</strong></div>
-        <div><span>Membership</span><strong class="mono">{{ selectedBooking.membershipId }}</strong></div>
-        <div><span>Booking ID</span><strong class="mono">{{ selectedBooking.id }}</strong></div>
-      </div>
-    </aside>
+        <div class="booking-detail-grid">
+          <div><span>参与人</span><strong>{{ selectedBooking.participant.name }}</strong></div>
+          <div><span>时段类型</span><strong>{{ selectedBooking.slotType.name }}</strong></div>
+          <div><span>状态</span><strong>{{ statusLabel(selectedBooking.status) }}</strong></div>
+          <div><span>日期</span><strong>{{ selectedBooking.slot.localDate }}</strong></div>
+        </div>
+        <div class="modal-actions booking-detail-actions">
+          <button
+            v-if="selectedBooking.status === 'booked'"
+            class="button button--ghost"
+            @click="openEdit(selectedBooking)"
+          >修改预约</button>
+          <button
+            v-if="selectedBooking.status === 'booked'"
+            class="button button--ghost"
+            :disabled="saving"
+            @click="completeBooking(selectedBooking)"
+          >标记完成</button>
+          <button
+            v-if="selectedBooking.status === 'booked'"
+            class="button button--danger-ghost"
+            :disabled="saving"
+            @click="cancelBooking(selectedBooking)"
+          >取消预约</button>
+        </div>
+      </section>
+    </div>
 
     <div v-if="editOpen && editingBooking" class="modal-backdrop" @click.self="editOpen = false">
       <form class="modal booking-edit-modal" role="dialog" aria-modal="true" aria-label="修改预约" @submit.prevent="saveEdit">
@@ -531,12 +525,11 @@ onMounted(loadBase)
 </template>
 
 <style scoped>
-.booking-metrics{grid-template-columns:repeat(4,minmax(0,1fr))}
-.booking-filter-grid{display:grid;grid-template-columns:repeat(3,minmax(160px,1fr));gap:14px;padding:20px 24px;border-bottom:1px solid var(--line);background:#f8fafb}
-.booking-filter-actions{display:flex;gap:8px;align-items:end}.booking-detail-panel{margin-top:20px}
-.booking-detail-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;padding:20px 24px}
+.booking-filter-grid{display:grid;grid-template-columns:repeat(3,minmax(150px,1fr));gap:10px;padding:14px 16px;border-bottom:1px solid var(--line);background:#f8fafb}
+.booking-filter-actions{display:flex;gap:8px;align-items:end}
+.booking-detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:16px 0}
 .booking-detail-grid>div{display:grid;gap:5px;min-width:0}.booking-detail-grid span{font-size:12px;color:var(--muted)}
 .booking-detail-grid strong{overflow-wrap:anywhere}.booking-status--booked{background:var(--accent-soft);color:var(--accent)}
 .booking-status--completed{background:#eef1f2;color:#59656f}.booking-status--cancelled{background:#fff0ef;color:var(--danger)}
-.booking-edit-modal{width:min(680px,100%)}@media(max-width:820px){.booking-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.booking-filter-grid,.booking-detail-grid{grid-template-columns:1fr}.booking-filter-actions{align-items:stretch}.booking-filter-actions .button{flex:1}}@media(max-width:560px){.booking-metrics{grid-template-columns:1fr}}
+.booking-edit-modal,.booking-detail-modal{width:min(680px,100%)}.booking-detail-actions{padding-top:14px;border-top:1px solid var(--line)}@media(max-width:820px){.booking-filter-grid,.booking-detail-grid{grid-template-columns:1fr}.booking-filter-actions{align-items:stretch}.booking-filter-actions .button{flex:1}}
 </style>
