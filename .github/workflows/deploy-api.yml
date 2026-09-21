@@ -63,13 +63,42 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          YUKE_D1_DATABASE_NAME: ${{ secrets.YUKE_D1_DATABASE_NAME }}
+          YUKE_D1_DATABASE_ID: ${{ secrets.YUKE_D1_DATABASE_ID }}
+          YUKE_R2_BUCKET_NAME: ${{ secrets.YUKE_R2_BUCKET_NAME }}
         shell: bash
         run: |
           set -euo pipefail
           log="$RUNNER_TEMP/yuke-api-migrations.log"
           if ! pnpm --filter @yuke/api exec wrangler d1 migrations apply DB --remote --config .wrangler/production.toml >"$log" 2>&1; then
+            echo "::error::Remote D1 migration failed. Showing a redacted diagnostic summary:"
+            node - "$log" <<'NODE'
+          const fs = require('fs')
+          const path = process.argv[2]
+          let output = fs.readFileSync(path, 'utf8')
+          const sensitiveValues = [
+            process.env.CLOUDFLARE_API_TOKEN,
+            process.env.CLOUDFLARE_ACCOUNT_ID,
+            process.env.YUKE_D1_DATABASE_NAME,
+            process.env.YUKE_D1_DATABASE_ID,
+            process.env.YUKE_R2_BUCKET_NAME
+          ].filter(Boolean)
+
+          for (const value of sensitiveValues) {
+            output = output.split(value).join('<redacted>')
+          }
+
+          const safeLines = output
+            .split(/\r?\n/)
+            .filter((line) =>
+              /error|failed|sqlite|migration|duplicate|constraint|no such|already exists|d1_/i.test(line)
+            )
+            .slice(-40)
+
+          const summary = safeLines.join('\n').slice(0, 8000)
+          console.error(summary || 'Wrangler failed without a matching diagnostic line.')
+          NODE
             rm -f "$log"
-            echo "::error::Remote D1 migration failed. Wrangler output is intentionally suppressed in this public repository; reproduce locally with the production runbook."
             exit 1
           fi
           rm -f "$log"
