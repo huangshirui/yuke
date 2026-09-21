@@ -1,5 +1,8 @@
 import type {
   AdminBookingDetail as SharedAdminBookingDetail,
+  AdminMemberDetail as SharedAdminMemberDetail,
+  AdminMemberSummary as SharedAdminMemberSummary,
+  AdminParticipantDetail as SharedAdminParticipantDetail,
   BookingStatus,
   CurrentAdmin as SharedCurrentAdmin,
   CreateInviteInput as SharedCreateInviteInput,
@@ -58,30 +61,9 @@ export type MemberFilters = {
   inviteCodeId?: string
 }
 
-export type AdminMemberSummary = {
-  membershipId: string
-  nickname: string
-  joinedAt: string
-  participantCount: number
-  invitedByAdminId: string
-  inviteCodeId: string
-  status: EntityStatus
-  adminNote: string | null
-}
-
-export type AdminParticipantDetail = {
-  id: string
-  name: string
-  birthMonth: string
-  status: EntityStatus
-  userNote: string | null
-  adminNote: string | null
-}
-
-export type AdminMemberDetail = AdminMemberSummary & {
-  participants: AdminParticipantDetail[]
-  bookingCount: number
-}
+export type AdminMemberSummary = SharedAdminMemberSummary
+export type AdminParticipantDetail = SharedAdminParticipantDetail
+export type AdminMemberDetail = SharedAdminMemberDetail
 
 export type AdminScheduleSlot = {
   id: string

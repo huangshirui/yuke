@@ -453,4 +453,147 @@ describe('Invite and SpaceMembership', () => {
       error: { code: 'SPACE_ACCESS_DENIED' }
     })
   })
+
+  it('exposes Space-scoped Admin member list, detail, filters and private notes', async () => {
+    const suffix = crypto.randomUUID()
+    const spaceId = `spc_admin_members_${suffix}`
+    const signingKey = await createSyntheticAccessKey(`admin-members-${suffix}`)
+    const admin = await createAdminIdentity({
+      id: `adm_admin_members_${suffix}`,
+      suffix: `admin-members-${suffix}`,
+      signingKey
+    })
+    const outsider = await createAdminIdentity({
+      id: `adm_admin_members_outsider_${suffix}`,
+      suffix: `admin-members-outsider-${suffix}`,
+      signingKey
+    })
+
+    await insertSpace(spaceId, 'Synthetic Admin Members Space')
+    await assignAdmin(spaceId, admin.id)
+
+    const invite = await createInvite(spaceId, admin.token, 'Synthetic Admin Members')
+    const user = await createUser(`admin-members-${suffix}`)
+    const join = await userRequest('/v1/spaces/join', user.token, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ inviteCode: invite.code })
+    })
+    expect(join.status).toBe(200)
+    const membership = (await join.json()).data.membership
+
+    const participantId = `par_admin_members_${suffix}`
+    await env.DB.prepare(`
+      INSERT INTO participants (
+        id, space_id, membership_id, name, birth_month,
+        user_note, admin_note, status, created_at, updated_at
+      )
+      VALUES (?, ?, ?, 'Synthetic Participant', '2012-09',
+              'Synthetic user note', NULL, 'active', ?, ?)
+    `).bind(
+      participantId,
+      spaceId,
+      membership.id,
+      NOW_MS,
+      NOW_MS
+    ).run()
+
+    const list = await adminRequest(
+      `/v1/admin/spaces/${spaceId}/members`,
+      admin.token
+    )
+    expect(list.status).toBe(200)
+    await expect(list.json()).resolves.toMatchObject({
+      data: [{
+        membershipId: membership.id,
+        nickname: `Synthetic admin-members-${suffix}`,
+        participantCount: 1,
+        invitedByAdminId: admin.id,
+        inviteCodeId: invite.id,
+        status: 'active',
+        adminNote: null
+      }]
+    })
+
+    const filtered = await adminRequest(
+      `/v1/admin/spaces/${spaceId}/members?invitedByAdminId=${encodeURIComponent(admin.id)}&inviteCodeId=${encodeURIComponent(invite.id)}`,
+      admin.token
+    )
+    expect(filtered.status).toBe(200)
+    expect((await filtered.json()).data).toHaveLength(1)
+
+    const emptyFilter = await adminRequest(
+      `/v1/admin/spaces/${spaceId}/members?inviteCodeId=inv_missing`,
+      admin.token
+    )
+    expect(emptyFilter.status).toBe(200)
+    expect((await emptyFilter.json()).data).toEqual([])
+
+    const detail = await adminRequest(
+      `/v1/admin/spaces/${spaceId}/members/${membership.id}`,
+      admin.token
+    )
+    expect(detail.status).toBe(200)
+    await expect(detail.json()).resolves.toMatchObject({
+      data: {
+        membershipId: membership.id,
+        participantCount: 1,
+        bookingCount: 0,
+        participants: [{
+          id: participantId,
+          name: 'Synthetic Participant',
+          birthMonth: '2012-09',
+          status: 'active',
+          userNote: 'Synthetic user note',
+          adminNote: null
+        }]
+      }
+    })
+
+    const memberNote = await adminRequest(
+      `/v1/admin/spaces/${spaceId}/members/${membership.id}`,
+      admin.token,
+      {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ adminNote: '  Synthetic private member note  ' })
+      }
+    )
+    expect(memberNote.status).toBe(200)
+    await expect(memberNote.json()).resolves.toMatchObject({
+      data: { adminNote: 'Synthetic private member note' }
+    })
+
+    const participantNote = await adminRequest(
+      `/v1/admin/spaces/${spaceId}/participants/${participantId}`,
+      admin.token,
+      {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ adminNote: 'Synthetic private participant note' })
+      }
+    )
+    expect(participantNote.status).toBe(200)
+
+    const updatedDetail = await adminRequest(
+      `/v1/admin/spaces/${spaceId}/members/${membership.id}`,
+      admin.token
+    )
+    await expect(updatedDetail.json()).resolves.toMatchObject({
+      data: {
+        adminNote: 'Synthetic private member note',
+        participants: [{
+          id: participantId,
+          adminNote: 'Synthetic private participant note'
+        }]
+      }
+    })
+
+    const forbidden = await adminRequest(
+      `/v1/admin/spaces/${spaceId}/members`,
+      outsider.token
+    )
+    expect(forbidden.status).toBe(403)
+  })
+
 })
