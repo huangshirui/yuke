@@ -122,7 +122,9 @@ apply_migrations
 - D1 migration SQL 保持无 `--` 行注释；Cloudflare 远程 migration 的 statement splitter 对 SQL 行注释存在已知兼容性问题，本地可通过而 remote 失败。迁移意图写在领域/部署文档或 commit/PR 中；CI 会阻止带 `--` 行注释的 migration。
 - Worker 发布完成后，`deploy` Job 独立结束；随后单独的 `smoke` Job 检查 `/health`；
 - `smoke` 最多重试约 2 分钟，处理刚发布后可能出现的短暂边缘传播 / WAF 状态波动；
-- 只有最终获得 HTTP 200 且 payload 为 `{ data: { status: "ok", service: "yuke-api" } }` 才算 smoke 成功；403 不会被视为成功。
+- 只有最终获得 HTTP 200 且 payload 为 `{ data: { status: "ok", service: "yuke-api" } }` 才算 **smoke passed**；
+- 如果 12 次全部只得到 HTTP 403，则判定为 **edge-policy blocked / smoke inconclusive**：不把 403 当成健康成功，但也不再把已经成功完成 migration + Worker deploy 的发布判为失败；Workflow 会给出 warning 和 Job Summary；
+- 如果出现非 403 的 HTTP 错误、连接错误或 payload 不匹配，则仍然把 smoke 判为真实失败。
 
 Runtime Secrets（例如微信 Secret、Cloudflare Access AUD、Super Admin 邮箱）继续保存在 Worker Secret 中；普通 `wrangler deploy` 不应把它们写入 GitHub Secrets 或仓库配置。
 
