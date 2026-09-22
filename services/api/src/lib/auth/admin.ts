@@ -13,6 +13,7 @@ export type AdminPrincipal = {
   id: string
   accessSubject: string
   email: string
+  displayName: string | null
   platformRole: AdminPlatformRole
 }
 
@@ -38,6 +39,7 @@ export type AdminRow = {
   id: string
   access_subject: string
   email: string
+  display_name: string | null
   platform_role: AdminPlatformRole
   status: 'active' | 'inactive'
   identity_status: AdminIdentityStatus
@@ -65,7 +67,7 @@ export async function findAdminByAccessSubject(
 ): Promise<AdminRow | null> {
   return db
     .prepare(`
-      SELECT id, access_subject, email, platform_role, status, identity_status
+      SELECT id, access_subject, email, display_name, platform_role, status, identity_status
       FROM admin_users
       WHERE access_subject = ?
         AND identity_status = 'bound'
@@ -81,7 +83,7 @@ export async function findAdminByEmail(
 ): Promise<AdminRow | null> {
   return db
     .prepare(`
-      SELECT id, access_subject, email, platform_role, status, identity_status
+      SELECT id, access_subject, email, display_name, platform_role, status, identity_status
       FROM admin_users
       WHERE email = ?
       LIMIT 1
@@ -99,6 +101,7 @@ export function toAdminPrincipal(row: AdminRow): AdminPrincipal {
     id: row.id,
     accessSubject: row.access_subject,
     email: row.email,
+    displayName: row.display_name,
     platformRole: row.platform_role
   }
 }
