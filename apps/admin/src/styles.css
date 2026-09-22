@@ -229,7 +229,6 @@ textarea:focus { border-color: var(--color-focus); box-shadow: var(--focus-ring)
   padding: var(--space-22) var(--space-14) var(--space-16);
   z-index: 20;
 }
-.brand { padding: 0 var(--space-8) var(--space-18); }
 .brand-logo-wrap {
   width: 46px;
   height: 46px;
@@ -246,8 +245,60 @@ textarea:focus { border-color: var(--color-focus); box-shadow: var(--focus-ring)
   object-fit: cover;
   display: block;
 }
-.brand strong { font-size: var(--font-size-17); }
-.brand small { font-size: var(--font-size-12); }
+.space-switcher--brand {
+  position: relative;
+  padding: 0 var(--space-2) var(--space-18);
+}
+.space-brand-button {
+  width: 100%;
+  min-height: 58px;
+  border: 0;
+  border-radius: var(--radius-11);
+  padding: var(--space-6) var(--space-8);
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-10);
+  background: transparent;
+  color: var(--color-sidebar-text);
+  text-align: left;
+}
+.space-brand-button:hover,
+.space-brand-button:focus-visible {
+  background: var(--color-sidebar-control);
+}
+.space-brand-mark {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--radius-12);
+  background: var(--color-avatar-bg);
+  color: var(--color-primary);
+  font-size: var(--font-size-20);
+  font-weight: 800;
+}
+.space-brand-copy {
+  min-width: 0;
+  display: grid;
+  gap: var(--space-3);
+}
+.space-brand-copy strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--font-size-17);
+}
+.space-brand-copy small {
+  color: var(--color-sidebar-muted);
+  font-size: var(--font-size-12);
+}
+.space-switcher--brand .space-menu {
+  top: calc(100% - var(--space-10));
+  bottom: auto;
+  left: var(--space-2);
+}
 
 .primary-nav {
   display: block;
@@ -312,27 +363,6 @@ textarea:focus { border-color: var(--color-focus); box-shadow: var(--focus-ring)
   line-height: 1.4;
 }
 .space-switcher { position: relative; }
-.space-switcher-button {
-  width: 100%;
-  min-height: 50px;
-  border: 0;
-  border-radius: var(--radius-11);
-  padding: 0 var(--space-12);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-12);
-  background: var(--color-sidebar-control);
-  color: var(--color-white);
-  text-align: left;
-}
-.space-switcher-button strong {
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: var(--font-size-14);
-}
 .switch-chevron {
   flex: 0 0 auto;
   font-size: var(--font-size-22);
@@ -715,16 +745,9 @@ textarea:focus { border-color: var(--color-focus); box-shadow: var(--focus-ring)
     gap: 0;
     background: var(--color-sidebar);
   }
-  .brand { order: 1; }
-  .sidebar-bottom {
-    order: 2;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr);
-    align-items: stretch;
-    padding-top: 0;
-    margin: var(--space-4) 0 var(--space-10);
-  }
+  .space-switcher--brand { order: 1; padding-bottom: var(--space-10); }
   .primary-nav {
-    order: 3;
+    order: 2;
     margin: 0 calc(-1 * var(--space-2));
     padding: var(--space-2) 0 0;
     display: flex;
@@ -749,7 +772,6 @@ textarea:focus { border-color: var(--color-focus); box-shadow: var(--focus-ring)
   .nav-item .app-icon { width: 17px; height: 17px; }
   .nav-item--disabled .coming-badge { display: none; }
 
-  .space-switcher-button,
   .account-card {
     min-height: 54px;
     height: 100%;
@@ -758,6 +780,12 @@ textarea:focus { border-color: var(--color-focus); box-shadow: var(--focus-ring)
     border-radius: var(--radius-11);
     background: var(--color-sidebar-card);
     padding-inline: var(--space-10);
+  }
+  .sidebar-bottom {
+    order: 3;
+    margin: var(--space-10) 0 0;
+    padding-top: var(--space-10);
+    border-top: var(--border-width) solid var(--color-sidebar-border);
   }
   .account-card .avatar { flex-basis: 34px; width: 34px; height: 34px; }
   .account-card strong { font-size: var(--font-size-11); }
@@ -858,9 +886,10 @@ textarea:focus { border-color: var(--color-focus); box-shadow: var(--focus-ring)
 }
 
 @media (max-width: 560px) {
-  .brand-logo-wrap { width: 40px; height: 40px; flex-basis: 40px; }
-  .brand strong { font-size: var(--font-size-15); }
-  .brand small { font-size: var(--font-size-11); }
+  .space-brand-button { grid-template-columns: 40px minmax(0, 1fr) auto; min-height: 52px; }
+  .space-brand-mark { width: 40px; height: 40px; font-size: var(--font-size-18); }
+  .space-brand-copy strong { font-size: var(--font-size-15); }
+  .space-brand-copy small { font-size: var(--font-size-11); }
 
   .sidebar-bottom { grid-template-columns: 1fr; }
   .account-card { min-height: 48px; }
