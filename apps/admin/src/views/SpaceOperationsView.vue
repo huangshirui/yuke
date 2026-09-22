@@ -84,7 +84,7 @@ function inviteLabel(inviteId: string) {
 async function loadSpace() {
   const spaces = await api.listSpaces()
   space.value = spaces.find((item) => item.id === spaceId.value) ?? null
-  if (!space.value) throw new Error('找不到这个空间。')
+  if (!space.value) throw new Error('找不到这个服务方。')
 }
 
 async function loadResources() {
@@ -136,7 +136,7 @@ async function load() {
     await loadSpace()
     await loadSection()
   } catch (cause) {
-    error.value = cause instanceof Error ? cause.message : '空间加载失败。'
+    error.value = cause instanceof Error ? cause.message : '服务方加载失败。'
   } finally {
     loading.value = false
   }
@@ -153,7 +153,7 @@ async function saveResource() {
   clearMessages()
   const name = resourceForm.name.trim()
   if (!name) {
-    error.value = '请输入预约对象名称。'
+    error.value = '请输入预约项目名称。'
     return
   }
   saving.value = true
@@ -163,18 +163,18 @@ async function saveResource() {
         name,
         note: resourceForm.note.trim() || null,
       })
-      notice.value = '预约对象已更新。'
+      notice.value = '预约项目已更新。'
     } else {
       await api.createResource(spaceId.value, {
         name,
         note: resourceForm.note.trim() || null,
       })
-      notice.value = '预约对象已创建。'
+      notice.value = '预约项目已创建。'
     }
     showResourceForm.value = false
     await loadResources()
   } catch (cause) {
-    error.value = cause instanceof Error ? cause.message : '预约对象保存失败。'
+    error.value = cause instanceof Error ? cause.message : '预约项目保存失败。'
   } finally {
     saving.value = false
   }
@@ -187,9 +187,9 @@ async function toggleResource(resource: AdminResource) {
     const next = resource.status === 'active' ? 'inactive' : 'active'
     await api.setResourceStatus(spaceId.value, resource.id, next)
     await loadResources()
-    notice.value = next === 'active' ? '预约对象已启用。' : '预约对象已停用；历史数据仍然保留。'
+    notice.value = next === 'active' ? '预约项目已启用。' : '预约项目已停用；历史数据仍然保留。'
   } catch (cause) {
-    error.value = cause instanceof Error ? cause.message : '预约对象状态更新失败。'
+    error.value = cause instanceof Error ? cause.message : '预约项目状态更新失败。'
   } finally {
     saving.value = false
   }
@@ -297,9 +297,9 @@ async function saveParticipantNote(participantId: string, value: string | null) 
     await api.updateParticipantAdminNote(spaceId.value, participantId, next)
     const participant = selectedMember.value.participants.find((item) => item.id === participantId)
     if (participant) participant.adminNote = next
-    notice.value = '参与人内部备注已保存。'
+    notice.value = '预约人内部备注已保存。'
   } catch (cause) {
-    error.value = cause instanceof Error ? cause.message : '参与人备注保存失败。'
+    error.value = cause instanceof Error ? cause.message : '预约人备注保存失败。'
   } finally {
     saving.value = false
   }
@@ -314,13 +314,13 @@ onMounted(load)
   <main class="page">
       <section class="page-heading">
         <div>
-          <h1>{{ section === 'resources' ? '预约对象' : section === 'slot-types' ? '时段类型' : '客户管理' }}</h1>
+          <h1>{{ section === 'resources' ? '预约项目' : section === 'slot-types' ? '时段类型' : '客户管理' }}</h1>
           <p>
             {{ section === 'resources'
-              ? '维护当前空间可被预约的资源。'
+              ? '维护当前服务方可被预约的资源。'
               : section === 'slot-types'
                 ? '维护时段分类，用于小程序展示与后续统计。'
-                : '查看当前空间的客户与参与人。' }}
+                : '查看当前服务方的客户与预约人。' }}
           </p>
         </div>
         <span v-if="space" class="page-context">{{ space.name }}</span>
@@ -330,25 +330,25 @@ onMounted(load)
       <div v-if="notice" class="alert alert--success">{{ notice }}</div>
 
       <section v-if="section === 'resources'" class="panel loading-surface" :aria-busy="loading || sectionLoading">
-        <LoadingOverlay v-if="loading || sectionLoading" label="正在加载预约对象…" />
+        <LoadingOverlay v-if="loading || sectionLoading" label="正在加载预约项目…" />
         <div class="panel-heading">
           <div>
-            <span class="eyebrow">预约对象</span>
-            <h2>预约对象</h2>
-            <p>预约对象停用后保留历史记录，但不能继续用于新时段和新预约。</p>
+            <span class="eyebrow">预约项目</span>
+            <h2>预约项目</h2>
+            <p>预约项目停用后保留历史记录，但不能继续用于新时段和新预约。</p>
           </div>
-          <button class="button button--primary" @click="openResourceForm()">+ 新建预约对象</button>
+          <button class="button button--primary" @click="openResourceForm()">+ 新建预约项目</button>
         </div>
 
         <div class="summary-strip">
-          <span><strong>{{ resources.length }}</strong> 个预约对象</span>
+          <span><strong>{{ resources.length }}</strong> 个预约项目</span>
           <span><strong>{{ activeResourceCount }}</strong> 个启用中</span>
         </div>
 
         <div class="table-wrap">
           <table>
             <thead>
-              <tr><th>预约对象</th><th>备注</th><th>状态</th><th class="align-right">操作</th></tr>
+              <tr><th>预约项目</th><th>备注</th><th>状态</th><th class="align-right">操作</th></tr>
             </thead>
             <tbody>
               <tr v-for="resource in resources" :key="resource.id">
@@ -374,7 +374,7 @@ onMounted(load)
                 </td>
               </tr>
               <tr v-if="!loading && !sectionLoading && resources.length === 0">
-                <td colspan="4" class="empty-cell">还没有预约对象。创建后才能配置可预约时段。</td>
+                <td colspan="4" class="empty-cell">还没有预约项目。创建后才能配置可预约时段。</td>
               </tr>
             </tbody>
           </table>
@@ -437,8 +437,8 @@ onMounted(load)
         <div class="panel-heading">
           <div>
             <span class="eyebrow">客户资料</span>
-            <h2>客户与参与人</h2>
-            <p>查看加入来源和参与人资料；内部备注仅在管理端可见，不会展示到小程序。</p>
+            <h2>客户与预约人</h2>
+            <p>查看加入来源和预约人资料；内部备注仅在管理端可见，不会展示到小程序。</p>
           </div>
         </div>
 
@@ -466,7 +466,7 @@ onMounted(load)
         <div class="table-wrap">
           <table>
             <thead>
-              <tr><th>客户</th><th>参与人</th><th>邀请来源</th><th>加入时间</th><th class="align-right">操作</th></tr>
+              <tr><th>客户</th><th>预约人</th><th>邀请来源</th><th>加入时间</th><th class="align-right">操作</th></tr>
             </thead>
             <tbody>
               <tr v-for="member in members" :key="member.membershipId">
@@ -494,7 +494,7 @@ onMounted(load)
               <span class="eyebrow">客户详情</span>
               <h3>{{ selectedMember.nickname }}</h3>
               <p class="muted">
-                {{ selectedMember.participantCount }} 个参与人 · {{ selectedMember.bookingCount }} 条预约记录
+                {{ selectedMember.participantCount }} 个预约人 · {{ selectedMember.bookingCount }} 条预约记录
               </p>
             </div>
             <button class="icon-button" aria-label="关闭客户详情" @click="selectedMember = null">×</button>
@@ -540,26 +540,26 @@ onMounted(load)
                     :disabled="saving"
                     @click="saveParticipantNote(participant.id, participant.adminNote)"
                   >
-                    保存参与人备注
+                    保存预约人备注
                   </button>
                 </label>
               </div>
             </article>
-            <div v-if="selectedMember.participants.length === 0" class="empty-state">这个客户还没有参与人。</div>
+            <div v-if="selectedMember.participants.length === 0" class="empty-state">这个客户还没有预约人。</div>
           </div>
         </aside>
       </section>
 
     <div v-if="showResourceForm" class="modal-backdrop" @click.self="showResourceForm = false">
-      <form class="modal" role="dialog" aria-modal="true" aria-label="预约对象编辑" @submit.prevent="saveResource">
+      <form class="modal" role="dialog" aria-modal="true" aria-label="预约项目编辑" @submit.prevent="saveResource">
         <div class="modal-heading">
-          <div><span class="eyebrow">预约对象</span><h2>{{ editingResource ? '编辑预约对象' : '新建预约对象' }}</h2></div>
+          <div><span class="eyebrow">预约项目</span><h2>{{ editingResource ? '编辑预约项目' : '新建预约项目' }}</h2></div>
           <button type="button" class="icon-button" aria-label="关闭" @click="showResourceForm = false">×</button>
         </div>
         <div class="form-stack">
           <label class="field">
             <span>名称</span>
-            <input v-model="resourceForm.name" placeholder="例如：预约对象 A" />
+            <input v-model="resourceForm.name" placeholder="例如：预约项目 A" />
           </label>
           <label class="field">
             <span>备注（可选）</span>
@@ -567,7 +567,7 @@ onMounted(load)
           </label>
           <div class="modal-actions">
             <button type="button" class="button button--ghost" @click="showResourceForm = false">取消</button>
-            <button class="button button--primary" :disabled="saving">{{ saving ? '保存中…' : '保存预约对象' }}</button>
+            <button class="button button--primary" :disabled="saving">{{ saving ? '保存中…' : '保存预约项目' }}</button>
           </div>
         </div>
       </form>
