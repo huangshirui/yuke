@@ -113,9 +113,9 @@ async function saveParticipantNote(participantId: string, value: string | null) 
     await api.updateParticipantAdminNote(spaceId.value, participantId, next)
     const participant = member.value.participants.find((item) => item.id === participantId)
     if (participant) participant.adminNote = next
-    notice.value = '参与人内部备注已保存。'
+    notice.value = '预约人内部备注已保存。'
   } catch (cause) {
-    error.value = cause instanceof Error ? cause.message : '参与人备注保存失败。'
+    error.value = cause instanceof Error ? cause.message : '预约人备注保存失败。'
   } finally {
     saving.value = false
   }
@@ -138,7 +138,7 @@ onMounted(load)
       <div>
         <button class="back-link" @click="router.push('/spaces/' + encodeURIComponent(spaceId) + '/users')">← 返回客户管理</button>
         <h1>{{ member?.nickname || '客户详情' }}</h1>
-        <p v-if="member">{{ member.participantCount }} 个参与人 · {{ member.bookingCount }} 条预约记录</p>
+        <p v-if="member">{{ member.participantCount }} 个预约人 · {{ member.bookingCount }} 条预约记录</p>
       </div>
     </section>
 
@@ -157,13 +157,13 @@ onMounted(load)
         </article>
       </div>
       <section class="panel detail-section">
-        <div class="compact-panel-heading"><h2>参与人</h2></div>
+        <div class="compact-panel-heading"><h2>预约人</h2></div>
         <div class="detail-loading-block"></div>
       </section>
       <section class="panel detail-section">
         <div class="compact-panel-heading"><h2>预约记录</h2></div>
         <div class="table-wrap">
-          <table><thead><tr><th>时间</th><th>参与人</th><th>预约对象</th><th>状态</th></tr></thead></table>
+          <table><thead><tr><th>时间</th><th>预约人</th><th>预约项目</th><th>状态</th></tr></thead></table>
         </div>
       </section>
     </section>
@@ -197,7 +197,7 @@ onMounted(load)
 
       <section class="panel detail-section">
         <div class="compact-panel-heading">
-          <h2>参与人</h2>
+          <h2>预约人</h2>
           <span class="muted">{{ member.participants.length }} 人</span>
         </div>
         <div class="participant-detail-list">
@@ -229,7 +229,7 @@ onMounted(load)
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th>时间</th><th>参与人</th><th>预约对象</th><th>状态</th></tr></thead>
+            <thead><tr><th>时间</th><th>预约人</th><th>预约项目</th><th>状态</th></tr></thead>
             <tbody>
               <tr
                 v-for="booking in bookings"
