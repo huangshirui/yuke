@@ -67,6 +67,8 @@ type BookingRow = {
 
 type BookingDetailRow = BookingRow & {
   membership_id: string
+  user_nickname: string
+  invited_by_admin_email: string
   completed_at: number | null
   completion_source: BookingCompletionSource | null
   completion_external_reference: string | null
@@ -144,6 +146,8 @@ function mapAdminBookingDetail(row: BookingDetailRow): AdminBookingDetail {
   return {
     ...mapBookingDetail(row),
     membershipId: row.membership_id,
+    userNickname: row.user_nickname,
+    invitedByAdminEmail: row.invited_by_admin_email,
     completion:
       row.status === 'completed' && row.completed_at !== null
         ? {
@@ -174,6 +178,8 @@ const BOOKING_DETAIL_SELECT = `
          bookings.space_id,
          bookings.slot_id,
          bookings.membership_id,
+         users.nickname AS user_nickname,
+         invited_admins.email AS invited_by_admin_email,
          bookings.participant_id,
          bookings.status,
          bookings.completed_at,
@@ -205,6 +211,13 @@ const BOOKING_DETAIL_SELECT = `
   LEFT JOIN booking_reconciliations
     ON booking_reconciliations.booking_id = bookings.id
    AND booking_reconciliations.space_id = bookings.space_id
+  JOIN space_memberships
+    ON space_memberships.id = bookings.membership_id
+   AND space_memberships.space_id = bookings.space_id
+  JOIN users
+    ON users.id = space_memberships.user_id
+  JOIN admin_users AS invited_admins
+    ON invited_admins.id = space_memberships.invited_by_admin_id
   JOIN participants
     ON participants.id = bookings.participant_id
    AND participants.membership_id = bookings.membership_id
