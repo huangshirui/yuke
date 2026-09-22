@@ -154,7 +154,7 @@ async function loadBase() {
     if (!filters.from && !filters.to) {
       const today = currentDateInSpace()
       filters.from = today
-      filters.to = today
+      filters.to = addDays(today, 7)
     }
     await loadSpaceContext()
     await openRequestedBooking()
@@ -212,7 +212,7 @@ async function loadBookings() {
 async function resetFilters() {
   const today = currentDateInSpace()
   filters.from = today
-  filters.to = today
+  filters.to = addDays(today, 7)
   filters.status = undefined
   filters.resourceId = ''
   filters.participantId = ''
@@ -462,6 +462,8 @@ onMounted(loadBase)
             <tr>
               <th>时间 / 预约对象</th>
               <th>参与人</th>
+              <th>用户</th>
+              <th title="该用户加入空间时的来源管理员">管理员</th>
               <th>类型</th>
               <th>状态</th>
             </tr>
@@ -480,6 +482,8 @@ onMounted(loadBase)
                 <div class="secondary-cell">{{ booking.resource.name }}</div>
               </td>
               <td>{{ booking.participant.name }}</td>
+              <td>{{ booking.userNickname }}</td>
+              <td>{{ booking.invitedByAdminEmail }}</td>
               <td>{{ booking.slotType.name }}</td>
               <td>
                 <div class="booking-state-stack">
@@ -495,7 +499,7 @@ onMounted(loadBase)
               </td>
             </tr>
             <tr v-if="!loading && bookings.length === 0">
-              <td colspan="4" class="empty-cell">当前筛选条件下没有预约。</td>
+              <td colspan="6" class="empty-cell">当前筛选条件下没有预约。</td>
             </tr>
           </tbody>
         </table>
