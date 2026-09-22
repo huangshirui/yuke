@@ -602,6 +602,8 @@ Query：
 返回 Space 内匹配的 Booking 及 Participant / Resource / Slot Type / Slot 摘要。Admin 响应额外包含：
 
 - `membershipId`；
+- `userNickname`：该 Booking 所属用户当前昵称；
+- `invitedByAdminEmail`：该用户加入 Space 时的来源管理员邮箱；即使该管理员后续不再管理该 Space，历史来源仍可展示；
 - `completion`：完成时间、来源、外部引用、导入批次；
 - `reconciliation`：`pending | settled`、对账时间、来源、操作管理员、batchId、note。
 
