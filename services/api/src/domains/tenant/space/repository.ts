@@ -32,6 +32,7 @@ type SettingsRow = {
 
 type AdminRow = {
   id: string
+  display_name: string | null
   email: string
   platform_role: 'none' | 'super_admin'
   status: 'active' | 'inactive'
@@ -56,6 +57,7 @@ function mapSettings(row: SettingsRow): SpaceSettings {
 function mapAdmin(row: AdminRow): SpaceAdminSummary {
   return {
     id: row.id,
+    displayName: row.display_name,
     email: row.email,
     platformRole: row.platform_role,
     status: row.status
@@ -223,6 +225,7 @@ export async function listSpaceAdmins(
   const result = await db
     .prepare(`
       SELECT admin_users.id,
+             admin_users.display_name,
              admin_users.email,
              admin_users.platform_role,
              admin_users.status
@@ -243,7 +246,7 @@ export async function findAdminById(
 ): Promise<SpaceAdminSummary | null> {
   const row = await db
     .prepare(`
-      SELECT id, email, platform_role, status
+      SELECT id, display_name, email, platform_role, status
       FROM admin_users
       WHERE id = ?
       LIMIT 1

@@ -21,12 +21,13 @@ export async function seedBookingFixture(suffix) {
   await env.DB.batch([
     env.DB.prepare(`
       INSERT INTO admin_users
-        (id, access_subject, email, platform_role, status, created_at, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+        (id, access_subject, email, display_name, platform_role, status, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       ids.admin,
       `access-${suffix}`,
       `${suffix}@example.invalid`,
+      `Synthetic Operator ${suffix}`,
       'super_admin',
       'active',
       NOW,

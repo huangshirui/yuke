@@ -47,6 +47,16 @@ describe('D1 migration gate', () => {
     ).all()
     expect(adminColumns.results).toEqual([{ name: 'identity_status' }])
 
+    const displayNameMigration = await env.DB.prepare(
+      "SELECT name FROM d1_migrations WHERE name = '0005_admin_user_display_name.sql'"
+    ).first()
+    expect(displayNameMigration?.name).toBe('0005_admin_user_display_name.sql')
+
+    const displayNameColumns = await env.DB.prepare(
+      "SELECT name FROM pragma_table_info('admin_users') WHERE name = 'display_name'"
+    ).all()
+    expect(displayNameColumns.results).toEqual([{ name: 'display_name' }])
+
     const reconciliationMigration = await env.DB.prepare(
       "SELECT name FROM d1_migrations WHERE name = '0004_booking_fulfillment_reconciliation.sql'"
     ).first()

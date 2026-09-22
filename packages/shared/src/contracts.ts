@@ -184,6 +184,7 @@ export type BookingReconciliation = {
 export type AdminBookingDetail = BookingDetail & {
   membershipId: Id
   userNickname: string
+  invitedByAdminDisplayName: string | null
   invitedByAdminEmail: string
   completion: BookingCompletion | null
   reconciliation: BookingReconciliation | null
@@ -301,6 +302,7 @@ export type SpaceDetail = SpaceSummary & {
 
 export type SpaceAdminSummary = {
   id: Id
+  displayName: string | null
   email: string
   platformRole: 'none' | 'super_admin'
   status: EntityStatus
@@ -310,6 +312,7 @@ export type AdminIdentityStatus = 'pending' | 'bound'
 
 export type AdminUserSummary = {
   id: Id
+  displayName: string | null
   email: string
   platformRole: 'none' | 'super_admin'
   status: EntityStatus
@@ -318,12 +321,18 @@ export type AdminUserSummary = {
 
 export type CurrentAdmin = {
   id: Id
+  displayName: string | null
   email: string
   platformRole: 'none' | 'super_admin'
 }
 
 export type CreateAdminUserInput = {
   email: string
+  displayName?: string
+}
+
+export type UpdateAdminUserInput = {
+  displayName: string
 }
 
 export type CreateSpaceInput = {
@@ -364,6 +373,8 @@ export type InviteMemberSummary = {
   joinedAt: string
   participantCount: number
   invitedByAdminId: Id
+  invitedByAdminDisplayName: string | null
+  invitedByAdminEmail: string
   inviteCodeId: Id
 }
 
@@ -373,6 +384,8 @@ export type AdminMemberSummary = {
   joinedAt: string
   participantCount: number
   invitedByAdminId: Id
+  invitedByAdminDisplayName: string | null
+  invitedByAdminEmail: string
   inviteCodeId: Id
   status: EntityStatus
   adminNote: string | null

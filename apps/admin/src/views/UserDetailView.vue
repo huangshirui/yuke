@@ -7,7 +7,6 @@ import type {
   AdminBooking,
   AdminMemberDetail,
   AdminSpace,
-  AdminUserSummary,
   InviteSummary,
 } from '../types/admin'
 
@@ -17,7 +16,6 @@ const router = useRouter()
 
 const member = ref<AdminMemberDetail | null>(null)
 const space = ref<AdminSpace | null>(null)
-const admins = ref<AdminUserSummary[]>([])
 const invites = ref<InviteSummary[]>([])
 const bookings = ref<AdminBooking[]>([])
 const memberNote = ref('')
@@ -57,8 +55,8 @@ function statusLabel(status: AdminBooking['status']) {
   return '已预约'
 }
 
-const sourceAdmin = computed(() =>
-  admins.value.find((item) => item.id === member.value?.invitedByAdminId)?.email ?? '已移除用户'
+const sourceUserName = computed(() =>
+  member.value?.invitedByAdminDisplayName || member.value?.invitedByAdminEmail || '未知用户'
 )
 const sourceInvite = computed(() => {
   const invite = invites.value.find((item) => item.id === member.value?.inviteCodeId)
@@ -70,16 +68,14 @@ async function load() {
   error.value = ''
   notice.value = ''
   try {
-    const [spaces, nextMember, nextAdmins, nextInvites, nextBookings] = await Promise.all([
+    const [spaces, nextMember, nextInvites, nextBookings] = await Promise.all([
       api.listSpaces(),
       api.getMember(spaceId.value, membershipId.value),
-      api.listAdmins(spaceId.value),
       api.listInvites(spaceId.value),
       api.listBookings(spaceId.value, { membershipId: membershipId.value }),
     ])
     space.value = spaces.find((item) => item.id === spaceId.value) ?? null
     member.value = nextMember
-    admins.value = nextAdmins
     invites.value = nextInvites
     bookings.value = nextBookings
     memberNote.value = nextMember.adminNote ?? ''
@@ -177,7 +173,13 @@ onMounted(load)
         <article class="panel detail-section">
           <div class="compact-panel-heading"><h2>加入信息</h2></div>
           <dl class="detail-list">
-            <div><dt>来源用户</dt><dd>{{ sourceAdmin }}</dd></div>
+            <div>
+              <dt>来源用户</dt>
+              <dd>
+                {{ sourceUserName }}
+                <small v-if="member.invitedByAdminDisplayName" class="muted source-email">{{ member.invitedByAdminEmail }}</small>
+              </dd>
+            </div>
             <div><dt>来源邀请码</dt><dd>{{ sourceInvite }}</dd></div>
             <div><dt>加入时间</dt><dd>{{ formatDate(member.joinedAt) }}</dd></div>
             <div><dt>状态</dt><dd>{{ member.status === 'active' ? '启用' : '已停用' }}</dd></div>
@@ -254,4 +256,5 @@ onMounted(load)
 <style scoped>
 .detail-loading-shell{min-height:420px}.detail-loading-block{min-height:120px}
 .detail-section-grid{display:grid;grid-template-columns:minmax(0,.9fr) minmax(0,1.1fr);gap: var(--space-12);margin-bottom: var(--space-12)}.detail-section{padding: 0;margin-bottom: var(--space-12)}.compact-panel-heading{min-height:46px;padding: 0 var(--space-16);border-bottom:var(--border-width) solid var(--color-border);display:flex;align-items:center;justify-content:space-between;gap: var(--space-12)}.compact-panel-heading h2{margin: 0;font-size:var(--font-size-15)}.compact-panel-heading small{color:var(--color-text-secondary);font-size:var(--font-size-11)}.detail-list{margin: 0;padding: var(--space-8) var(--space-16)}.detail-list>div{min-height:38px;display:grid;grid-template-columns:96px minmax(0,1fr);align-items:center;border-bottom:var(--border-width) solid var(--color-border-subtle)}.detail-list>div:last-child{border-bottom:0}.detail-list dt{font-size:var(--font-size-12);color:var(--color-text-secondary)}.detail-list dd{margin: 0;font-size:var(--font-size-13);font-weight:650;overflow-wrap:anywhere}.compact-editor{padding: var(--space-14) var(--space-16);display:grid;gap: var(--space-10)}.compact-editor textarea{width:100%;resize:vertical}.compact-editor .button{justify-self:end}.participant-detail-list{display:grid}.participant-detail-row{display:grid;grid-template-columns:minmax(150px,.7fr) minmax(180px,.8fr) minmax(260px,1.4fr);gap: var(--space-14);padding: var(--space-14) var(--space-16);border-bottom:var(--border-width) solid var(--color-border)}.participant-detail-row:last-child{border-bottom:0}.participant-identity{display:flex;align-items:center;gap: var(--space-8);flex-wrap:wrap}.participant-identity>span:not(.status-pill){font-size:var(--font-size-12);color:var(--color-text-secondary)}.participant-user-note>span{font-size:var(--font-size-11);color:var(--color-text-secondary)}.participant-user-note p{margin: var(--space-5) 0 0;font-size:var(--font-size-13);line-height:1.45}.participant-admin-note .button{justify-self:start;margin-top: var(--space-4)}@media(max-width:820px){.detail-section-grid{grid-template-columns:1fr}.participant-detail-row{grid-template-columns:1fr}.compact-editor .button{width:100%}}
+.source-email{display:block;margin-top:var(--space-3);font-weight:400}
 </style>

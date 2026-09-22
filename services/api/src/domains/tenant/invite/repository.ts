@@ -39,6 +39,8 @@ type MemberRow = {
   joined_at: number
   participant_count: number
   invited_by_admin_id: string
+  invited_by_admin_display_name: string | null
+  invited_by_admin_email: string
   invite_code_id: string
 }
 
@@ -245,9 +247,13 @@ export async function listInviteMembers(
              space_memberships.joined_at,
              COUNT(participants.id) AS participant_count,
              space_memberships.invited_by_admin_id,
+             invited_admins.display_name AS invited_by_admin_display_name,
+             invited_admins.email AS invited_by_admin_email,
              space_memberships.invite_code_id
       FROM space_memberships
       JOIN users ON users.id = space_memberships.user_id
+      JOIN admin_users AS invited_admins
+        ON invited_admins.id = space_memberships.invited_by_admin_id
       LEFT JOIN participants
         ON participants.membership_id = space_memberships.id
        AND participants.space_id = space_memberships.space_id
@@ -265,6 +271,8 @@ export async function listInviteMembers(
     joinedAt: toIso(row.joined_at),
     participantCount: row.participant_count,
     invitedByAdminId: row.invited_by_admin_id,
+    invitedByAdminDisplayName: row.invited_by_admin_display_name,
+    invitedByAdminEmail: row.invited_by_admin_email,
     inviteCodeId: row.invite_code_id
   }))
 }

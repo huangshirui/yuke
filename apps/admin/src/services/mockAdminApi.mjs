@@ -3,6 +3,7 @@ const KEY = 'yuke.admin.mock.v3'
 const seed = {
   currentAdmin: {
     id: 'adm_demo_super',
+    displayName: '示例超级用户',
     email: 'super-admin@example.invalid',
     platformRole: 'super_admin',
   },
@@ -16,8 +17,8 @@ const seed = {
   },
   admins: {
     sp_demo_alpha: [
-      { id: 'adm_demo_owner', email: 'admin-a@example.invalid', platformRole: 'none', status: 'active' },
-      { id: 'adm_demo_ops', email: 'admin-b@example.invalid', platformRole: 'none', status: 'active' },
+      { id: 'adm_demo_owner', displayName: '示例运营甲', email: 'admin-a@example.invalid', platformRole: 'none', status: 'active' },
+      { id: 'adm_demo_ops', displayName: '示例运营乙', email: 'admin-b@example.invalid', platformRole: 'none', status: 'active' },
     ],
     sp_demo_beta: [
       { id: 'adm_demo_owner', email: 'admin-a@example.invalid', platformRole: 'none', status: 'active' },
@@ -56,6 +57,8 @@ const seed = {
         joinedAt: '2026-09-18T03:20:00.000Z',
         participantCount: 2,
         invitedByAdminId: 'adm_demo_owner',
+        invitedByAdminDisplayName: '示例运营甲',
+        invitedByAdminEmail: 'admin-a@example.invalid',
         inviteCodeId: 'inv_demo_open',
       },
       {
@@ -64,6 +67,8 @@ const seed = {
         joinedAt: '2026-09-19T08:10:00.000Z',
         participantCount: 1,
         invitedByAdminId: 'adm_demo_owner',
+        invitedByAdminDisplayName: '示例运营甲',
+        invitedByAdminEmail: 'admin-a@example.invalid',
         inviteCodeId: 'inv_demo_open',
       },
     ],
@@ -74,6 +79,8 @@ const seed = {
         joinedAt: '2026-09-10T01:00:00.000Z',
         participantCount: 1,
         invitedByAdminId: 'adm_demo_ops',
+        invitedByAdminDisplayName: '示例运营乙',
+        invitedByAdminEmail: 'admin-b@example.invalid',
         inviteCodeId: 'inv_demo_old',
       },
     ],
@@ -164,6 +171,8 @@ const seed = {
         joinedAt: '2026-09-18T03:20:00.000Z',
         participantCount: 2,
         invitedByAdminId: 'adm_demo_owner',
+        invitedByAdminDisplayName: '示例运营甲',
+        invitedByAdminEmail: 'admin-a@example.invalid',
         inviteCodeId: 'inv_demo_open',
         status: 'active',
         adminNote: '仅用于演示的内部备注。',
@@ -193,6 +202,8 @@ const seed = {
         joinedAt: '2026-09-19T08:10:00.000Z',
         participantCount: 1,
         invitedByAdminId: 'adm_demo_owner',
+        invitedByAdminDisplayName: '示例运营甲',
+        invitedByAdminEmail: 'admin-a@example.invalid',
         inviteCodeId: 'inv_demo_open',
         status: 'active',
         adminNote: null,
@@ -214,6 +225,8 @@ const seed = {
         joinedAt: '2026-09-10T01:00:00.000Z',
         participantCount: 1,
         invitedByAdminId: 'adm_demo_ops',
+        invitedByAdminDisplayName: '示例运营乙',
+        invitedByAdminEmail: 'admin-b@example.invalid',
         inviteCodeId: 'inv_demo_old',
         status: 'active',
         adminNote: null,
@@ -324,7 +337,8 @@ export function createMockAdminApi(storage = globalThis.localStorage ?? memorySt
     )
 
     booking.userNickname = member.nickname
-    booking.invitedByAdminEmail = invitedByAdmin?.email || '未知用户'
+    booking.invitedByAdminDisplayName = member.invitedByAdminDisplayName ?? invitedByAdmin?.displayName ?? null
+    booking.invitedByAdminEmail = member.invitedByAdminEmail || invitedByAdmin?.email || 'unknown@example.invalid'
     booking.resource = {
       id: resource.id,
       name: resource.name,
@@ -412,25 +426,49 @@ export function createMockAdminApi(storage = globalThis.localStorage ?? memorySt
       const list = state.admins[spaceId] ?? (state.admins[spaceId] = [])
       const current = list.find((item) => item.id === id)
       if (current) return clone(current)
-      const admin = { id, email: 'assigned-admin@example.invalid', platformRole: 'none', status: 'active' }
+      const admin = { id, displayName: '示例用户', email: 'assigned-admin@example.invalid', platformRole: 'none', status: 'active' }
       list.push(admin)
       save()
       return clone(admin)
     },
 
-    async assignAdminByEmail(spaceId, emailInput) {
+    async assignAdminByEmail(spaceId, emailInput, displayNameInput) {
       requireSpace(spaceId)
+      const displayName = String(displayNameInput || '').trim()
       const email = String(emailInput || '').trim().toLowerCase()
+      if (!displayName) throw new Error('请输入用户名称。')
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
         throw new Error('请输入有效的用户邮箱。')
       }
       const list = state.admins[spaceId] ?? (state.admins[spaceId] = [])
       const current = list.find((item) => item.email.toLowerCase() === email)
-      if (current) return clone(current)
-      const admin = { id: makeId('adm'), email, platformRole: 'none', status: 'active' }
+      if (current) {
+        current.displayName = displayName
+        save()
+        return clone(current)
+      }
+      const admin = { id: makeId('adm'), displayName, email, platformRole: 'none', status: 'active' }
       list.push(admin)
       save()
       return clone(admin)
+    },
+
+    async updateAdminDisplayName(adminUserId, displayNameInput) {
+      const displayName = String(displayNameInput || '').trim()
+      if (!displayName) throw new Error('请输入用户名称。')
+      let found = null
+      for (const list of Object.values(state.admins)) {
+        for (const admin of list) {
+          if (admin.id === adminUserId) {
+            admin.displayName = displayName
+            found = admin
+          }
+        }
+      }
+      if (state.currentAdmin.id === adminUserId) state.currentAdmin.displayName = displayName
+      if (!found) throw new Error('找不到这个用户。')
+      save()
+      return clone(found)
     },
 
     async removeAdmin(spaceId, adminUserId) {

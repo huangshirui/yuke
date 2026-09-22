@@ -483,7 +483,10 @@ onMounted(loadBase)
               </td>
               <td>{{ booking.participant.name }}</td>
               <td>{{ booking.userNickname }}</td>
-              <td>{{ booking.invitedByAdminEmail }}</td>
+              <td>
+                <strong>{{ booking.invitedByAdminDisplayName || booking.invitedByAdminEmail }}</strong>
+                <small v-if="booking.invitedByAdminDisplayName" class="muted source-user-email">{{ booking.invitedByAdminEmail }}</small>
+              </td>
               <td>{{ booking.slotType.name }}</td>
               <td>
                 <div class="booking-state-stack">
@@ -629,4 +632,5 @@ onMounted(loadBase)
 .booking-detail-grid strong{overflow-wrap:anywhere}.booking-status--booked{background:var(--color-primary-soft);color:var(--color-primary)}
 .booking-status--completed{background:var(--color-status-completed-bg);color:var(--color-status-completed-text)}.booking-status--cancelled{background:var(--color-status-cancelled-bg);color:var(--color-danger)}.booking-state-stack{display:flex;gap: var(--space-5);flex-wrap:wrap}.reconciliation--pending{background:var(--color-status-pending-bg);color:var(--color-status-pending-text)}.reconciliation--settled{background:var(--color-status-settled-bg);color:var(--color-status-settled-text)}
 .booking-edit-modal,.booking-detail-modal{width:min(680px,100%)}.booking-detail-actions{padding-top: var(--space-14);border-top:var(--border-width) solid var(--color-border)}@media(max-width:820px){.booking-filter-grid,.booking-detail-grid{grid-template-columns:1fr}.booking-filter-actions{align-items:stretch}.booking-filter-actions .button{flex:1}}
+.source-user-email{display:block;margin-top:var(--space-3)}
 </style>

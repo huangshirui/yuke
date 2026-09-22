@@ -107,6 +107,7 @@ describe('AdminUser bootstrap and provisioning', () => {
     await expect(meResponse.json()).resolves.toEqual({
       data: {
         id: principal.id,
+        displayName: null,
         email: SUPER_EMAIL,
         platformRole: 'super_admin'
       }
@@ -128,15 +129,17 @@ describe('AdminUser bootstrap and provisioning', () => {
     await authenticate(superToken.token, sharedKey)
 
     const adminEmail = `future-${suffix}@example.invalid`
+    const displayName = 'Synthetic Future Operator'
     const createResponse = await request('/v1/admin/admin-users', superToken.token, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ email: adminEmail })
+      body: JSON.stringify({ email: adminEmail, displayName })
     })
 
     expect(createResponse.status).toBe(200)
     const created = await createResponse.json()
     expect(created.data).toMatchObject({
+      displayName,
       email: adminEmail,
       platformRole: 'none',
       status: 'active',
@@ -166,6 +169,7 @@ describe('AdminUser bootstrap and provisioning', () => {
       id: pendingId,
       accessSubject: regularSubject,
       email: adminEmail,
+      displayName,
       platformRole: 'none'
     })
 
@@ -186,6 +190,7 @@ describe('AdminUser bootstrap and provisioning', () => {
       expect.arrayContaining([
         expect.objectContaining({
           id: pendingId,
+          displayName,
           email: adminEmail,
           identityStatus: 'bound'
         })

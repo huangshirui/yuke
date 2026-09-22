@@ -10,12 +10,12 @@ Issue #19 提供 Space / Invite 的第一版管理界面，Issue #23 在同一�
 
 - Space 列表、创建、启用/停用
 - Space 预约/取消截止规则
-- Space Admin 分配/移除
+- 空间用户按名称 + 登录邮箱添加、改名与移除权限
 - Invite 创建、撤销、复制及来源用户查看
 - Resource（预约对象）新建、编辑、停用/启用
 - Slot Type（时段类型）新建、编辑、停用/启用
-- 用户列表按来源管理员 / 邀请码筛选
-- Participant 查看以及用户 / 参与人内部备注维护
+- 客户列表按来源用户 / 邀请码筛选
+- 参与人查看以及客户 / 参与人内部备注维护
 - 预约列表按日期 / 状态 / 预约对象 / 参与人 / 时段类型筛选
 - 预约详情、修改 Slot / Participant、管理员取消与完成
 
@@ -41,7 +41,7 @@ VITE_ADMIN_DATA_MODE=api
 
 ## Contract 边界
 
-- Space Admin 仍严格按现有 Contract 使用 `adminUserId` 分配，不私自增加管理员目录接口。
+- 用户名称是运营界面的主要识别信息，邮箱用于登录与账号匹配；底层空间授权仍通过稳定内部 ID 关联，但 Web Admin 不展示该 ID。
 - Resource / Slot Type 直接使用 shared Contract 中的领域类型。
 - 用户运营页面只调用既有 `/admin/spaces/{spaceId}/members`、成员详情和 admin note API；前端 adapter 负责页面需要的读取模型，不修改领域语义。
 - Admin 内部备注与用户可见备注始终分离，内部备注不会进入小程序展示。

@@ -1,5 +1,6 @@
 import type {
-  CreateAdminUserInput
+  CreateAdminUserInput,
+  UpdateAdminUserInput
 } from '@yuke/shared'
 import type { IdentityEnv } from './env'
 import {
@@ -13,12 +14,14 @@ import type { Router } from '../../lib/router'
 import {
   expectObject,
   parseJsonBody,
-  requireString
+  requireString,
+  optionalString
 } from '../../lib/validation'
 import { ValidationError } from '../../lib/errors'
 import {
   listAdminUsers,
-  provisionAdminUser
+  provisionAdminUser,
+  updateAdminUserDisplayName
 } from './admin-provisioning'
 
 function parseEmail(value: unknown): CreateAdminUserInput {
@@ -29,7 +32,13 @@ function parseEmail(value: unknown): CreateAdminUserInput {
     throw new ValidationError('email must be a valid email address', { path: 'email' })
   }
 
-  return { email }
+  const displayName = optionalString(body, 'displayName', { maxLength: 80 })
+  return { email, ...(displayName ? { displayName } : {}) }
+}
+
+function parseDisplayName(value: unknown): UpdateAdminUserInput {
+  const body = expectObject(value)
+  return { displayName: requireString(body, 'displayName', { maxLength: 80 }) }
 }
 
 export type AdminProvisioningEnv = IdentityEnv & AdminAuthEnv
@@ -43,6 +52,7 @@ export function registerAdminProvisioningRoutes(
       const principal = getAdminPrincipal(context)
       return ok({
         id: principal.id,
+        displayName: principal.displayName,
         email: principal.email,
         platformRole: principal.platformRole
       })
@@ -60,7 +70,18 @@ export function registerAdminProvisioningRoutes(
     '/v1/admin/admin-users',
     async ({ request, env }) => {
       const input = await parseJsonBody(request, parseEmail)
-      return ok(await provisionAdminUser(env.DB, input.email))
+      return ok(await provisionAdminUser(env.DB, input.email, input.displayName))
+    },
+    [requireAdminAccess, requireSuperAdmin]
+  )
+
+  app.patch(
+    '/v1/admin/admin-users/:adminUserId',
+    async ({ request, env, params }) => {
+      const input = await parseJsonBody(request, parseDisplayName)
+      const updated = await updateAdminUserDisplayName(env.DB, params.adminUserId, input.displayName)
+      if (!updated) throw new ValidationError('user not found', { path: 'adminUserId' })
+      return ok(updated)
     },
     [requireAdminAccess, requireSuperAdmin]
   )

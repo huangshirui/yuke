@@ -5,7 +5,6 @@ import LoadingOverlay from '../components/LoadingOverlay.vue'
 import { getAdminApi } from '../services/adminApi'
 import type {
   AdminMemberSummary,
-  AdminUserSummary,
   InviteMemberSummary,
   InviteSummary,
 } from '../types/admin'
@@ -15,7 +14,7 @@ const route = useRoute()
 const router = useRouter()
 
 const members = ref<AdminMemberSummary[]>([])
-const admins = ref<AdminUserSummary[]>([])
+const sourceUsers = ref<Array<{ id: string; displayName: string | null; email: string }>>([])
 const invites = ref<InviteSummary[]>([])
 const inviteMembers = ref<InviteMemberSummary[]>([])
 const selectedInvite = ref<InviteSummary | null>(null)
@@ -65,8 +64,12 @@ function inviteStatus(invite: InviteSummary) {
   return new Date(invite.expiresAt).getTime() <= Date.now() ? '已过期' : '有效'
 }
 
-function adminLabel(adminId: string) {
-  return admins.value.find((item) => item.id === adminId)?.email ?? '已移除用户'
+function sourceUserLabel(member: AdminMemberSummary) {
+  return member.invitedByAdminDisplayName || member.invitedByAdminEmail
+}
+
+function sourceUserOptionLabel(user: { displayName: string | null; email: string }) {
+  return user.displayName ? `${user.displayName}（${user.email}）` : user.email
 }
 
 function inviteLabel(inviteId: string) {
@@ -79,13 +82,19 @@ async function load() {
   clearFeedback()
   selectedInvite.value = null
   try {
-    const [nextMembers, nextAdmins, nextInvites] = await Promise.all([
+    const [nextMembers, nextInvites] = await Promise.all([
       api.listMembers(spaceId.value),
-      api.listAdmins(spaceId.value),
       api.listInvites(spaceId.value),
     ])
     members.value = nextMembers
-    admins.value = nextAdmins
+    sourceUsers.value = [...new Map(nextMembers.map((member) => [
+      member.invitedByAdminId,
+      {
+        id: member.invitedByAdminId,
+        displayName: member.invitedByAdminDisplayName,
+        email: member.invitedByAdminEmail,
+      },
+    ])).values()]
     invites.value = nextInvites
   } catch (cause) {
     error.value = cause instanceof Error ? cause.message : '客户管理加载失败。'
@@ -215,7 +224,7 @@ onMounted(load)
           <span>来源用户</span>
           <select v-model="filters.invitedByAdminId">
             <option value="">全部用户</option>
-            <option v-for="admin in admins" :key="admin.id" :value="admin.id">{{ admin.email }}</option>
+            <option v-for="user in sourceUsers" :key="user.id" :value="user.id">{{ sourceUserOptionLabel(user) }}</option>
           </select>
         </label>
         <label class="field">
@@ -248,7 +257,8 @@ onMounted(load)
               <td><strong>{{ member.nickname || '未命名客户' }}</strong></td>
               <td>{{ member.participantCount }} 个</td>
               <td>
-                <div>{{ adminLabel(member.invitedByAdminId) }}</div>
+                <div><strong>{{ sourceUserLabel(member) }}</strong></div>
+                <small v-if="member.invitedByAdminDisplayName" class="muted">{{ member.invitedByAdminEmail }}</small>
                 <small class="muted">{{ inviteLabel(member.inviteCodeId) }}</small>
               </td>
               <td>{{ formatDate(member.joinedAt) }}</td>
