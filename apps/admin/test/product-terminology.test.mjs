@@ -45,3 +45,17 @@ test('unauthorized admin login uses a friendly auto-logout gate', () => {
   assert.match(app, /location\.replace\('\/cdn-cgi\/access\/logout'\)/)
   assert.doesNotMatch(app, />Admin access is not assigned</)
 })
+
+
+test('current space is the sidebar identity and switcher', () => {
+  const app = source('src/App.vue')
+  assert.match(app, /const spaceInitial = computed/)
+  assert.match(app, /class="space-switcher space-switcher--brand"/)
+  assert.match(app, /class="space-brand-mark"[^>]*>\{\{ spaceInitial \}\}/)
+  assert.match(app, /<strong>\{\{ currentSpace\?\.name \|\| '选择空间' \}\}<\/strong>/)
+  assert.match(app, /<small>运营后台<\/small>/)
+  assert.doesNotMatch(app, /<strong>Yu言在线<\/strong>/)
+
+  const sidebarBottom = app.split('<div class="sidebar-bottom">')[1] || ''
+  assert.doesNotMatch(sidebarBottom, /class="space-switcher"/)
+})

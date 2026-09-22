@@ -139,11 +139,10 @@ sans-serif
 ```text
 ┌──────────────────────────────────────────────┐
 │ Sidebar          │ Page heading              │
-│ Brand            │                           │
-│ Current Space    │ Main work area            │
+│ Current Space    │                           │
+│ identity/switch  │ Main work area            │
 │ grouped nav      │                           │
 │                  │                           │
-│ Space switcher   │                           │
 │ Admin identity   │                           │
 └──────────────────────────────────────────────┘
 ```
@@ -153,8 +152,11 @@ sans-serif
 - Sidebar：约 248px；
 - 不保留固定全局 Topbar，页面主体直接从 Page heading 开始；
 - 主导航始终表达当前 Space 的运营功能；
-- Space Switcher 与当前用户身份位于 Sidebar 底部；
-- Space Switcher 主控件只显示空间名称，不显示图标、ID 或时区；
+- Sidebar 顶部不再固定展示产品品牌标题，而是直接展示当前 Space 身份；
+- 当前 Space 身份区同时承担 Space Switcher：Logo + Space 名称 + “运营后台”辅助文案 + 切换箭头整体可点击；
+- Space Logo 默认由 Space 名称自动生成文字标识（取名称首字符）；未来如增加自定义 Logo，则优先显示自定义 Logo；
+- 当前登录用户身份与退出登录入口保留在 Sidebar 底部；
+- Space Switcher 不显示内部 ID 或时区；
 - 默认入口恢复上次可访问 Space 并进入“概览”；
 - /spaces 仅作为 Super Admin 的低频空间管理入口；
 - Page desktop padding：约 20–24px；页面顶部优先 18–20px，避免 Page heading 吞噬工作区；
@@ -336,7 +338,7 @@ Admin 为桌面优先，但必须保证手机浏览器可完成全部核心运�
 
 窄屏：
 
-- 固定桌面 Sidebar 转为顶部结构：品牌 → 当前 Space / 账号 → 横向功能导航；
+- 固定桌面 Sidebar 转为顶部结构：当前 Space 身份/切换 → 横向功能导航 → 当前账号；
 - 预约工作台 Desktop 默认周历；Mobile 默认单日 Agenda / Day View，不把 7 列周历强行压缩到手机宽度；
 - Current Space Switcher 在移动端使用覆盖式弹层，仍只展示空间名称；
 - 功能导航横向滚动，不因小屏隐藏核心功能；
@@ -472,7 +474,7 @@ Web 与小程序共享**品牌、术语、状态语义和交互原则**，不强
 
 - Web Admin 采用 Current Space 驱动的运营控制台 Shell。
 - 导航分为运营、资源配置、空间设置、数据；运营区收敛为“概览 / 预约 / 客户管理”，“预约”内部提供“日历 / 列表”两种视图；空间设置中的后台账号统一称“用户”，使用“用户管理”；“对账”保留入口并标记即将开放。
-- Space Switcher 与当前用户身份统一下沉至侧边栏底部。
+- 当前 Space 身份与 Space Switcher 统一置于侧边栏顶部，并替代固定“Yu言在线”品牌标题；当前用户身份与退出登录保留在侧边栏底部。
 - Web Admin 同时具备桌面与移动端响应式基线。
 - Space / Settings / Admin / Invite 页面成为首批基准实现。
 - 小程序轻量原生工具风格已冻结，并与现有深墨绿品牌体系对齐。

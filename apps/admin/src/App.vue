@@ -25,6 +25,10 @@ const currentSpace = computed(() =>
 )
 const isSuperAdmin = computed(() => admin.value?.platformRole === 'super_admin')
 const adminInitial = computed(() => (admin.value?.email || 'A').slice(0, 1).toUpperCase())
+const spaceInitial = computed(() => {
+  const name = currentSpace.value?.name.trim()
+  return name ? name.slice(0, 1).toUpperCase() : 'Y'
+})
 const roleLabel = computed(() => isSuperAdmin.value ? '超级用户' : '空间用户')
 
 function currentPath(section: string) {
@@ -108,11 +112,44 @@ onMounted(loadShell)
 
   <div v-else class="app-shell">
     <aside class="sidebar">
-      <div class="brand">
-        <span class="brand-logo-wrap"><img src="/yu-logo.png" alt="" class="brand-logo" /></span>
-        <div>
-          <strong>Yu言在线</strong>
-          <small>运营后台</small>
+      <div class="space-switcher space-switcher--brand">
+        <button
+          class="space-brand-button"
+          :aria-expanded="spaceMenuOpen"
+          aria-haspopup="menu"
+          @click="spaceMenuOpen = !spaceMenuOpen"
+        >
+          <span class="space-brand-mark" aria-hidden="true">{{ spaceInitial }}</span>
+          <span class="space-brand-copy">
+            <strong>{{ currentSpace?.name || '选择空间' }}</strong>
+            <small>运营后台</small>
+          </span>
+          <span class="switch-chevron" :class="{ open: spaceMenuOpen }">›</span>
+        </button>
+
+        <div v-if="spaceMenuOpen" class="space-menu" role="menu">
+          <div class="space-menu-heading">
+            <strong>切换空间</strong>
+            <button class="icon-button icon-button--plain" aria-label="关闭空间切换" @click="spaceMenuOpen = false">×</button>
+          </div>
+          <div class="space-menu-list">
+            <button
+              v-for="space in spaces"
+              :key="space.id"
+              class="space-menu-item"
+              :class="{ active: space.id === currentSpace?.id }"
+              role="menuitem"
+              @click="switchSpace(space.id)"
+            >
+              <span>{{ space.name }}</span>
+              <span v-if="space.id === currentSpace?.id" class="space-check">✓</span>
+            </button>
+            <div v-if="spaces.length === 0" class="space-menu-empty">还没有可访问空间。</div>
+          </div>
+          <div v-if="isSuperAdmin" class="space-menu-actions">
+            <button @click="openSpaceManagement(true)"><AppIcon name="plus" />新建空间</button>
+            <button @click="openSpaceManagement(false)"><AppIcon name="external" />管理空间</button>
+          </div>
         </div>
       </div>
 
@@ -164,43 +201,6 @@ onMounted(loadShell)
 
       <div class="sidebar-bottom">
         <div v-if="shellError" class="sidebar-error">{{ shellError }}</div>
-
-        <div class="space-switcher">
-          <button
-            class="space-switcher-button"
-            :aria-expanded="spaceMenuOpen"
-            aria-haspopup="menu"
-            @click="spaceMenuOpen = !spaceMenuOpen"
-          >
-            <strong>{{ currentSpace?.name || '选择空间' }}</strong>
-            <span class="switch-chevron" :class="{ open: spaceMenuOpen }">›</span>
-          </button>
-
-          <div v-if="spaceMenuOpen" class="space-menu" role="menu">
-            <div class="space-menu-heading">
-              <strong>切换空间</strong>
-              <button class="icon-button icon-button--plain" aria-label="关闭空间切换" @click="spaceMenuOpen = false">×</button>
-            </div>
-            <div class="space-menu-list">
-              <button
-                v-for="space in spaces"
-                :key="space.id"
-                class="space-menu-item"
-                :class="{ active: space.id === currentSpace?.id }"
-                role="menuitem"
-                @click="switchSpace(space.id)"
-              >
-                <span>{{ space.name }}</span>
-                <span v-if="space.id === currentSpace?.id" class="space-check">✓</span>
-              </button>
-              <div v-if="spaces.length === 0" class="space-menu-empty">还没有可访问空间。</div>
-            </div>
-            <div v-if="isSuperAdmin" class="space-menu-actions">
-              <button @click="openSpaceManagement(true)"><AppIcon name="plus" />新建空间</button>
-              <button @click="openSpaceManagement(false)"><AppIcon name="external" />管理空间</button>
-            </div>
-          </div>
-        </div>
 
         <div v-if="admin" class="account-card">
           <span class="avatar">{{ adminInitial }}</span>
