@@ -183,6 +183,8 @@ type AdminMemberRow = {
   joined_at: number
   participant_count: number
   invited_by_admin_id: string
+  invited_by_admin_display_name: string | null
+  invited_by_admin_email: string
   invite_code_id: string
   status: 'active' | 'inactive'
   admin_note: string | null
@@ -204,6 +206,8 @@ function mapAdminMember(row: AdminMemberRow): AdminMemberSummary {
     joinedAt: new Date(row.joined_at).toISOString(),
     participantCount: row.participant_count,
     invitedByAdminId: row.invited_by_admin_id,
+    invitedByAdminDisplayName: row.invited_by_admin_display_name,
+    invitedByAdminEmail: row.invited_by_admin_email,
     inviteCodeId: row.invite_code_id,
     status: row.status,
     adminNote: row.admin_note
