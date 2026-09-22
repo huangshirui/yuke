@@ -384,6 +384,8 @@ export type AdminMemberSummary = {
   joinedAt: string
   participantCount: number
   invitedByAdminId: Id
+  invitedByAdminDisplayName: string | null
+  invitedByAdminEmail: string
   inviteCodeId: Id
   status: EntityStatus
   adminNote: string | null
