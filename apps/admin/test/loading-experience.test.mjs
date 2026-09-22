@@ -40,7 +40,7 @@ test('schedule refreshes use a local loading state and reject stale slot respons
   assert.match(source, /const slotsLoading = ref\(false\)/)
   assert.match(source, /const requestVersion = \+\+slotsRequestVersion/)
   assert.match(source, /requestVersion === slotsRequestVersion/)
-  assert.match(source, /LoadingOverlay v-if="loading \|\| slotsLoading" label="正在加载排期…"/)
+  assert.match(source, /LoadingOverlay v-if="loading \|\| slotsLoading" label="正在加载时段…"/)
 })
 
 
@@ -52,7 +52,8 @@ test('schedule calendar keeps slot and booking details inside the current worksp
   assert.match(source, /selectedBooking\.value = await api\.getBooking/)
   assert.match(source, /class="detail-drawer/)
   assert.match(source, /function slotMainLabel\(slot: AdminScheduleSlot\)/)
-  assert.match(source, /return '空'/)
+  assert.match(source, /if \(!slot\.booking\) return slotTypeName\(slot\)/)
+  assert.match(source, /return slot\.booking\.participantName \|\| '未命名预约人'/)
   assert.match(source, /slot-card--booked/)
   assert.match(source, /slot-card--pending/)
   assert.match(source, /slot-card--settled/)
@@ -60,12 +61,18 @@ test('schedule calendar keeps slot and booking details inside the current worksp
 })
 
 
-test('short calendar slots use a single compact content row', () => {
+test('short calendar slots show the right primary label and hover context', () => {
   const source = view('ScheduleView.vue')
 
   assert.match(source, /function slotCompactStateLabel\(slot: AdminScheduleSlot\)/)
+  assert.match(source, /if \(!slot\.booking \|\| slot\.booking\.status === 'booked'\) return ''/)
   assert.match(source, /class="slot-compact-state"/)
-  assert.match(source, /:title="slotLocalTime\(slot\.startAt\).*slotSecondaryLabel\(slot\)"/)
+  assert.match(source, /function slotHoverLabel\(slot: AdminScheduleSlot\)/)
+  assert.match(source, /客户：/)
+  assert.match(source, /预约人：/)
+  assert.match(source, /:title="slotHoverLabel\(slot\)"/)
+  assert.match(source, /slot-card--unavailable/)
+  assert.match(source, /return slot\.bookable \? '可预约' : '暂不可预约'/)
   assert.doesNotMatch(source, /class="slot-time"/)
   assert.doesNotMatch(source, /class="slot-operational-state"/)
 })
