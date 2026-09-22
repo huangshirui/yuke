@@ -319,7 +319,12 @@ export function createMockAdminApi(storage = globalThis.localStorage ?? memorySt
     const member = requireMember(spaceId, booking.membershipId)
     const participant = member.participants.find((item) => item.id === booking.participantId)
     if (!participant) throw new Error('找不到这个参与人。')
+    const invitedByAdmin = (state.admins[spaceId] ?? []).find(
+      (item) => item.id === member.invitedByAdminId,
+    )
 
+    booking.userNickname = member.nickname
+    booking.invitedByAdminEmail = invitedByAdmin?.email || '未知管理员'
     booking.resource = {
       id: resource.id,
       name: resource.name,
