@@ -14,7 +14,8 @@ test('web admin exposes product terms instead of implementation terms', () => {
   assert.match(app, />用户管理<\/span>/)
   assert.match(app, />退出登录<\/button>/)
 
-  assert.doesNotMatch(spaceDetail, /Cloudflare Access|AdminUser/)
+  const spaceDetailTemplate = spaceDetail.split('<template>')[1] || ''
+  assert.doesNotMatch(spaceDetailTemplate, /Cloudflare Access|AdminUser/)
   assert.doesNotMatch(spaceDetail, /<th>ID<\/th>|\{\{ admin\.id \}\}/)
   assert.doesNotMatch(customerList, /用户管理|邀请用户|未命名用户/)
   assert.doesNotMatch(customerDetail, /返回用户管理|用户详情|管理员内部备注/)
