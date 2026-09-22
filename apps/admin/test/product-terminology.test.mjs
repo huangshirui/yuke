@@ -46,7 +46,7 @@ test('web admin customer-facing business terms align across operational template
 
   for (const path of pages) {
     const template = source(path).split('<template>')[1] || ''
-    assert.doesNotMatch(template, /空间|预约对象|参与人/, path)
+    assert.doesNotMatch(template, /空间|预约对象|参与人|管理员|已冻结|冻结时段|解冻时段|开放时段|开放时间|排期/, path)
   }
 
   assert.match(source('src/App.vue'), />预约项目<\/span>/)
