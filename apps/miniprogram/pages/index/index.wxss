@@ -10,14 +10,16 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 96rpx;
-  height: 96rpx;
-  border-radius: 24rpx;
-  background: #126e62;
-  color: #ffffff;
-  font-size: 42rpx;
-  font-weight: 600;
-  line-height: 96rpx;
+  width: 180rpx;
+  height: 180rpx;
+  border-radius: 36rpx;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-brand);
+}
+
+.brand-logo {
+  width: 132rpx;
+  height: 132rpx;
 }
 
 .bootstrap-title {

@@ -21,7 +21,7 @@ Page({
         api: app.globalData.api,
         storage: wx
       })
-      routeToEntry(wx, user)
+      await routeToEntry(wx, user, { api: app.globalData.api, storage: wx })
     } catch (error) {
       this.setData({
         loading: false,

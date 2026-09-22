@@ -1,5 +1,5 @@
 const { loadUser } = require('../../lib/storage')
-const { decorateBooking } = require('../../lib/bookings')
+const { decorateBooking, addDays, today } = require('../../lib/bookings')
 
 function activeSpace(user) {
   return user?.spaces?.find(
@@ -10,6 +10,7 @@ function activeSpace(user) {
 Page({
   data: {
     currentSpace: null,
+    hasSpace: true,
     bookingId: '',
     booking: null,
     loading: true,
@@ -24,10 +25,10 @@ Page({
     const user = loadUser(wx)
     const currentSpace = activeSpace(user)
     if (!currentSpace) {
-      wx.redirectTo({ url: '/pages/me/index?selectSpace=1' })
+      this.setData({ hasSpace: false, loading: false })
       return
     }
-    this.setData({ currentSpace })
+    this.setData({ currentSpace, hasSpace: true })
     await this.loadBooking()
   },
 
@@ -47,6 +48,10 @@ Page({
     } finally {
       this.setData({ loading: false })
     }
+  },
+
+  goToSpaces() {
+    wx.navigateTo({ url: '/pages/spaces/index' })
   },
 
   async cancelBooking() {

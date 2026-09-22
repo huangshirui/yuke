@@ -35,21 +35,23 @@ Yu言在线是一个通用预约工具。设计首先服务于**清晰、效率�
 
 ## 2. Product terminology / 产品术语
 
-对外 UI 使用通用预约语言，避免教育行业特定角色词。
+对外 UI 使用通用预约语言，避免教育行业特定角色词。内部 Contract、代码和 Admin 管理语境继续使用稳定领域术语；小程序用户端使用面向任务的自然语言，避免直接暴露抽象领域模型。
 
-| Domain | 中文 UI | English |
-|---|---|---|
-| Space | 空间 | Space |
-| Resource | 预约对象 | Resource |
-| Participant | 参与人 | Participant |
-| Slot | 可预约时段 / 时段 | Slot |
-| Slot Type | 时段类型 | Slot Type |
-| Booking | 预约 | Booking |
-| Customer (Mini Program User) | 客户 | Customer |
-| Web Admin User | 用户 | User |
-| Space Admin | 空间用户 | Space User |
-| Super Admin | 超级用户 | Super User |
-| Invite Code | 邀请码 | Invite Code |
+| Domain | 小程序用户 UI | Admin / 内部中文 | English |
+|---|---|---|---|
+| Space | 服务方 | 空间 | Space |
+| Resource | 预约项目 / 预约什么 | 预约对象 | Resource |
+| Participant | 常用预约人 / 为谁预约 | 参与人 | Participant |
+| Slot | 可预约时间 | 可预约时段 / 时段 | Slot |
+| Slot Type | — | 时段类型 | Slot Type |
+| Booking | 预约 | 预约 | Booking |
+| Customer (Mini Program User) | 用户 | 客户 | Customer |
+| Web Admin User | — | 用户 | User |
+| Space Admin | — | 空间用户 | Space User |
+| Super Admin | — | 超级用户 | Super User |
+| Invite Code | 邀请码 | 邀请码 | Invite Code |
+
+小程序预约路径优先使用动作式表达：“选择服务方 → 预约什么 → 选择时间 → 为谁预约 → 确认预约”。
 
 小程序审核相关页面不要使用“家长 / 学生 / 老师”等行业角色词作为核心业务术语。
 
@@ -374,11 +376,35 @@ Admin 为桌面优先，但必须保证手机浏览器可完成全部核心运�
 
 小程序基础层级：
 
-- Page title：约 40rpx / semibold；
+- Page title：36–40rpx / semibold；
 - Section title：30–32rpx / semibold；
 - Body：28rpx；
 - Secondary / Caption：22–26rpx；
 - Card / Input / Button 间距遵循 8rpx 基础网格。
+
+小程序全局视觉 Token 统一定义在 `apps/miniprogram/app.wxss`，页面样式只消费语义变量，不重复声明颜色值。当前 Token 分为：
+
+- `--color-*`：背景、Surface、文字层级、边框、品牌、状态与遮罩；
+- `--space-*`：基于 8rpx 网格的间距；
+- `--radius-*`：小圆角、控件圆角、Card 圆角与胶囊圆角；
+- `--font-*`：标题、分区标题、正文、辅助文字和微型标签；
+- `--control-*`：标准与紧凑控件高度。
+
+日程页是小程序的视觉基准：其它页面应复用相同的白色 Surface、弱分隔线、深墨绿主操作、扁平列表行、状态 Badge 和底部弹层，不再为单页维护独立色板。通用样式优先复用 `.card`、`.list-surface`、`.list-row`、`.primary-button`、`.secondary-button`、`.danger-button`、`.compact-button`、`.status-badge` 和统一空状态。
+
+小程序页面操作位置按任务层级统一：
+
+- 可直接创建内容的列表页，在非空状态使用标题区紧凑主按钮；空间紧张且页面标题已明确对象时可使用“新增”，其余场景使用“发起预约”等完整动作；
+- 选择或切换类列表以列表选择为主任务，低频的“加入其他……”放在列表末尾的操作行，不与主任务争夺标题区；
+- 空状态中的下一步使用内容区完整主按钮，不同时保留标题区主按钮；
+- 表单提交继续使用内容底部完整主按钮，危险操作继续使用明确的危险按钮。
+
+预约可用性与确认流程遵循：
+
+- 选定预约项目后，展示查询范围内所有用户可见时段；不可预约时段保留在原日期位置，置灰并使用文字状态标注，不能只靠隐藏表达不可用；
+- 时间列表优先展示日期、开始和结束时间，不使用“时段”等无信息量的占位文案；
+- 打开确认弹层所需的预约人等数据应在进入预约页时并行预加载，不在用户点击时段后才发起首次请求；
+- 快速切换预约项目时，只允许最后一次时段请求更新页面，避免旧响应覆盖当前选择。
 
 首次进入固定流程：
 
@@ -478,6 +504,7 @@ Web 与小程序共享**品牌、术语、状态语义和交互原则**，不强
 - Web Admin 同时具备桌面与移动端响应式基线。
 - Space / Settings / Admin / Invite 页面成为首批基准实现。
 - 小程序轻量原生工具风格已冻结，并与现有深墨绿品牌体系对齐。
+- 小程序已以日程页为基准收敛全局视觉 Token、Surface、列表、按钮、状态与表单模式。
 - 当前不引入第三方 UI Component Library。
 - Web Admin Design Token System 已收口到 `apps/admin/src/tokens.css`；颜色与通用控件视觉参数不得在页面侧分叉。
 - 后续页面优先复用已有 Shell、Button、Panel、Table、Field、Status、Tab 等模式。

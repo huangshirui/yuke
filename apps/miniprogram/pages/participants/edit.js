@@ -29,20 +29,22 @@ Page({
     today: todayDate(),
     loading: false,
     submitting: false,
-    editMode: false
+    editMode: false,
+    hasSpace: true
   },
 
   async onLoad(options) {
     const user = loadUser(wx)
     const currentSpace = currentSpaceFromUser(user)
     if (!currentSpace) {
-      wx.redirectTo({ url: '/pages/me/index?selectSpace=1' })
+      this.setData({ hasSpace: false })
       return
     }
 
     const participantId = String(options?.id || '')
     this.setData({
       currentSpace,
+      hasSpace: true,
       participantId,
       editMode: Boolean(participantId)
     })
@@ -58,8 +60,8 @@ Page({
       const participants = await getApp().globalData.api.listParticipants(this.data.currentSpace.id)
       const participant = participants.find((item) => item.id === participantId)
       if (!participant) {
-        wx.showToast({ title: '参与人不存在', icon: 'none' })
-        setTimeout(() => wx.navigateBack(), 300)
+        wx.showToast({ title: '预约人不存在', icon: 'none' })
+        setTimeout(() => this.leave(), 300)
         return
       }
 
@@ -70,12 +72,20 @@ Page({
       })
     } catch (error) {
       wx.showToast({
-        title: error.message || '参与人加载失败',
+        title: error.message || '预约人加载失败',
         icon: 'none'
       })
     } finally {
       this.setData({ loading: false })
     }
+  },
+
+  goToSpaces() {
+    wx.navigateTo({ url: '/pages/spaces/index' })
+  },
+
+  leave() {
+    wx.navigateBack()
   },
 
   onNameInput(event) {
@@ -122,7 +132,7 @@ Page({
         title: this.data.editMode ? '已保存' : '已新增',
         icon: 'success'
       })
-      setTimeout(() => wx.navigateBack(), 250)
+      setTimeout(() => this.leave(), 250)
     } catch (error) {
       wx.showToast({
         title: error.message || '保存失败，请重试',

@@ -1,30 +1,39 @@
 <view class="page">
   <view class="page-header booking-header">
-    <view>
+    <view class="booking-title-row">
       <text class="page-title">发起预约</text>
-      <text class="page-description">选择预约对象、可预约时段和参与人。</text>
+      <button class="text-button" bindtap="viewSchedule">我的预约 ›</button>
     </view>
-    <button class="text-button" bindtap="viewSchedule">我的预约</button>
+    <text class="page-description">先选择预约项目，再选择时间。</text>
   </view>
 
-  <view wx:if="{{loading}}" class="card state-card">
-    <text class="muted">正在加载预约对象…</text>
+  <view wx:if="{{!hasSpace}}" class="card state-card">
+    <text class="state-title">还没有可用的服务方</text>
+    <text class="page-description">先加入或选择服务方，才能发起预约。</text>
+    <button class="primary-button empty-action" bindtap="goToSpaces">选择服务方</button>
+  </view>
+
+  <view wx:elif="{{loading}}" class="card state-card">
+    <text class="muted">正在加载预约项目…</text>
   </view>
 
   <block wx:else>
-    <scroll-view wx:if="{{resources.length}}" class="resource-strip" scroll-x enable-flex>
-      <button
-        wx:for="{{resources}}"
-        wx:key="id"
-        class="resource-chip {{item.id === selectedResourceId ? 'resource-chip--active' : ''}}"
-        data-resource-id="{{item.id}}"
-        bindtap="selectResource"
-      >{{item.name}}</button>
-    </scroll-view>
+    <view wx:if="{{resources.length}}" class="resource-section">
+      <text class="field-label">预约项目</text>
+      <scroll-view class="resource-strip" scroll-x enable-flex>
+        <button
+          wx:for="{{resources}}"
+          wx:key="id"
+          class="resource-chip {{item.id === selectedResourceId ? 'resource-chip--active' : ''}}"
+          data-resource-id="{{item.id}}"
+          bindtap="selectResource"
+        >{{item.name}}</button>
+      </scroll-view>
+    </view>
 
     <view wx:if="{{!resources.length}}" class="card state-card">
-      <text class="state-title">暂无可预约对象</text>
-      <text class="page-description">当前空间还没有启用中的预约对象。</text>
+      <text class="state-title">暂无预约项目</text>
+      <text class="page-description">当前服务方还没有可预约的项目。</text>
     </view>
 
     <view wx:elif="{{loadingSlots}}" class="card state-card">
@@ -32,28 +41,28 @@
     </view>
 
     <view wx:elif="{{!groups.length}}" class="card state-card">
-      <text class="state-title">未来 14 天暂无可预约时间</text>
-      <text class="page-description">可以稍后再来查看新的开放时段。</text>
+      <text class="state-title">未来 14 天暂无开放时间</text>
+      <text class="page-description">当前预约项目还没有安排时段，可以稍后再来查看。</text>
     </view>
 
     <view wx:else class="slot-groups">
       <view wx:for="{{groups}}" wx:key="date" class="slot-day">
         <text class="section-title">{{item.label}}</text>
-        <view class="slot-list">
-          <button
+        <view class="list-surface slot-list">
+          <view
             wx:for="{{item.slots}}"
             wx:for-item="slot"
             wx:key="id"
-            class="card slot-card"
+            class="list-row slot-card {{slot.bookable ? '' : 'slot-card--unavailable'}}"
             data-slot-id="{{slot.id}}"
             bindtap="chooseSlot"
+            role="button"
+            aria-disabled="{{!slot.bookable}}"
           >
-            <view class="slot-time">
-              <text>{{slot.displayStart}}–{{slot.displayEnd}}</text>
-              <text class="slot-type">{{slot.slotTypeName || '时段'}}</text>
-            </view>
-            <text class="chevron">›</text>
-          </button>
+            <text class="slot-time">{{slot.displayStart}}–{{slot.displayEnd}}</text>
+            <text wx:if="{{!slot.bookable}}" class="slot-availability">{{slot.availabilityLabel}}</text>
+            <text wx:else class="chevron">›</text>
+          </view>
         </view>
       </view>
     </view>
@@ -62,41 +71,38 @@
   <view wx:if="{{selectedSlot}}" class="confirm-backdrop" bindtap="closeConfirm">
     <view class="confirm-sheet" catchtap="noop">
       <view class="confirm-heading">
-        <view>
+        <view class="confirm-heading__copy">
           <text class="section-title">确认预约</text>
           <text class="confirm-time">
-            {{selectedSlot.localDate}} {{selectedSlot.displayStart}}–{{selectedSlot.displayEnd}}
+            {{selectedSlot.displayDate}} {{selectedSlot.displayStart}}–{{selectedSlot.displayEnd}}
           </text>
-          <text class="caption">{{selectedSlot.slotTypeName || '时段'}}</text>
+          <text class="caption">{{selectedSlot.resourceName}}</text>
         </view>
         <button class="confirm-close" bindtap="closeConfirm">×</button>
       </view>
 
-      <view wx:if="{{loadingParticipants}}" class="confirm-state">
-        <text class="muted">正在加载参与人…</text>
-      </view>
-
-      <view wx:elif="{{!participants.length}}" class="confirm-state">
-        <text class="state-title">还没有可用参与人</text>
-        <text class="page-description">先新增一位参与人，再回来完成预约。</text>
-        <button class="secondary-button" bindtap="addParticipant">新增参与人</button>
+      <view wx:if="{{!participants.length}}" class="confirm-state">
+        <text class="state-title">还没有常用预约人</text>
+        <text class="page-description">先新增一位预约人，再回来完成预约。</text>
+        <button class="secondary-button" bindtap="addParticipant">新增预约人</button>
       </view>
 
       <view wx:else class="participant-picker">
-        <text class="field-label">参与人</text>
-        <button
+        <text class="field-label">为谁预约</text>
+        <view
           wx:for="{{participants}}"
           wx:key="id"
           class="participant-option {{item.id === selectedParticipantId ? 'participant-option--active' : ''}}"
           data-participant-id="{{item.id}}"
           bindtap="selectParticipant"
+          role="button"
         >
           <view>
             <text class="participant-name">{{item.name}}</text>
             <text class="caption">出生年月 {{item.birthMonth}}</text>
           </view>
           <text class="participant-check">{{item.id === selectedParticipantId ? '✓' : ''}}</text>
-        </button>
+        </view>
 
         <button
           class="primary-button confirm-action"

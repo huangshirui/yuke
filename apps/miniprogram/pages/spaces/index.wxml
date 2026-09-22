@@ -1,0 +1,43 @@
+<view class="page">
+  <view class="page-header">
+    <text class="page-title">服务方</text>
+    <text class="page-description">选择要使用的服务方，预约内容会随之切换。</text>
+  </view>
+
+  <view wx:if="{{loading}}" class="card state-card">
+    <text class="muted">正在加载服务方…</text>
+  </view>
+
+  <view wx:elif="{{!spaces.length}}" class="card state-card">
+    <text class="state-title">还没有加入服务方</text>
+    <text class="page-description">使用服务方提供的邀请码即可加入。</text>
+    <button class="primary-button empty-action" bindtap="addSpace">加入服务方</button>
+  </view>
+
+  <block wx:else>
+    <view class="list-surface provider-list">
+      <view
+        wx:for="{{spaces}}"
+        wx:key="id"
+        class="list-row provider-row {{item.id === currentSpaceId ? 'provider-row--current' : ''}}"
+        data-space-id="{{item.id}}"
+        bindtap="switchSpace"
+        role="button"
+      >
+        <view class="provider-row__copy">
+          <text class="provider-name">{{item.name}}</text>
+          <text wx:if="{{item.id === currentSpaceId}}" class="provider-state">当前使用</text>
+        </view>
+        <text wx:if="{{switchingSpaceId === item.id}}" class="caption">切换中…</text>
+        <text wx:elif="{{item.id !== currentSpaceId}}" class="chevron">›</text>
+      </view>
+
+      <button class="list-row list-action-row" bindtap="addSpace">
+        <text>＋ 加入其他服务方</text>
+        <text class="chevron">›</text>
+      </button>
+    </view>
+  </block>
+
+  <view class="safe-bottom"></view>
+</view>

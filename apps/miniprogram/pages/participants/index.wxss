@@ -1,115 +1,58 @@
-.participant-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 24rpx;
-}
-
-.participant-header__copy {
-  flex: 1;
-}
-
-.participant-add {
-  min-width: 120rpx;
-  height: 72rpx;
-  margin: 0;
-  padding: 0 24rpx;
-  border: 0;
-  border-radius: 14rpx;
-  background: #126e62;
-  color: #ffffff;
-  font-size: 26rpx;
-  line-height: 72rpx;
-}
-
-.participant-list .participant-card + .participant-card {
-  margin-top: 20rpx;
-}
-
 .participant-card {
-  padding-bottom: 16rpx;
+  padding: var(--space-3) var(--space-4) var(--space-2);
 }
 
 .participant-card__heading {
   display: flex;
   align-items: center;
-  gap: 16rpx;
+  gap: var(--space-2);
+}
+
+.participant-card__main {
+  min-width: 0;
 }
 
 .participant-name {
   flex: 1;
   font-size: 32rpx;
   font-weight: 600;
-  color: #17202a;
-}
-
-.status-badge {
-  flex: none;
-  padding: 6rpx 14rpx;
-  border-radius: 999rpx;
-  font-size: 22rpx;
-  line-height: 1.4;
-}
-
-.status-badge--active {
-  background: #e8f4f1;
-  color: #126e62;
-}
-
-.status-badge--inactive {
-  background: #f0f2f5;
-  color: #667085;
+  color: var(--color-ink);
 }
 
 .participant-meta {
   display: block;
   margin-top: 14rpx;
-  color: #667085;
+  color: var(--color-muted);
   font-size: 24rpx;
 }
 
 .participant-note {
   display: block;
   margin-top: 12rpx;
-  color: #475467;
+  color: var(--color-ink);
   font-size: 26rpx;
   line-height: 1.55;
 }
 
 .participant-actions {
   display: flex;
-  justify-content: flex-end;
-  gap: 32rpx;
+  justify-content: flex-start;
+  gap: var(--space-4);
   margin-top: 20rpx;
   padding-top: 12rpx;
-  border-top: 1rpx solid #eef0f3;
+  border-top: 1rpx solid var(--color-line-soft);
 }
 
 .participant-action {
-  width: auto;
+  flex: 0 0 104rpx;
+  width: 104rpx;
+  min-width: 104rpx;
+  max-width: 104rpx;
   margin: 0;
   min-height: 64rpx;
   line-height: 64rpx;
 }
 
 .participant-action--danger {
-  color: #b43c3c;
-}
-
-.state-card {
-  text-align: center;
-}
-
-.state-title {
-  display: block;
-  font-size: 30rpx;
-  font-weight: 600;
-}
-
-.state-card .page-description {
-  margin-top: 12rpx;
-}
-
-.empty-action {
-  margin-top: 28rpx;
+  color: var(--color-danger);
 }

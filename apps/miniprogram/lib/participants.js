@@ -10,7 +10,7 @@ function normalizeParticipantInput(input) {
   const note = String(input?.note || '').trim()
 
   if (!name) {
-    const error = new Error('请填写参与人名称')
+    const error = new Error('请填写预约人姓名')
     error.code = 'VALIDATION_ERROR'
     throw error
   }

@@ -30,7 +30,7 @@ test('mock booking lifecycle supports create, list, conflict and cancel', async 
     '2026-09-21',
     '2026-09-23'
   )
-  const slot = slots[0]
+  const slot = slots.find((item) => item.bookable)
   assert.ok(slot)
 
   const booking = await api.createBooking(spaceId, {

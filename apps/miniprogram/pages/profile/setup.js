@@ -28,7 +28,7 @@ Page({
     }
 
     if (!editMode && user?.profileInitialized === true) {
-      routeToEntry(wx, user)
+      await routeToEntry(wx, user, { api: getApp().globalData.api, storage: wx })
       return
     }
 
@@ -93,7 +93,7 @@ Page({
         return
       }
 
-      routeToEntry(wx, user)
+      await routeToEntry(wx, user, { api, storage: wx })
     } catch (error) {
       wx.showToast({
         title: error.message || '保存失败，请重试',

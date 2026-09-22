@@ -1,30 +1,38 @@
 <view class="page">
-  <view class="page-header participant-header">
-    <view class="participant-header__copy">
-      <text class="page-title">参与人</text>
-      <text class="page-description">管理 {{currentSpace.name || '当前空间'}} 中用于预约的参与人。</text>
+  <view class="page-header page-header--action">
+    <view class="page-header__copy">
+      <text class="page-title">常用预约人</text>
+      <text class="page-description">
+        {{hasSpace ? currentSpace.name + ' · ' + activeCount + '/' + participants.length + ' 位可使用' : '管理为家人或他人预约时使用的信息。'}}
+      </text>
     </view>
-    <button class="participant-add" bindtap="addParticipant">新增</button>
+    <button wx:if="{{hasSpace}}" class="header-action" bindtap="addParticipant">新增</button>
   </view>
 
-  <view wx:if="{{loading}}" class="card state-card">
-    <text class="muted">正在加载参与人…</text>
+  <view wx:if="{{!hasSpace}}" class="card state-card">
+    <text class="state-title">还没有可用的服务方</text>
+    <text class="page-description">先加入或选择服务方，才能管理常用预约人。</text>
+    <button class="primary-button empty-action" bindtap="goToSpaces">选择服务方</button>
+  </view>
+
+  <view wx:elif="{{loading}}" class="card state-card">
+    <text class="muted">正在加载预约人…</text>
   </view>
 
   <view wx:elif="{{!participants.length}}" class="card state-card">
-    <text class="state-title">还没有参与人</text>
-    <text class="page-description">先新增一位参与人，之后创建预约时即可直接选择。</text>
-    <button class="primary-button empty-action" bindtap="addParticipant">新增参与人</button>
+    <text class="state-title">还没有常用预约人</text>
+    <text class="page-description">新增后，发起预约时即可直接选择“为谁预约”。</text>
+    <button class="primary-button empty-action" bindtap="addParticipant">新增预约人</button>
   </view>
 
-  <view wx:else class="participant-list">
-    <view wx:for="{{participants}}" wx:key="id" class="card participant-card">
+  <view wx:else class="list-surface participant-list">
+    <view wx:for="{{participants}}" wx:key="id" class="list-row participant-card">
       <view class="participant-card__main">
         <view class="participant-card__heading">
           <text class="participant-name">{{item.name}}</text>
-          <text class="status-badge {{item.status === 'active' ? 'status-badge--active' : 'status-badge--inactive'}}">
-            {{item.status === 'active' ? '可使用' : '已停用'}}
-          </text>
+          <view class="status-badge {{item.status === 'active' ? 'status-badge--active' : 'status-badge--inactive'}}">
+            <text class="status-badge__label">{{item.status === 'active' ? '可使用' : '已停用'}}</text>
+          </view>
         </view>
         <text class="participant-meta">出生年月 {{item.birthMonth}}</text>
         <text wx:if="{{item.note}}" class="participant-note">{{item.note}}</text>
