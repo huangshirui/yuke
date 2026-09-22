@@ -279,10 +279,11 @@ Worker 必须验证 Access JWT。管理员身份生命周期：
 
 ### GET /admin/admin-users
 
-仅 Super Admin。列出 AdminUser，包括：
+仅 Super Admin。列出后台用户，包括：
 
-- id
-- email
+- id（内部关联字段，不在运营 UI 展示）
+- displayName（友好用户名称，可为空以兼容历史数据）
+- email（登录邮箱）
 - platformRole
 - status
 - identityStatus: `pending | bound`
@@ -292,10 +293,20 @@ Worker 必须验证 Access JWT。管理员身份生命周期：
 仅 Super Admin。按邮箱显式创建/读取普通 AdminUser：
 
 ```json
-{ "email": "synthetic-admin@example.invalid" }
+{ "displayName": "Synthetic Operator", "email": "synthetic-admin@example.invalid" }
 ```
 
-新建普通 AdminUser 的 `identityStatus = pending`；稳定项目 Admin ID 在首次 Access 登录前即存在，因此可提前分配 Space。
+新建普通后台用户的 `identityStatus = pending`；稳定内部 ID 在首次登录前即存在，因此可提前分配 Space。运营 UI 以 `displayName` 为主、邮箱为次级信息。
+
+### PATCH /admin/admin-users/{adminUserId}
+
+仅超级用户。修改后台用户的友好名称：
+
+```json
+{ "displayName": "Synthetic Operator Renamed" }
+```
+
+名称用于运营界面主要展示，不改变登录邮箱或空间授权关系。
 
 ## 8. Space / Admin
 
@@ -602,8 +613,9 @@ Query：
 返回 Space 内匹配的 Booking 及 Participant / Resource / Slot Type / Slot 摘要。Admin 响应额外包含：
 
 - `membershipId`；
-- `userNickname`：该 Booking 所属用户当前昵称；
-- `invitedByAdminEmail`：该用户加入 Space 时的来源管理员邮箱；即使该管理员后续不再管理该 Space，历史来源仍可展示；
+- `userNickname`：该 Booking 所属客户当前昵称；
+- `invitedByAdminDisplayName`：该客户加入 Space 时的来源用户友好名称；
+- `invitedByAdminEmail`：该来源用户登录邮箱；即使其后续不再拥有该 Space 权限，历史来源仍可展示；
 - `completion`：完成时间、来源、外部引用、导入批次；
 - `reconciliation`：`pending | settled`、对账时间、来源、操作管理员、batchId、note。
 
@@ -672,8 +684,8 @@ Message API 在 Phase 5 实现。
 
 返回：
 
-- 用户资料摘要
-- 邀请来源
+- 客户资料摘要
+- 邀请来源（包含来源用户名称与邮箱，独立于该用户当前是否仍有 Space 权限）
 - Participant 列表
 - Booking 摘要
 - 管理员内部备注
