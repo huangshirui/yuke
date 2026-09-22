@@ -148,7 +148,7 @@ async function loadBase() {
     spaces.value = await api.listSpaces()
     const routeSpaceId = String(route.params.spaceId || '')
     if (!spaces.value.some((item) => item.id === routeSpaceId)) {
-      throw new Error('找不到这个空间。')
+      throw new Error('找不到这个服务方。')
     }
     selectedSpaceId.value = routeSpaceId
     if (!filters.from && !filters.to) {
@@ -184,7 +184,7 @@ async function loadSpaceContext() {
     selectedBooking.value = null
     await loadBookings()
   } catch (cause) {
-    error.value = friendlyError(cause, '空间预约数据加载失败。')
+    error.value = friendlyError(cause, '服务方预约数据加载失败。')
   }
 }
 
@@ -316,7 +316,7 @@ async function changeEditResource() {
 
 async function saveEdit() {
   if (!editingBooking.value || !edit.slotId || !edit.participantId) {
-    error.value = '请选择目标时段和参与人。'
+    error.value = '请选择目标时段和预约人。'
     return
   }
 
@@ -404,7 +404,7 @@ onMounted(loadBase)
       <div>
         <span class="eyebrow">预约记录</span>
         <h1>预约管理</h1>
-        <p>查看空间预约，按条件筛选，并处理预约调整、取消与完成。</p>
+        <p>查看服务方预约，按条件筛选，并处理预约调整、取消与完成。</p>
       </div>
       <span v-if="selectedSpace" class="page-context">{{ selectedSpace.name }}</span>
     </section>
@@ -425,7 +425,7 @@ onMounted(loadBase)
             <option value="cancelled">已取消</option>
           </select>
         </label>
-        <label class="field"><span>预约对象</span>
+        <label class="field"><span>预约项目</span>
           <select v-model="filters.resourceId">
             <option value="">全部</option>
             <option v-for="item in resources" :key="item.id" :value="item.id">{{ item.name }}</option>
@@ -437,7 +437,7 @@ onMounted(loadBase)
             <option v-for="item in slotTypes" :key="item.id" :value="item.id">{{ item.name }}</option>
           </select>
         </label>
-        <label class="field"><span>参与人</span>
+        <label class="field"><span>预约人</span>
           <select v-model="filters.participantId">
             <option value="">全部</option>
             <option v-for="item in participantOptions" :key="item.id" :value="item.id">{{ item.name }}</option>
@@ -460,10 +460,10 @@ onMounted(loadBase)
         <table>
           <thead>
             <tr>
-              <th>时间 / 预约对象</th>
-              <th>参与人</th>
+              <th>时间 / 预约项目</th>
+              <th>预约人</th>
               <th>客户</th>
-              <th title="该客户加入空间时的来源用户">来源用户</th>
+              <th title="该客户加入服务方时的来源用户">来源用户</th>
               <th>类型</th>
               <th>状态</th>
             </tr>
@@ -520,7 +520,7 @@ onMounted(loadBase)
           <button class="icon-button" aria-label="关闭预约详情" @click="closeBookingDetail">×</button>
         </div>
         <div class="booking-detail-grid">
-          <div><span>参与人</span><strong>{{ selectedBooking.participant.name }}</strong></div>
+          <div><span>预约人</span><strong>{{ selectedBooking.participant.name }}</strong></div>
           <div><span>时段类型</span><strong>{{ selectedBooking.slotType.name }}</strong></div>
           <div><span>服务状态</span><strong>{{ statusLabel(selectedBooking.status) }}</strong></div>
           <div><span>日期</span><strong>{{ selectedBooking.slot.localDate }}</strong></div>
@@ -581,17 +581,17 @@ onMounted(loadBase)
 
         <div class="form-stack">
           <label class="field">
-            <span>参与人</span>
+            <span>预约人</span>
             <select v-model="edit.participantId">
               <option v-for="item in activeEditParticipants" :key="item.id" :value="item.id">
                 {{ item.name }} · {{ item.birthMonth }}
               </option>
             </select>
-            <small>只能选择该预约客户名下的启用参与人。</small>
+            <small>只能选择该预约客户名下的启用预约人。</small>
           </label>
 
           <label class="field">
-            <span>预约对象</span>
+            <span>预约项目</span>
             <select v-model="editResourceId" @change="changeEditResource">
               <option
                 v-for="item in resources.filter((resource) => resource.status === 'active')"
