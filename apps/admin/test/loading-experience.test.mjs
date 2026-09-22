@@ -58,3 +58,25 @@ test('schedule calendar keeps slot and booking details inside the current worksp
   assert.match(source, /slot-card--settled/)
   assert.match(source, /查看所属时段/)
 })
+
+
+test('short calendar slots use a single compact content row', () => {
+  const source = view('ScheduleView.vue')
+
+  assert.match(source, /function slotCompactStateLabel\(slot: AdminScheduleSlot\)/)
+  assert.match(source, /class="slot-compact-state"/)
+  assert.match(source, /:title="slotLocalTime\(slot\.startAt\).*slotSecondaryLabel\(slot\)"/)
+  assert.doesNotMatch(source, /class="slot-time"/)
+  assert.doesNotMatch(source, /class="slot-operational-state"/)
+})
+
+test('booking list defaults to a seven-day-forward window and shows ownership columns', () => {
+  const source = view('BookingsView.vue')
+
+  assert.match(source, /filters\.to = addDays\(today, 7\)/)
+  assert.match(source, /<th>用户<\/th>/)
+  assert.match(source, />管理员<\/th>/)
+  assert.match(source, /booking\.userNickname/)
+  assert.match(source, /booking\.invitedByAdminEmail/)
+  assert.match(source, /colspan="6"/)
+})
