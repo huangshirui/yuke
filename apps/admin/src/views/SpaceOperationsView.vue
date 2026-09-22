@@ -9,7 +9,6 @@ import type {
   AdminResource,
   AdminSlotType,
   AdminSpace,
-  AdminUserSummary,
   InviteSummary,
 } from '../types/admin'
 
@@ -20,7 +19,7 @@ const space = ref<AdminSpace | null>(null)
 const resources = ref<AdminResource[]>([])
 const slotTypes = ref<AdminSlotType[]>([])
 const members = ref<AdminMemberSummary[]>([])
-const admins = ref<AdminUserSummary[]>([])
+const sourceUsers = ref<Array<{ id: string; displayName: string | null; email: string }>>([])
 const invites = ref<InviteSummary[]>([])
 const selectedMember = ref<AdminMemberDetail | null>(null)
 
@@ -69,9 +68,12 @@ function formatDate(value: string) {
   }).format(new Date(value))
 }
 
-function adminLabel(adminId: string) {
-  const admin = admins.value.find((item) => item.id === adminId)
-  return admin?.email ?? adminId
+function sourceUserLabel(member: AdminMemberSummary) {
+  return member.invitedByAdminDisplayName || member.invitedByAdminEmail
+}
+
+function sourceUserOptionLabel(user: { displayName: string | null; email: string }) {
+  return user.displayName ? `${user.displayName}（${user.email}）` : user.email
 }
 
 function inviteLabel(inviteId: string) {
@@ -94,16 +96,20 @@ async function loadSlotTypes() {
 }
 
 async function loadMembers() {
-  const [nextMembers, nextAdmins, nextInvites] = await Promise.all([
+  const [nextMembers, nextInvites] = await Promise.all([
     api.listMembers(spaceId.value, {
       invitedByAdminId: memberFilters.invitedByAdminId || undefined,
       inviteCodeId: memberFilters.inviteCodeId || undefined,
     }),
-    api.listAdmins(spaceId.value),
     api.listInvites(spaceId.value),
   ])
   members.value = nextMembers
-  admins.value = nextAdmins
+  if (!memberFilters.invitedByAdminId && !memberFilters.inviteCodeId) {
+    sourceUsers.value = [...new Map(nextMembers.map((member) => [
+      member.invitedByAdminId,
+      { id: member.invitedByAdminId, displayName: member.invitedByAdminDisplayName, email: member.invitedByAdminEmail },
+    ])).values()]
+  }
   invites.value = nextInvites
 }
 
@@ -441,7 +447,7 @@ onMounted(load)
             <span>来源用户</span>
             <select v-model="memberFilters.invitedByAdminId">
               <option value="">全部用户</option>
-              <option v-for="admin in admins" :key="admin.id" :value="admin.id">{{ admin.email }}</option>
+              <option v-for="user in sourceUsers" :key="user.id" :value="user.id">{{ sourceUserOptionLabel(user) }}</option>
             </select>
           </label>
           <label class="field">
@@ -469,7 +475,7 @@ onMounted(load)
                 </td>
                 <td>{{ member.participantCount }} 个</td>
                 <td>
-                  <div>{{ adminLabel(member.invitedByAdminId) }}</div>
+                  <div><strong>{{ sourceUserLabel(member) }}</strong></div><small v-if="member.invitedByAdminDisplayName" class="muted">{{ member.invitedByAdminEmail }}</small>
                   <small class="muted">{{ inviteLabel(member.inviteCodeId) }}</small>
                 </td>
                 <td>{{ formatDate(member.joinedAt) }}</td>
@@ -495,7 +501,7 @@ onMounted(load)
           </div>
 
           <div class="detail-meta">
-            <div><span>来源用户</span><strong>{{ adminLabel(selectedMember.invitedByAdminId) }}</strong></div>
+            <div><span>来源用户</span><strong>{{ sourceUserLabel(selectedMember) }}</strong><small v-if="selectedMember.invitedByAdminDisplayName" class="muted">{{ selectedMember.invitedByAdminEmail }}</small></div>
             <div><span>来源邀请码</span><strong>{{ inviteLabel(selectedMember.inviteCodeId) }}</strong></div>
             <div><span>加入时间</span><strong>{{ formatDate(selectedMember.joinedAt) }}</strong></div>
           </div>
