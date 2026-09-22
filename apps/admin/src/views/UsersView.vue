@@ -66,7 +66,7 @@ function inviteStatus(invite: InviteSummary) {
 }
 
 function adminLabel(adminId: string) {
-  return admins.value.find((item) => item.id === adminId)?.email ?? '已移除管理员'
+  return admins.value.find((item) => item.id === adminId)?.email ?? '已移除用户'
 }
 
 function inviteLabel(inviteId: string) {
@@ -88,7 +88,7 @@ async function load() {
     admins.value = nextAdmins
     invites.value = nextInvites
   } catch (cause) {
-    error.value = cause instanceof Error ? cause.message : '用户管理加载失败。'
+    error.value = cause instanceof Error ? cause.message : '客户管理加载失败。'
   } finally {
     loading.value = false
   }
@@ -103,7 +103,7 @@ async function applyFilters() {
       inviteCodeId: filters.inviteCodeId || undefined,
     })
   } catch (cause) {
-    error.value = cause instanceof Error ? cause.message : '用户筛选失败。'
+    error.value = cause instanceof Error ? cause.message : '客户筛选失败。'
   } finally {
     loading.value = false
   }
@@ -158,7 +158,7 @@ async function revokeInvite(invite: InviteSummary) {
   try {
     await api.revokeInvite(spaceId.value, invite.id)
     invites.value = await api.listInvites(spaceId.value)
-    notice.value = '邀请码已撤销；已经加入的用户不受影响。'
+    notice.value = '邀请码已撤销；已经加入的客户不受影响。'
   } catch (cause) {
     error.value = cause instanceof Error ? cause.message : '邀请码撤销失败。'
   } finally {
@@ -172,7 +172,7 @@ async function showInviteMembers(invite: InviteSummary) {
   try {
     inviteMembers.value = await api.listInviteMembers(spaceId.value, invite.id)
   } catch (cause) {
-    error.value = cause instanceof Error ? cause.message : '来源用户加载失败。'
+    error.value = cause instanceof Error ? cause.message : '来源客户加载失败。'
   }
 }
 
@@ -194,27 +194,27 @@ onMounted(load)
   <main class="page users-page">
     <section class="page-heading page-heading--compact">
       <div>
-        <h1>用户管理</h1>
-        <p>查看用户与参与人、追踪邀请来源，并管理邀请入口。</p>
+        <h1>客户管理</h1>
+        <p>查看客户与参与人、追踪邀请来源，并管理邀请入口。</p>
       </div>
-      <button class="button button--primary" @click="startInvite">+ 邀请用户</button>
+      <button class="button button--primary" @click="startInvite">+ 邀请客户</button>
     </section>
 
     <div v-if="error" class="alert alert--error">{{ error }}</div>
     <div v-if="notice" class="alert alert--success">{{ notice }}</div>
 
-    <nav class="section-tabs compact-tabs" aria-label="用户管理子导航">
-      <button :class="{ active: activeTab === 'members' }" @click="activeTab = 'members'">用户</button>
+    <nav class="section-tabs compact-tabs" aria-label="客户管理子导航">
+      <button :class="{ active: activeTab === 'members' }" @click="activeTab = 'members'">客户</button>
       <button :class="{ active: activeTab === 'invites' }" @click="activeTab = 'invites'">邀请记录</button>
     </nav>
 
     <section v-if="activeTab === 'members'" class="panel loading-surface" :aria-busy="loading">
-      <LoadingOverlay v-if="loading" label="正在加载用户…" />
+      <LoadingOverlay v-if="loading" label="正在加载客户…" />
       <div class="filter-bar compact-filter-bar">
         <label class="field">
-          <span>来源管理员</span>
+          <span>来源用户</span>
           <select v-model="filters.invitedByAdminId">
-            <option value="">全部管理员</option>
+            <option value="">全部用户</option>
             <option v-for="admin in admins" :key="admin.id" :value="admin.id">{{ admin.email }}</option>
           </select>
         </label>
@@ -234,7 +234,7 @@ onMounted(load)
       <div class="table-wrap">
         <table>
           <thead>
-            <tr><th>用户</th><th>参与人</th><th>邀请来源</th><th>加入时间</th></tr>
+            <tr><th>客户</th><th>参与人</th><th>邀请来源</th><th>加入时间</th></tr>
           </thead>
           <tbody>
             <tr
@@ -245,7 +245,7 @@ onMounted(load)
               @click="openMember(member)"
               @keydown.enter.prevent="openMember(member)"
             >
-              <td><strong>{{ member.nickname || '未命名用户' }}</strong></td>
+              <td><strong>{{ member.nickname || '未命名客户' }}</strong></td>
               <td>{{ member.participantCount }} 个</td>
               <td>
                 <div>{{ adminLabel(member.invitedByAdminId) }}</div>
@@ -253,7 +253,7 @@ onMounted(load)
               </td>
               <td>{{ formatDate(member.joinedAt) }}</td>
             </tr>
-            <tr v-if="!loading && members.length === 0"><td colspan="4" class="empty-cell">当前条件下没有用户。</td></tr>
+            <tr v-if="!loading && members.length === 0"><td colspan="4" class="empty-cell">当前条件下没有客户。</td></tr>
           </tbody>
         </table>
       </div>
@@ -284,17 +284,17 @@ onMounted(load)
                 <span v-else class="muted">已撤销</span>
               </td>
             </tr>
-            <tr v-if="!loading && invites.length === 0"><td colspan="5" class="empty-cell">还没有邀请码。点击右上角“邀请用户”创建第一个邀请入口。</td></tr>
+            <tr v-if="!loading && invites.length === 0"><td colspan="5" class="empty-cell">还没有邀请码。点击右上角“邀请客户”创建第一个邀请入口。</td></tr>
           </tbody>
         </table>
       </div>
     </section>
 
     <div v-if="inviteModalOpen" class="modal-backdrop" @click.self="inviteModalOpen = false">
-      <form class="modal invite-modal" role="dialog" aria-modal="true" aria-label="邀请用户" @submit.prevent="createInvite">
+      <form class="modal invite-modal" role="dialog" aria-modal="true" aria-label="邀请客户" @submit.prevent="createInvite">
         <div class="modal-heading">
-          <div><h2>邀请用户</h2><p>创建一个有有效期、可多人使用的邀请入口。</p></div>
-          <button type="button" class="icon-button" aria-label="关闭邀请用户" @click="inviteModalOpen = false">×</button>
+          <div><h2>邀请客户</h2><p>创建一个有有效期、可多人使用的邀请入口。</p></div>
+          <button type="button" class="icon-button" aria-label="关闭邀请客户" @click="inviteModalOpen = false">×</button>
         </div>
         <div class="form-stack">
           <label class="field">
@@ -304,7 +304,7 @@ onMounted(load)
           <label class="field">
             <span>有效期至</span>
             <input v-model="inviteForm.expiresAt" type="datetime-local" />
-            <small>有效期内可多人使用；用户加入后会记录来源管理员与邀请码。</small>
+            <small>有效期内可多人使用；客户加入后会记录来源用户与邀请码。</small>
           </label>
           <div class="modal-actions">
             <button type="button" class="button button--ghost" @click="inviteModalOpen = false">取消</button>
@@ -315,15 +315,15 @@ onMounted(load)
     </div>
 
     <div v-if="selectedInvite" class="modal-backdrop" @click.self="selectedInvite = null">
-      <section class="modal invite-source-modal" role="dialog" aria-modal="true" aria-label="邀请来源用户">
+      <section class="modal invite-source-modal" role="dialog" aria-modal="true" aria-label="邀请来源客户">
         <div class="modal-heading">
           <div>
             <h2>{{ selectedInvite.label || selectedInvite.code }}</h2>
-            <p>通过这个邀请码加入的用户</p>
+            <p>通过这个邀请码加入的客户</p>
           </div>
-          <button class="icon-button" aria-label="关闭来源用户" @click="selectedInvite = null">×</button>
+          <button class="icon-button" aria-label="关闭来源客户" @click="selectedInvite = null">×</button>
         </div>
-        <div v-if="inviteMembers.length === 0" class="empty-state">还没有用户通过这个邀请码加入。</div>
+        <div v-if="inviteMembers.length === 0" class="empty-state">还没有客户通过这个邀请码加入。</div>
         <div v-else class="member-list modal-member-list">
           <button
             v-for="member in inviteMembers"
@@ -332,7 +332,7 @@ onMounted(load)
             @click="openMember(member)"
           >
             <div>
-              <strong>{{ member.nickname || '未命名用户' }}</strong>
+              <strong>{{ member.nickname || '未命名客户' }}</strong>
               <small>{{ member.participantCount }} 个参与人 · {{ formatDate(member.joinedAt) }} 加入</small>
             </div>
             <span class="row-chevron">›</span>
