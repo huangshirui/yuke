@@ -282,12 +282,12 @@ onMounted(load)
           </div>
         </div>
 
-        <div class="inline-form">
+        <div class="inline-form admin-user-form">
           <label class="field field--grow">
             <span>用户邮箱</span>
             <input v-model="adminEmail" type="email" autocomplete="off" placeholder="例如：operator@example.invalid" @keyup.enter="addAdmin" />
-            <small>输入邮箱即可添加；尚未登录过的邮箱也可以提前获得当前空间权限。</small>
           </label>
+          <small class="admin-user-form__help">输入邮箱即可添加；尚未登录过的邮箱也可以提前获得当前空间权限。</small>
           <button class="button button--primary" :disabled="saving" @click="addAdmin">添加用户</button>
         </div>
 
