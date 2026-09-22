@@ -278,7 +278,7 @@ function slotVisualState(slot: AdminScheduleSlot) {
 
 function slotMainLabel(slot: AdminScheduleSlot) {
   if (!slot.booking) return '空'
-  return (slot.booking.userNickname || '未命名用户') + ' · ' +
+  return (slot.booking.userNickname || '未命名客户') + ' · ' +
     (slot.booking.participantName || '未命名参与人')
 }
 
@@ -321,7 +321,7 @@ async function openSlot(slot: AdminScheduleSlot) {
 
   if (slot.booking) {
     selectedBookingSlot.value = slot
-    selectedBookingUserNickname.value = slot.booking.userNickname || '未命名用户'
+    selectedBookingUserNickname.value = slot.booking.userNickname || '未命名客户'
     detailLoading.value = true
     try {
       selectedBooking.value = await api.getBooking(spaceId.value, slot.booking.id)
@@ -742,7 +742,7 @@ onMounted(loadBase)
             </div>
 
             <div class="detail-grid">
-              <div><span>用户</span><strong>{{ selectedBookingUserNickname }}</strong></div>
+              <div><span>客户</span><strong>{{ selectedBookingUserNickname }}</strong></div>
               <div><span>参与人</span><strong>{{ selectedBooking.participant.name }}</strong></div>
               <div><span>预约对象</span><strong>{{ selectedBooking.resource.name }}</strong></div>
               <div><span>时段类型</span><strong>{{ selectedBooking.slotType.name }}</strong></div>
