@@ -27,7 +27,7 @@ function switchView(view: 'calendar' | 'list') {
     <section class="page-heading page-heading--compact operations-heading">
       <div>
         <h1>预约</h1>
-        <p>在一个工作台里查看开放时段、预约状态，并处理预约变更。</p>
+        <p>在一个工作台里查看时段、预约状态，并处理预约变更。</p>
       </div>
       <nav class="view-switch" aria-label="预约视图">
         <button :class="{ active: activeView === 'calendar' }" @click="switchView('calendar')">日历</button>
