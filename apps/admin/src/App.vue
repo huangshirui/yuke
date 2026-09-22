@@ -14,6 +14,7 @@ const admin = ref<CurrentAdmin | null>(null)
 const spaces = ref<AdminSpace[]>([])
 const fallbackSpaceId = ref('')
 const shellError = ref('')
+const accessDenied = ref(false)
 const spaceMenuOpen = ref(false)
 
 const routeSpaceId = computed(() => String(route.params.spaceId || ''))
@@ -49,6 +50,12 @@ async function loadShell() {
       rememberSpace(routeSpaceId.value)
     }
   } catch (cause) {
+    const error = cause as Error & { code?: string; statusCode?: number }
+    if (error?.code === 'SPACE_ACCESS_DENIED' || error?.statusCode === 403) {
+      accessDenied.value = true
+      window.setTimeout(logout, 400)
+      return
+    }
     shellError.value = cause instanceof Error ? cause.message : '管理后台初始化失败。'
   }
 }
@@ -61,7 +68,7 @@ async function switchSpace(spaceId: string) {
 }
 
 function logout() {
-  window.location.assign('/cdn-cgi/access/logout')
+  window.location.replace('/cdn-cgi/access/logout')
 }
 
 async function openSpaceManagement(create = false) {
@@ -89,7 +96,17 @@ onMounted(loadShell)
 </script>
 
 <template>
-  <div class="app-shell">
+  <main v-if="accessDenied" class="access-gate">
+    <section class="access-gate__card" role="status" aria-live="polite">
+      <span class="brand-logo-wrap access-gate__logo"><img src="/yu-logo.png" alt="" class="brand-logo" /></span>
+      <span class="eyebrow">Yu言在线运营后台</span>
+      <h1>此账号没有后台访问权限</h1>
+      <p>当前登录邮箱尚未被添加为后台用户。正在自动退出，请使用已授权的邮箱重新登录。</p>
+      <button class="button button--primary" type="button" @click="logout">立即退出并重新登录</button>
+    </section>
+  </main>
+
+  <div v-else class="app-shell">
     <aside class="sidebar">
       <div class="brand">
         <span class="brand-logo-wrap"><img src="/yu-logo.png" alt="" class="brand-logo" /></span>
