@@ -454,6 +454,59 @@ describe('Invite and SpaceMembership', () => {
     })
   })
 
+  it('keeps a platform Super User readable as invite source without a Space assignment', async () => {
+    const suffix = crypto.randomUUID()
+    const spaceId = `spc_super_source_${suffix}`
+    const signingKey = await createSyntheticAccessKey(`super-source-${suffix}`)
+    const superUser = await createAdminIdentity({
+      id: `adm_super_source_${suffix}`,
+      suffix: `super-source-${suffix}`,
+      signingKey,
+      platformRole: 'super_admin'
+    })
+
+    await env.DB.prepare(
+      'UPDATE admin_users SET display_name = ? WHERE id = ?'
+    ).bind('Synthetic Platform Operator', superUser.id).run()
+    await insertSpace(spaceId, 'Synthetic Super Source Space')
+
+    const assignment = await env.DB.prepare(`
+      SELECT 1 AS assigned
+      FROM space_admins
+      WHERE space_id = ? AND admin_user_id = ?
+      LIMIT 1
+    `).bind(spaceId, superUser.id).first()
+    expect(assignment).toBeNull()
+
+    const invite = await createInvite(
+      spaceId,
+      superUser.token,
+      'Synthetic Platform Source'
+    )
+    const user = await createUser(`super-source-${suffix}`)
+    const join = await userRequest('/v1/spaces/join', user.token, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ inviteCode: invite.code })
+    })
+    expect(join.status).toBe(200)
+    const membership = (await join.json()).data.membership
+
+    const list = await adminRequest(
+      `/v1/admin/spaces/${spaceId}/members`,
+      superUser.token
+    )
+    expect(list.status).toBe(200)
+    await expect(list.json()).resolves.toMatchObject({
+      data: [{
+        membershipId: membership.id,
+        invitedByAdminId: superUser.id,
+        invitedByAdminDisplayName: 'Synthetic Platform Operator',
+        invitedByAdminEmail: superUser.email
+      }]
+    })
+  })
+
   it('exposes Space-scoped Admin member list, detail, filters and private notes', async () => {
     const suffix = crypto.randomUUID()
     const spaceId = `spc_admin_members_${suffix}`
