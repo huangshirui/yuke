@@ -398,7 +398,7 @@ textarea:focus { border-color: var(--color-focus); box-shadow: var(--focus-ring)
   font: inherit;
   font-size: var(--font-size-11);
   cursor: pointer;
-  border-radius: var(--radius-6);
+  border-radius: var(--radius-8);
 }
 .account-logout:hover,
 .account-logout:focus-visible {
