@@ -327,7 +327,7 @@ onMounted(load)
         <LoadingOverlay v-if="loading || sectionLoading" label="正在加载预约对象…" />
         <div class="panel-heading">
           <div>
-            <span class="eyebrow">Resources</span>
+            <span class="eyebrow">预约对象</span>
             <h2>预约对象</h2>
             <p>预约对象停用后保留历史记录，但不能继续用于新时段和新预约。</p>
           </div>
@@ -570,7 +570,7 @@ onMounted(load)
     <div v-if="showSlotTypeForm" class="modal-backdrop" @click.self="showSlotTypeForm = false">
       <form class="modal" role="dialog" aria-modal="true" aria-label="时段类型编辑" @submit.prevent="saveSlotType">
         <div class="modal-heading">
-          <div><span class="eyebrow">Slot Type</span><h2>{{ editingSlotType ? '编辑时段类型' : '新建时段类型' }}</h2></div>
+          <div><span class="eyebrow">时段类型</span><h2>{{ editingSlotType ? '编辑时段类型' : '新建时段类型' }}</h2></div>
           <button type="button" class="icon-button" aria-label="关闭" @click="showSlotTypeForm = false">×</button>
         </div>
         <div class="form-stack">
