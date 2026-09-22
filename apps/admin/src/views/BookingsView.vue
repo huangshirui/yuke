@@ -87,7 +87,7 @@ function errorCode(cause: unknown) {
 function friendlyError(cause: unknown, fallback: string) {
   const code = errorCode(cause)
   if (code === 'SLOT_ALREADY_BOOKED') return '这个时间刚刚被预约了，请选择其他时间。'
-  if (code === 'SLOT_FROZEN') return '这个时段已冻结，请选择其他时间。'
+  if (code === 'SLOT_FROZEN') return '这个时段已暂停，请选择其他时间。'
   if (code === 'BOOKING_CUTOFF_REACHED') return '目标时段已超过最晚预约时间，请选择其他时段。'
   if (code === 'SLOT_NOT_BOOKABLE') return '目标时段当前不可预约，请刷新后重新选择。'
   return cause instanceof Error ? cause.message : fallback
