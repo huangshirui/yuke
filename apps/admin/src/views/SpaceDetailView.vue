@@ -84,13 +84,13 @@ async function load() {
       api.listInvites(spaceId.value),
     ])
     space.value = spaces.find((item) => item.id === spaceId.value) ?? null
-    if (!space.value) throw new Error('找不到这个空间。')
+    if (!space.value) throw new Error('找不到这个服务方。')
     settings.bookingCutoffMinutes = nextSettings.bookingCutoffMinutes
     settings.cancellationCutoffMinutes = nextSettings.cancellationCutoffMinutes
     admins.value = nextAdmins
     invites.value = nextInvites
   } catch (cause) {
-    error.value = cause instanceof Error ? cause.message : '空间加载失败。'
+    error.value = cause instanceof Error ? cause.message : '服务方加载失败。'
   } finally {
     loading.value = false
   }
@@ -121,7 +121,7 @@ async function toggleSpaceStatus() {
       space.value.id,
       space.value.status === 'active' ? 'disabled' : 'active',
     )
-    notice.value = space.value.status === 'active' ? '空间已启用。' : '空间已停用。'
+    notice.value = space.value.status === 'active' ? '服务方已启用。' : '服务方已停用。'
   } catch (cause) {
     error.value = cause instanceof Error ? cause.message : '状态更新失败。'
   } finally {
@@ -147,7 +147,7 @@ async function addAdmin() {
     admins.value = await api.listAdmins(spaceId.value)
     adminDisplayName.value = ''
     adminEmail.value = ''
-    notice.value = '用户已添加，可访问当前空间。'
+    notice.value = '用户已添加，可访问当前服务方。'
   } catch (cause) {
     error.value = cause instanceof Error ? cause.message : '用户添加失败。'
   } finally {
@@ -269,10 +269,10 @@ onMounted(load)
           <h1>{{ section === 'admins' ? '用户管理' : section === 'invites' ? '邀请客户' : '规则设置' }}</h1>
           <p>
             {{ section === 'admins'
-              ? '管理可访问当前空间的用户。'
+              ? '管理可访问当前服务方的用户。'
               : section === 'invites'
-                ? '管理客户加入当前空间的邀请入口。'
-                : '配置当前空间的预约与取消规则。' }}
+                ? '管理客户加入当前服务方的邀请入口。'
+                : '配置当前服务方的预约与取消规则。' }}
           </p>
         </div>
         <span v-if="space" class="page-context">{{ space.name }}</span>
@@ -314,7 +314,7 @@ onMounted(load)
         <div class="panel-heading">
           <div>
             <span class="eyebrow">访问权限</span>
-            <h2>空间用户</h2>
+            <h2>服务方用户</h2>
             <p>使用名称识别用户，邮箱用于登录与账号匹配。</p>
           </div>
         </div>
@@ -328,7 +328,7 @@ onMounted(load)
             <span>登录邮箱</span>
             <input v-model="adminEmail" type="email" autocomplete="off" placeholder="例如：operator@example.invalid" @keyup.enter="addAdmin" />
           </label>
-          <small class="admin-user-form__help">名称用于后台主要展示；邮箱用于登录匹配。尚未登录过的邮箱也可以提前获得当前空间权限。</small>
+          <small class="admin-user-form__help">名称用于后台主要展示；邮箱用于登录匹配。尚未登录过的邮箱也可以提前获得当前服务方权限。</small>
           <button class="button button--primary" :disabled="saving" @click="addAdmin">添加用户</button>
         </div>
 
@@ -341,14 +341,14 @@ onMounted(load)
                   <strong>{{ admin.displayName || admin.email }}</strong>
                   <small v-if="admin.displayName" class="muted identity-email">{{ admin.email }}</small>
                 </td>
-                <td>{{ admin.platformRole === 'super_admin' ? '超级用户' : '空间用户' }}</td>
+                <td>{{ admin.platformRole === 'super_admin' ? '超级用户' : '服务方用户' }}</td>
                 <td>{{ admin.status === 'active' ? '启用' : '停用' }}</td>
                 <td class="align-right user-actions">
                   <button class="button button--ghost" :disabled="saving" @click="editAdminName(admin)">修改名称</button>
                   <button class="button button--danger-ghost" :disabled="saving" @click="removeAdmin(admin)">移除</button>
                 </td>
               </tr>
-              <tr v-if="!loading && admins.length === 0"><td colspan="4" class="empty-cell">当前没有空间用户。</td></tr>
+              <tr v-if="!loading && admins.length === 0"><td colspan="4" class="empty-cell">当前没有服务方用户。</td></tr>
             </tbody>
           </table>
         </div>
@@ -430,7 +430,7 @@ onMounted(load)
           <div v-if="inviteMembers.length === 0" class="empty-state">还没有客户通过这个邀请码加入。</div>
           <div v-else class="member-list">
             <article v-for="member in inviteMembers" :key="member.membershipId" class="member-card">
-              <div><strong>{{ member.nickname }}</strong><small>{{ member.participantCount }} 个参与人 · {{ formatDate(member.joinedAt) }} 加入</small></div>
+              <div><strong>{{ member.nickname }}</strong><small>{{ member.participantCount }} 个预约人 · {{ formatDate(member.joinedAt) }} 加入</small></div>
             </article>
           </div>
         </aside>

@@ -90,7 +90,7 @@ async function load() {
   try {
     const spaces = await api.listSpaces()
     space.value = spaces.find((item) => item.id === spaceId.value) ?? null
-    if (!space.value) throw new Error('找不到这个空间。')
+    if (!space.value) throw new Error('找不到这个服务方。')
 
     const from = addDays(today.value, -6)
     const to = addDays(today.value, 6)
@@ -135,7 +135,7 @@ onMounted(load)
       <LoadingOverlay v-if="loading" label="正在加载运营概览…" />
       <section class="overview-metrics">
         <article class="overview-metric"><span>今日预约</span><strong>{{ todayBookings.length }}</strong><small>当前有效预约</small></article>
-        <article class="overview-metric"><span>注册客户</span><strong>{{ activeMembers.length }}</strong><small>当前空间客户</small></article>
+        <article class="overview-metric"><span>注册客户</span><strong>{{ activeMembers.length }}</strong><small>当前服务方客户</small></article>
         <article class="overview-metric"><span>未来 7 天预约</span><strong>{{ weekBookings.length }}</strong><small>不含已取消</small></article>
         <article class="overview-metric"><span>可预约时段</span><strong>{{ activeSlots.length }}</strong><small>未来 7 天</small></article>
       </section>
@@ -179,9 +179,9 @@ onMounted(load)
         <article class="panel overview-card">
           <div class="overview-card-heading"><h2>常用操作</h2></div>
           <div class="quick-actions">
-            <button @click="router.push(spacePath(spaceId, 'reservations'))"><strong>新建开放时间</strong><small>设置可预约时段</small></button>
+            <button @click="router.push(spacePath(spaceId, 'reservations'))"><strong>新建时段</strong><small>设置可预约时段</small></button>
             <button @click="router.push(spacePath(spaceId, 'users'))"><strong>邀请客户</strong><small>生成或管理邀请码</small></button>
-            <button @click="router.push(spacePath(spaceId, 'resources'))"><strong>添加预约对象</strong><small>维护预约资源</small></button>
+            <button @click="router.push(spacePath(spaceId, 'resources'))"><strong>添加预约项目</strong><small>维护预约项目</small></button>
             <button @click="router.push(spacePath(spaceId, 'settings'))"><strong>规则设置</strong><small>预约与取消规则</small></button>
           </div>
         </article>
@@ -190,8 +190,8 @@ onMounted(load)
           <div class="overview-card-heading"><h2>待处理事项</h2></div>
           <div class="task-list">
             <div><strong>{{ todayBookings.length }}</strong><span>个今日有效预约需要关注</span></div>
-            <div><strong>{{ activeSlots.length }}</strong><span>个未来 7 天开放时段可预约</span></div>
-            <div><strong>{{ resources.filter((item) => item.status === 'active').length }}</strong><span>个预约对象正在启用</span></div>
+            <div><strong>{{ activeSlots.length }}</strong><span>个未来 7 天时段可预约</span></div>
+            <div><strong>{{ resources.filter((item) => item.status === 'active').length }}</strong><span>个预约项目正在启用</span></div>
           </div>
         </article>
 
@@ -204,7 +204,7 @@ onMounted(load)
           <div v-for="member in latestMembers" :key="member.membershipId" class="latest-user-row">
             <span class="user-avatar">{{ member.nickname.slice(0, 1) || 'U' }}</span>
             <strong>{{ member.nickname || '未命名客户' }}</strong>
-            <small>{{ member.participantCount }} 个参与人</small>
+            <small>{{ member.participantCount }} 个预约人</small>
           </div>
         </article>
       </section>

@@ -28,6 +28,33 @@ test('web admin exposes product terms instead of implementation terms', () => {
   assert.match(customerDetail, /invitedByAdminDisplayName/)
 })
 
+
+test('web admin customer-facing business terms align across operational templates', () => {
+  const pages = [
+    'src/App.vue',
+    'src/views/BookingsView.vue',
+    'src/views/EntryView.vue',
+    'src/views/OverviewView.vue',
+    'src/views/ReservationsView.vue',
+    'src/views/ScheduleView.vue',
+    'src/views/SpaceDetailView.vue',
+    'src/views/SpaceOperationsView.vue',
+    'src/views/SpacesView.vue',
+    'src/views/UserDetailView.vue',
+    'src/views/UsersView.vue',
+  ]
+
+  for (const path of pages) {
+    const template = source(path).split('<template>')[1] || ''
+    assert.doesNotMatch(template, /空间|预约对象|参与人|管理员|已冻结|冻结时段|解冻时段|开放时段|开放时间|排期/, path)
+  }
+
+  assert.match(source('src/App.vue'), />预约项目<\/span>/)
+  assert.match(source('src/views/BookingsView.vue'), />预约人<\/span>/)
+  assert.match(source('src/views/SpacesView.vue'), /服务方管理/)
+  assert.match(source('src/views/ScheduleView.vue'), />时段类型</)
+})
+
 test('operational pages do not render internal ids', () => {
   const pages = [
     'src/views/SpaceDetailView.vue',
@@ -59,7 +86,7 @@ test('current space is the sidebar identity and switcher', () => {
   assert.match(app, /const spaceInitial = computed/)
   assert.match(app, /class="space-switcher space-switcher--brand"/)
   assert.match(app, /class="space-brand-mark"[^>]*>\{\{ spaceInitial \}\}/)
-  assert.match(app, /<strong>\{\{ currentSpace\?\.name \|\| '选择空间' \}\}<\/strong>/)
+  assert.match(app, /<strong>\{\{ currentSpace\?\.name \|\| '选择服务方' \}\}<\/strong>/)
   assert.match(app, /<small>运营后台<\/small>/)
   assert.doesNotMatch(app, /<strong>Yu言在线<\/strong>/)
 

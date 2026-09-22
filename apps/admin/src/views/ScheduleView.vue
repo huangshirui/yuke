@@ -195,7 +195,7 @@ async function loadBase() {
     mobileDate.value = today
     await loadSlots()
   } catch (cause) {
-    showError(cause, '排期加载失败。')
+    showError(cause, '时段加载失败。')
   } finally {
     loading.value = false
   }
@@ -266,7 +266,7 @@ function bookingStateLabel(slot: AdminScheduleSlot) {
       parts.push(slot.booking.reconciliationStatus === 'settled' ? '已对账' : '待对账')
     }
   }
-  if (slot.status === 'frozen') parts.push('已冻结')
+  if (slot.status === 'frozen') parts.push('已暂停')
   return parts.join(' · ')
 }
 
@@ -276,26 +276,35 @@ function slotVisualState(slot: AdminScheduleSlot) {
   return slot.booking.reconciliationStatus === 'settled' ? 'settled' : 'pending'
 }
 
+function slotAvailabilityLabel(slot: AdminScheduleSlot) {
+  if (slot.status === 'frozen') return '已暂停'
+  return slot.bookable ? '可预约' : '暂不可预约'
+}
+
 function slotMainLabel(slot: AdminScheduleSlot) {
-  if (!slot.booking) return '空'
-  return (slot.booking.userNickname || '未命名客户') + ' · ' +
-    (slot.booking.participantName || '未命名参与人')
+  if (!slot.booking) return slotTypeName(slot)
+  return slot.booking.participantName || '未命名预约人'
 }
 
 function slotSecondaryLabel(slot: AdminScheduleSlot) {
-  if (slot.booking) return bookingStateLabel(slot)
-  const parts = [slot.status === 'frozen' ? '已冻结' : (!slot.bookable ? '状态同步中' : '可预约')]
-  parts.push(slotTypeName(slot))
-  return parts.join(' · ')
+  if (!slot.booking) return slotAvailabilityLabel(slot)
+  if (slot.booking.status === 'booked') return ''
+  if (slot.booking.reconciliationStatus === 'settled') return '已对账'
+  if (slot.booking.reconciliationStatus === 'pending') return '待对账'
+  return '已完成'
+}
+
+function slotHoverLabel(slot: AdminScheduleSlot) {
+  const time = slotLocalTime(slot.startAt) + '–' + slotLocalTime(slot.endAt)
+  if (!slot.booking) return time + ' · ' + slotAvailabilityLabel(slot)
+  const customer = slot.booking.userNickname || '未命名客户'
+  const participant = slot.booking.participantName || '未命名预约人'
+  const state = slotSecondaryLabel(slot)
+  return time + ' · 客户：' + customer + ' · 预约人：' + participant + (state ? ' · ' + state : '')
 }
 
 function slotCompactStateLabel(slot: AdminScheduleSlot) {
-  if (!slot.booking) {
-    if (slot.status === 'frozen') return '已冻结'
-    if (!slot.bookable) return '同步中'
-    return ''
-  }
-  if (slot.booking.status === 'booked') return '已预约'
+  if (!slot.booking || slot.booking.status === 'booked') return ''
   if (slot.booking.reconciliationStatus === 'settled') return '已对账'
   if (slot.booking.reconciliationStatus === 'pending') return '待对账'
   return '已完成'
@@ -331,11 +340,6 @@ async function openSlot(slot: AdminScheduleSlot) {
     } finally {
       detailLoading.value = false
     }
-    return
-  }
-
-  if (!slot.bookable && slot.status === 'open') {
-    error.value = '这个时段当前不可预约，状态正在同步，请稍后刷新。'
     return
   }
 
@@ -404,7 +408,7 @@ function toggleWeekday(day: number) {
 async function saveSlot() {
   clearFeedback()
   if (!selectedResourceId.value || !form.slotTypeId) {
-    error.value = '请选择预约对象和时段类型。'
+    error.value = '请选择预约项目和时段类型。'
     return
   }
   if (form.endTime <= form.startTime) {
@@ -439,7 +443,7 @@ async function saveSlot() {
         startsOn: form.date,
         endsOn: form.endsOn || null
       })
-      notice.value = '周期开放规则已创建。'
+      notice.value = '周期时段规则已创建。'
     } else {
       await api.createScheduleSlot(spaceId.value, {
         resourceId: selectedResourceId.value,
@@ -447,7 +451,7 @@ async function saveSlot() {
         startAt: dateTimeLocal(form.date, form.startTime),
         endAt: dateTimeLocal(form.date, form.endTime)
       })
-      notice.value = '开放时段已创建。'
+      notice.value = '时段已创建。'
     }
     formOpen.value = false
     await loadSlots()
@@ -466,7 +470,7 @@ async function toggleFrozen(slot: AdminScheduleSlot) {
     editingSlot.value = null
     selectedSlot.value = null
     await loadSlots()
-    notice.value = slot.status === 'frozen' ? '时段已解冻。' : '时段已冻结；已有预约仍保留。'
+    notice.value = slot.status === 'frozen' ? '时段已恢复。' : '时段已暂停；已有预约仍保留。'
   } catch (cause) {
     showError(cause, '时段状态更新失败。')
   } finally {
@@ -557,8 +561,8 @@ onMounted(loadBase)
   >
       <section v-if="!props.embedded" class="page-heading page-heading--compact">
         <div>
-          <div class="title-line"><h1>开放时间</h1></div>
-          <p>按周配置预约对象的单次或周期开放时段。拖选以 30 分钟为网格，也可以在表单中输入精确时间。</p>
+          <div class="title-line"><h1>时段</h1></div>
+          <p>按周配置预约项目的单次或周期时段。拖选以 30 分钟为网格，也可以在表单中输入精确时间。</p>
         </div>
         <button class="button button--primary" :disabled="!selectedResourceId" @click="openCreate()">+ 新建时段</button>
       </section>
@@ -568,9 +572,9 @@ onMounted(loadBase)
 
       <section class="schedule-toolbar">
         <label class="compact-field">
-          <span>预约对象</span>
+          <span>预约项目</span>
           <select v-model="selectedResourceId" :disabled="loading && !resources.length">
-            <option v-if="loading && !resources.length" value="" disabled>正在加载预约对象…</option>
+            <option v-if="loading && !resources.length" value="" disabled>正在加载预约项目…</option>
             <option v-for="resource in resources" :key="resource.id" :value="resource.id">{{ resource.name }}</option>
           </select>
         </label>
@@ -583,10 +587,10 @@ onMounted(loadBase)
         <button class="button button--primary" :disabled="!selectedResourceId" @click="openCreate()">+ 新建时段</button>
       </section>
 
-      <section v-if="!loading && !resources.length" class="panel empty-state">还没有启用中的预约对象，请先创建或启用预约对象。</section>
+      <section v-if="!loading && !resources.length" class="panel empty-state">还没有启用中的预约项目，请先创建或启用预约项目。</section>
 
       <section v-else class="panel schedule-panel desktop-schedule loading-surface" :aria-busy="loading || slotsLoading">
-        <LoadingOverlay v-if="loading || slotsLoading" label="正在加载排期…" />
+        <LoadingOverlay v-if="loading || slotsLoading" label="正在加载时段…" />
         <div class="week-head">
           <div class="time-gutter"></div>
           <div v-for="day in weekDays" :key="day.date" class="day-head">
@@ -618,12 +622,15 @@ onMounted(loadBase)
                 v-for="slot in slotsFor(day.date)"
                 :key="slot.id"
                 class="slot-card"
-                :class="['slot-card--' + slotVisualState(slot), { 'slot-card--frozen': slot.status === 'frozen' }]"
+                :class="['slot-card--' + slotVisualState(slot), {
+                  'slot-card--frozen': slot.status === 'frozen',
+                  'slot-card--unavailable': !slot.booking && slot.status === 'open' && !slot.bookable
+                }]"
                 :style="slotStyle(slot)"
                 role="button"
                 tabindex="0"
-                :aria-label="slotLocalTime(slot.startAt) + ' 到 ' + slotLocalTime(slot.endAt) + '，' + slotMainLabel(slot) + '，' + slotSecondaryLabel(slot)"
-                :title="slotLocalTime(slot.startAt) + '–' + slotLocalTime(slot.endAt) + ' · ' + slotSecondaryLabel(slot)"
+                :aria-label="slotHoverLabel(slot)"
+                :title="slotHoverLabel(slot)"
                 @click.stop="openSlot(slot)"
                 @keydown.enter.prevent="openSlot(slot)"
               >
@@ -636,7 +643,7 @@ onMounted(loadBase)
       </section>
 
       <section v-if="loading || resources.length" class="mobile-agenda loading-surface" :aria-busy="loading || slotsLoading">
-        <LoadingOverlay v-if="loading || slotsLoading" label="正在加载排期…" />
+        <LoadingOverlay v-if="loading || slotsLoading" label="正在加载时段…" />
         <div class="mobile-day-nav">
           <button class="button button--ghost icon-nav icon-nav--previous" aria-label="前一天" @click="changeMobileDay(-1)"><AppIcon name="chevron" /></button>
           <div>
@@ -650,18 +657,21 @@ onMounted(loadBase)
             v-for="slot in slotsFor(mobileDay?.date || mobileDate)"
             :key="slot.id"
             class="agenda-slot"
-            :class="['agenda-slot--' + slotVisualState(slot), { 'agenda-slot--frozen': slot.status === 'frozen' }]"
+            :class="['agenda-slot--' + slotVisualState(slot), {
+              'agenda-slot--frozen': slot.status === 'frozen',
+              'agenda-slot--unavailable': !slot.booking && slot.status === 'open' && !slot.bookable
+            }]"
             @click="openSlot(slot)"
           >
             <span class="agenda-time">{{ slotLocalTime(slot.startAt) }}–{{ slotLocalTime(slot.endAt) }}</span>
             <span class="agenda-main">
               <strong>{{ slotMainLabel(slot) }}</strong>
-              <small class="agenda-state">{{ slotSecondaryLabel(slot) }}</small>
+              <small v-if="slotSecondaryLabel(slot)" class="agenda-state">{{ slotSecondaryLabel(slot) }}</small>
             </span>
             <span class="row-chevron">›</span>
           </button>
           <div v-if="slotsFor(mobileDay?.date || mobileDate).length === 0" class="empty-state compact">
-            当天没有开放时段。
+            当天没有时段。
           </div>
         </div>
       </section>
@@ -678,15 +688,15 @@ onMounted(loadBase)
           </div>
 
           <div class="detail-hero">
-            <strong>{{ selectedSlot.booking ? slotMainLabel(selectedSlot) : '空' }}</strong>
-            <span>{{ selectedSlot.booking ? bookingStateLabel(selectedSlot) : (selectedSlot.status === 'frozen' ? '已冻结' : selectedSlot.bookable ? '可预约' : '暂不可预约') }}</span>
+            <strong>{{ slotMainLabel(selectedSlot) }}</strong>
+            <span>{{ selectedSlot.booking ? bookingStateLabel(selectedSlot) : slotAvailabilityLabel(selectedSlot) }}</span>
           </div>
 
           <div class="detail-grid">
-            <div><span>预约对象</span><strong>{{ selectedResource?.name || '—' }}</strong></div>
+            <div><span>预约项目</span><strong>{{ selectedResource?.name || '—' }}</strong></div>
             <div><span>时段类型</span><strong>{{ slotTypeName(selectedSlot) }}</strong></div>
             <div><span>时段形式</span><strong>{{ selectedSlot.seriesId ? '周期时段' : '单次时段' }}</strong></div>
-            <div><span>时段状态</span><strong>{{ selectedSlot.status === 'frozen' ? '已冻结' : '开放中' }}</strong></div>
+            <div><span>状态</span><strong>{{ slotAvailabilityLabel(selectedSlot) }}</strong></div>
           </div>
 
           <div v-if="selectedSlot.booking" class="detail-note">这个时段已有预约。预约处理请回到预约详情进行。</div>
@@ -709,7 +719,7 @@ onMounted(loadBase)
               class="button button--ghost"
               :disabled="saving"
               @click="toggleFrozen(selectedSlot)"
-            >{{ selectedSlot.status === 'frozen' ? '解冻时段' : '冻结时段' }}</button>
+            >{{ selectedSlot.status === 'frozen' ? '恢复时段' : '暂停时段' }}</button>
             <button
               v-if="!selectedSlot.booking"
               class="button button--danger-ghost"
@@ -743,8 +753,8 @@ onMounted(loadBase)
 
             <div class="detail-grid">
               <div><span>客户</span><strong>{{ selectedBookingUserNickname }}</strong></div>
-              <div><span>参与人</span><strong>{{ selectedBooking.participant.name }}</strong></div>
-              <div><span>预约对象</span><strong>{{ selectedBooking.resource.name }}</strong></div>
+              <div><span>预约人</span><strong>{{ selectedBooking.participant.name }}</strong></div>
+              <div><span>预约项目</span><strong>{{ selectedBooking.resource.name }}</strong></div>
               <div><span>时段类型</span><strong>{{ selectedBooking.slotType.name }}</strong></div>
               <div><span>服务状态</span><strong>{{ bookingStatusLabel(selectedBooking) }}</strong></div>
               <div v-if="selectedBooking.status === 'completed'"><span>对账状态</span><strong>{{ bookingReconciliationLabel(selectedBooking) }}</strong></div>
@@ -781,18 +791,18 @@ onMounted(loadBase)
       <div v-if="formOpen" class="modal-backdrop" @click.self="formOpen = false">
         <section class="modal-card" role="dialog" aria-modal="true" aria-label="时段编辑">
           <div class="panel-heading">
-            <div><span class="eyebrow">排期</span><h2>{{ editingSlot ? '编辑时段' : '新建开放时段' }}</h2></div>
+            <div><span class="eyebrow">时段</span><h2>{{ editingSlot ? '编辑时段' : '新建时段' }}</h2></div>
             <button class="button button--ghost" @click="formOpen = false">关闭</button>
           </div>
 
           <div v-if="editingSlot" class="slot-detail-meta">
             <span>{{ editingSlot.seriesId ? '周期时段' : '单次时段' }}</span>
-            <span>{{ editingSlot.status === 'frozen' ? '已冻结' : '开放中' }}</span>
+            <span>{{ editingSlot.status === 'frozen' ? '已暂停' : '可预约' }}</span>
             <span>{{ slotTypeName(editingSlot) }}</span>
           </div>
 
           <div class="field-grid schedule-form">
-            <label v-if="!editingSlot" class="field"><span>开放方式</span>
+            <label v-if="!editingSlot" class="field"><span>时段方式</span>
               <select v-model="form.mode"><option value="single">仅本次</option><option value="weekly">每周重复</option></select>
             </label>
             <label v-if="editingSlot && editingSlot.seriesId" class="field"><span>作用范围</span>
@@ -824,7 +834,7 @@ onMounted(loadBase)
               class="button button--ghost"
               :disabled="saving"
               @click="toggleFrozen(editingSlot)"
-            >{{ editingSlot.status === 'frozen' ? '解冻时段' : '冻结时段' }}</button>
+            >{{ editingSlot.status === 'frozen' ? '恢复时段' : '暂停时段' }}</button>
             <button
               v-if="editingSlot && !editingSlot.booking"
               class="button button--danger-ghost"
@@ -845,9 +855,9 @@ onMounted(loadBase)
 .schedule-toolbar{min-height:58px;display:grid;grid-template-columns:minmax(210px,280px) 1fr auto;align-items:center;gap: var(--space-14);margin-bottom: var(--space-12);padding: var(--space-8) var(--space-10);border:var(--border-width) solid var(--color-border);border-radius:var(--radius-12);background:var(--color-white)}
 .compact-field{display:flex;align-items:center;gap: var(--space-9);min-width:0}.compact-field>span{font-size:var(--font-size-12);font-weight:700;color:var(--color-text-secondary);white-space:nowrap}.compact-field select{min-width:0;width:100%;height:var(--control-height-md)}
 .week-nav{display:flex;align-items:center;justify-content:center;gap: var(--space-6)}.week-nav strong{min-width:88px;text-align:center;font-size:var(--font-size-13)}.week-nav>.button:first-child{min-height:var(--control-size-icon-nav);padding-inline:var(--space-12)}.icon-nav{width:var(--control-size-icon-nav);min-width:var(--control-size-icon-nav);height:var(--control-size-icon-nav);min-height:var(--control-size-icon-nav);padding:0;display:grid;place-items:center}.icon-nav :deep(.app-icon){width:var(--icon-size-nav-chevron);height:var(--icon-size-nav-chevron)}.icon-nav--previous :deep(.app-icon){transform:rotate(180deg)}
-.schedule-panel{overflow:auto;padding: 0}.week-head,.schedule-body{display:grid;grid-template-columns:58px repeat(7,minmax(116px,1fr));min-width:890px}.time-gutter,.day-head{height:50px;border-bottom:var(--border-width) solid var(--color-border)}.day-head{display:grid;align-content:center;gap: var(--space-2);padding: 0 var(--space-10);border-left:var(--border-width) solid var(--color-border)}.day-head strong{font-size:var(--font-size-13)}.day-head span{color:var(--color-text-secondary);font-size:var(--font-size-11)}.schedule-body{align-items:start}.time-column{display:grid;position:relative}.time-label{height:var(--schedule-row-height);padding: var(--space-6) var(--space-7);color:var(--color-text-secondary);font-size:var(--font-size-10);border-bottom:var(--border-width) solid var(--color-border)}.time-boundary-label{position:absolute;right:var(--space-7);bottom:0;transform:translateY(50%);z-index:1;padding-left:var(--space-4);background:var(--color-white);color:var(--color-text-secondary);font-size:var(--font-size-10)}.day-column{position:relative;border-left:var(--border-width) solid var(--color-border);min-height:var(--schedule-grid-height)}.time-cell{display:block;width:100%;height:var(--schedule-row-height);border:0;border-bottom:var(--border-width) solid var(--color-border);background:transparent;padding: 0;cursor:crosshair}.time-cell:hover,.time-cell--selected{background:var(--color-primary-soft)}.day-slots{position:absolute;inset:0;pointer-events:none}.slot-card{position:absolute;left:4px;right:4px;pointer-events:auto;border:var(--border-width) solid var(--color-slot-border);border-left:var(--border-width-strong) solid var(--color-primary);border-radius:var(--radius-7);background:var(--color-white);padding: var(--space-4) var(--space-6);text-align:left;display:flex;align-items:center;gap: var(--space-5);box-shadow:var(--shadow-slot);overflow:hidden;cursor:pointer}.slot-card strong{font-size:var(--font-size-12);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.slot-card small{font-size:var(--font-size-9);line-height:1.2}.slot-main-line{min-width:0;flex:1;color:var(--color-text-primary)}.slot-compact-state{flex:0 0 auto;white-space:nowrap;color:var(--color-text-secondary)}.slot-card--empty{background:var(--color-white)}.slot-card--booked{background:var(--color-status-booked-bg);border-color:var(--color-slot-border);border-left-color:var(--color-status-booked-text)}.slot-card--pending{background:var(--color-status-pending-bg);border-color:var(--color-status-pending-text);border-left-color:var(--color-status-pending-text)}.slot-card--settled{background:var(--color-status-settled-bg);border-color:var(--color-status-settled-text);border-left-color:var(--color-status-settled-text)}.slot-card--frozen{border-color:var(--color-slot-frozen-border);border-left-color:var(--color-slot-frozen-accent);border-style:dashed}.slot-card--empty.slot-card--frozen{background:var(--color-slot-frozen-bg)}
+.schedule-panel{overflow:auto;padding: 0}.week-head,.schedule-body{display:grid;grid-template-columns:58px repeat(7,minmax(116px,1fr));min-width:890px}.time-gutter,.day-head{height:50px;border-bottom:var(--border-width) solid var(--color-border)}.day-head{display:grid;align-content:center;gap: var(--space-2);padding: 0 var(--space-10);border-left:var(--border-width) solid var(--color-border)}.day-head strong{font-size:var(--font-size-13)}.day-head span{color:var(--color-text-secondary);font-size:var(--font-size-11)}.schedule-body{align-items:start}.time-column{display:grid;position:relative}.time-label{height:var(--schedule-row-height);padding: var(--space-6) var(--space-7);color:var(--color-text-secondary);font-size:var(--font-size-10);border-bottom:var(--border-width) solid var(--color-border)}.time-boundary-label{position:absolute;right:var(--space-7);bottom:0;transform:translateY(50%);z-index:1;padding-left:var(--space-4);background:var(--color-white);color:var(--color-text-secondary);font-size:var(--font-size-10)}.day-column{position:relative;border-left:var(--border-width) solid var(--color-border);min-height:var(--schedule-grid-height)}.time-cell{display:block;width:100%;height:var(--schedule-row-height);border:0;border-bottom:var(--border-width) solid var(--color-border);background:transparent;padding: 0;cursor:crosshair}.time-cell:hover,.time-cell--selected{background:var(--color-primary-soft)}.day-slots{position:absolute;inset:0;pointer-events:none}.slot-card{position:absolute;left:4px;right:4px;pointer-events:auto;border:var(--border-width) solid var(--color-slot-border);border-left:var(--border-width-strong) solid var(--color-primary);border-radius:var(--radius-7);background:var(--color-white);padding: var(--space-4) var(--space-6);text-align:left;display:flex;align-items:center;gap: var(--space-5);box-shadow:var(--shadow-slot);overflow:hidden;cursor:pointer}.slot-card strong{font-size:var(--font-size-12);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.slot-card small{font-size:var(--font-size-9);line-height:1.2}.slot-main-line{min-width:0;flex:1;color:var(--color-text-primary)}.slot-compact-state{flex:0 0 auto;white-space:nowrap;color:var(--color-text-secondary)}.slot-card--empty{background:var(--color-white)}.slot-card--booked{background:var(--color-status-booked-bg);border-color:var(--color-slot-border);border-left-color:var(--color-status-booked-text)}.slot-card--pending{background:var(--color-status-pending-bg);border-color:var(--color-status-pending-text);border-left-color:var(--color-status-pending-text)}.slot-card--settled{background:var(--color-status-settled-bg);border-color:var(--color-status-settled-text);border-left-color:var(--color-status-settled-text)}.slot-card--frozen{border-color:var(--color-slot-frozen-border);border-left-color:var(--color-slot-frozen-accent);border-style:dashed}.slot-card--empty.slot-card--frozen{background:var(--color-slot-frozen-bg)}.slot-card--unavailable .slot-main-line{color:var(--color-text-secondary)}
 .mobile-agenda{display:none}
 .modal-backdrop{position:fixed;inset:0;background:var(--color-overlay-soft);display:grid;place-items:center;padding: var(--space-24);z-index:20}.modal-card{width:min(720px,100%);max-height:90vh;overflow:auto;background:var(--color-white);border-radius:var(--radius-16);padding: var(--space-20);box-shadow:var(--shadow-schedule-modal)}.detail-backdrop{display:flex;justify-content:flex-end;align-items:stretch;padding:0}.detail-drawer{position:relative;width:min(440px,100%);height:100%;overflow:auto;background:var(--color-white);padding:var(--space-20);box-shadow:var(--shadow-schedule-modal)}.detail-heading{align-items:flex-start}.detail-heading p{margin:var(--space-4) 0 0;color:var(--color-text-secondary);font-size:var(--font-size-12)}.detail-hero{display:grid;gap:var(--space-4);margin:var(--space-14) 0;padding:var(--space-14);border:var(--border-width) solid var(--color-border);border-radius:var(--radius-12);background:var(--color-surface-subtle)}.detail-hero strong{font-size:var(--font-size-16)}.detail-hero span{font-size:var(--font-size-12);color:var(--color-text-secondary)}.detail-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:var(--space-10)}.detail-grid>div{display:grid;gap:var(--space-4);padding:var(--space-10);border:var(--border-width) solid var(--color-border-subtle);border-radius:var(--radius-10)}.detail-grid span{font-size:var(--font-size-11);color:var(--color-text-secondary)}.detail-grid strong{font-size:var(--font-size-13);overflow-wrap:anywhere}.detail-note{margin-top:var(--space-12);padding:var(--space-10);border-radius:var(--radius-10);background:var(--color-surface-muted);color:var(--color-text-secondary);font-size:var(--font-size-12)}.detail-link-row{display:flex;margin-top:var(--space-12)}.detail-actions{padding-top:var(--space-12);border-top:var(--border-width) solid var(--color-border-subtle)}.schedule-form{margin-top: var(--space-12)}.slot-detail-meta{display:flex;gap: var(--space-8);flex-wrap:wrap;margin: var(--space-10) 0 var(--space-4)}.slot-detail-meta span{padding: var(--space-4) var(--space-8);border-radius:var(--radius-pill);background:var(--color-neutral-pill);color:var(--color-text-secondary);font-size:var(--font-size-11)}.repeat-panel{margin-top: var(--space-14);padding: var(--space-14);border:var(--border-width) solid var(--color-border);border-radius:var(--radius-10);display:grid;gap: var(--space-12)}.field-label{font-size:var(--font-size-12);font-weight:600}.weekday-picker{display:flex;gap: var(--space-6);flex-wrap:wrap}.weekday-button{border:var(--border-width) solid var(--color-border);background:var(--color-white);border-radius:var(--radius-pill);padding: var(--space-6) var(--space-10);cursor:pointer;font-size:var(--font-size-12)}.weekday-button.active{background:var(--color-primary-soft);border-color:var(--color-primary);color:var(--color-primary)}.modal-actions{display:flex;justify-content:flex-end;align-items:center;gap: var(--space-8);margin-top: var(--space-16)}.modal-actions-spacer{flex:1}
-@media(max-width:820px){.week-nav>.button:first-child{min-height:var(--control-size-icon-nav-touch)}.week-nav .icon-nav,.mobile-day-nav .icon-nav{width:var(--control-size-icon-nav-touch);min-width:var(--control-size-icon-nav-touch);height:var(--control-size-icon-nav-touch);min-height:var(--control-size-icon-nav-touch)}.schedule-toolbar{grid-template-columns:1fr auto;gap: var(--space-8)}.schedule-toolbar>.button--primary{grid-column:2;grid-row:1}.week-nav{grid-column:1 / -1;justify-content:space-between;border-top:var(--border-width) solid var(--color-border);padding-top: var(--space-8)}.desktop-schedule{display:none}.mobile-agenda{display:block;border:var(--border-width) solid var(--color-border);border-radius:var(--radius-12);background:var(--color-white);overflow:hidden}.mobile-day-nav{min-height:52px;display:grid;grid-template-columns:40px 1fr 40px;align-items:center;border-bottom:var(--border-width) solid var(--color-border);padding: var(--space-4) var(--space-8)}.mobile-day-nav>div{display:flex;align-items:center;justify-content:center;gap: var(--space-8)}.mobile-day-nav strong{font-size:var(--font-size-14)}.mobile-day-nav span{font-size:var(--font-size-12);color:var(--color-text-secondary)}.agenda-list{display:grid}.agenda-slot{min-height:60px;border:0;border-bottom:var(--border-width) solid var(--color-border);background:var(--color-white);padding: var(--space-9) var(--space-12);display:grid;grid-template-columns:92px minmax(0,1fr) 16px;align-items:center;gap: var(--space-10);text-align:left;color:var(--color-text-primary)}.agenda-slot:last-child{border-bottom:0}.agenda-slot--booked{background:var(--color-status-booked-bg)}.agenda-slot--pending{background:var(--color-status-pending-bg)}.agenda-slot--settled{background:var(--color-status-settled-bg)}.agenda-slot--frozen{border-left:var(--border-width-strong) dashed var(--color-slot-frozen-accent)}.agenda-slot--empty.agenda-slot--frozen{background:var(--color-slot-frozen-bg)}.agenda-time{font-size:var(--font-size-12);color:var(--color-text-secondary)}.agenda-main{display:grid;gap: var(--space-2)}.agenda-main strong{font-size:var(--font-size-14)}.agenda-main small{font-size:var(--font-size-12);color:var(--color-text-secondary)}.agenda-state{font-size:var(--font-size-11)!important}.modal-backdrop{align-items:end;padding: 0}.modal-card{width:100%;max-width:none;max-height:92vh;border-radius:var(--radius-18) var(--radius-18) 0 0;padding: var(--space-18) var(--space-16) calc(var(--space-18) + env(safe-area-inset-bottom))}.detail-backdrop{align-items:flex-end}.detail-drawer{width:100%;height:auto;max-height:92vh;border-radius:var(--radius-18) var(--radius-18) 0 0;padding:var(--space-18) var(--space-16) calc(var(--space-18) + env(safe-area-inset-bottom))}.detail-grid{grid-template-columns:1fr}}
+@media(max-width:820px){.week-nav>.button:first-child{min-height:var(--control-size-icon-nav-touch)}.week-nav .icon-nav,.mobile-day-nav .icon-nav{width:var(--control-size-icon-nav-touch);min-width:var(--control-size-icon-nav-touch);height:var(--control-size-icon-nav-touch);min-height:var(--control-size-icon-nav-touch)}.schedule-toolbar{grid-template-columns:1fr auto;gap: var(--space-8)}.schedule-toolbar>.button--primary{grid-column:2;grid-row:1}.week-nav{grid-column:1 / -1;justify-content:space-between;border-top:var(--border-width) solid var(--color-border);padding-top: var(--space-8)}.desktop-schedule{display:none}.mobile-agenda{display:block;border:var(--border-width) solid var(--color-border);border-radius:var(--radius-12);background:var(--color-white);overflow:hidden}.mobile-day-nav{min-height:52px;display:grid;grid-template-columns:40px 1fr 40px;align-items:center;border-bottom:var(--border-width) solid var(--color-border);padding: var(--space-4) var(--space-8)}.mobile-day-nav>div{display:flex;align-items:center;justify-content:center;gap: var(--space-8)}.mobile-day-nav strong{font-size:var(--font-size-14)}.mobile-day-nav span{font-size:var(--font-size-12);color:var(--color-text-secondary)}.agenda-list{display:grid}.agenda-slot{min-height:60px;border:0;border-bottom:var(--border-width) solid var(--color-border);background:var(--color-white);padding: var(--space-9) var(--space-12);display:grid;grid-template-columns:92px minmax(0,1fr) 16px;align-items:center;gap: var(--space-10);text-align:left;color:var(--color-text-primary)}.agenda-slot:last-child{border-bottom:0}.agenda-slot--booked{background:var(--color-status-booked-bg)}.agenda-slot--pending{background:var(--color-status-pending-bg)}.agenda-slot--settled{background:var(--color-status-settled-bg)}.agenda-slot--frozen{border-left:var(--border-width-strong) dashed var(--color-slot-frozen-accent)}.agenda-slot--empty.agenda-slot--frozen{background:var(--color-slot-frozen-bg)}.agenda-slot--unavailable .agenda-main strong{color:var(--color-text-secondary)}.agenda-time{font-size:var(--font-size-12);color:var(--color-text-secondary)}.agenda-main{display:grid;gap: var(--space-2)}.agenda-main strong{font-size:var(--font-size-14)}.agenda-main small{font-size:var(--font-size-12);color:var(--color-text-secondary)}.agenda-state{font-size:var(--font-size-11)!important}.modal-backdrop{align-items:end;padding: 0}.modal-card{width:100%;max-width:none;max-height:92vh;border-radius:var(--radius-18) var(--radius-18) 0 0;padding: var(--space-18) var(--space-16) calc(var(--space-18) + env(safe-area-inset-bottom))}.detail-backdrop{align-items:flex-end}.detail-drawer{width:100%;height:auto;max-height:92vh;border-radius:var(--radius-18) var(--radius-18) 0 0;padding:var(--space-18) var(--space-16) calc(var(--space-18) + env(safe-area-inset-bottom))}.detail-grid{grid-template-columns:1fr}}
 @media(max-width:560px){.schedule-toolbar{grid-template-columns:minmax(0,1fr) auto}.compact-field>span{display:none}.schedule-toolbar>.button--primary{padding-inline: var(--space-12)}.week-nav .button:first-child{font-size:var(--font-size-13)}}
 </style>

@@ -32,7 +32,7 @@ const spaceInitial = computed(() => {
   const name = currentSpace.value?.name.trim()
   return name ? name.slice(0, 1).toUpperCase() : 'Y'
 })
-const roleLabel = computed(() => isSuperAdmin.value ? '超级用户' : '空间用户')
+const roleLabel = computed(() => isSuperAdmin.value ? '超级用户' : '服务方用户')
 
 function currentPath(section: string) {
   return currentSpace.value ? spacePath(currentSpace.value.id, section) : '/'
@@ -124,7 +124,7 @@ onMounted(loadShell)
         >
           <span class="space-brand-mark" aria-hidden="true">{{ spaceInitial }}</span>
           <span class="space-brand-copy">
-            <strong>{{ currentSpace?.name || '选择空间' }}</strong>
+            <strong>{{ currentSpace?.name || '选择服务方' }}</strong>
             <small>运营后台</small>
           </span>
           <span class="switch-chevron" :class="{ open: spaceMenuOpen }">›</span>
@@ -132,8 +132,8 @@ onMounted(loadShell)
 
         <div v-if="spaceMenuOpen" class="space-menu" role="menu">
           <div class="space-menu-heading">
-            <strong>切换空间</strong>
-            <button class="icon-button icon-button--plain" aria-label="关闭空间切换" @click="spaceMenuOpen = false">×</button>
+            <strong>切换服务方</strong>
+            <button class="icon-button icon-button--plain" aria-label="关闭服务方切换" @click="spaceMenuOpen = false">×</button>
           </div>
           <div class="space-menu-list">
             <button
@@ -147,16 +147,16 @@ onMounted(loadShell)
               <span>{{ space.name }}</span>
               <span v-if="space.id === currentSpace?.id" class="space-check">✓</span>
             </button>
-            <div v-if="spaces.length === 0" class="space-menu-empty">还没有可访问空间。</div>
+            <div v-if="spaces.length === 0" class="space-menu-empty">还没有可访问服务方。</div>
           </div>
           <div v-if="isSuperAdmin" class="space-menu-actions">
-            <button @click="openSpaceManagement(true)"><AppIcon name="plus" />新建空间</button>
-            <button @click="openSpaceManagement(false)"><AppIcon name="external" />管理空间</button>
+            <button @click="openSpaceManagement(true)"><AppIcon name="plus" />新建服务方</button>
+            <button @click="openSpaceManagement(false)"><AppIcon name="external" />管理服务方</button>
           </div>
         </div>
       </div>
 
-      <nav v-if="currentSpace" class="primary-nav" aria-label="当前空间主导航">
+      <nav v-if="currentSpace" class="primary-nav" aria-label="当前服务方主导航">
         <div class="nav-group">
           <span class="nav-group-label">运营</span>
           <RouterLink :to="currentPath('overview')" class="nav-item">
@@ -171,9 +171,9 @@ onMounted(loadShell)
         </div>
 
         <div class="nav-group">
-          <span class="nav-group-label">资源配置</span>
+          <span class="nav-group-label">预约配置</span>
           <RouterLink :to="currentPath('resources')" class="nav-item">
-            <AppIcon name="resource" /><span>预约对象</span>
+            <AppIcon name="resource" /><span>预约项目</span>
           </RouterLink>
           <RouterLink :to="currentPath('slot-types')" class="nav-item">
             <AppIcon name="tag" /><span>时段类型</span>
@@ -181,7 +181,7 @@ onMounted(loadShell)
         </div>
 
         <div class="nav-group">
-          <span class="nav-group-label">空间设置</span>
+          <span class="nav-group-label">服务方设置</span>
           <RouterLink :to="currentPath('settings')" class="nav-item">
             <AppIcon name="settings" /><span>规则设置</span>
           </RouterLink>
@@ -199,7 +199,7 @@ onMounted(loadShell)
       </nav>
 
       <div v-else class="sidebar-empty">
-        <span>尚未选择空间</span>
+        <span>尚未选择服务方</span>
       </div>
 
       <div class="sidebar-bottom">

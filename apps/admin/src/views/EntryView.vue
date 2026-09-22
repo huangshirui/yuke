@@ -26,6 +26,6 @@ onMounted(async () => {
 <template>
   <main class="page">
     <div v-if="error" class="alert alert--error">{{ error }}</div>
-    <div v-else class="empty-state">正在进入最近使用的空间…</div>
+    <div v-else class="empty-state">正在进入最近使用的服务方…</div>
   </main>
 </template>

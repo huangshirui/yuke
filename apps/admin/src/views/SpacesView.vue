@@ -49,7 +49,7 @@ async function load() {
     spaces.value = nextSpaces
     admin.value = nextAdmin
   } catch (cause) {
-    error.value = cause instanceof Error ? cause.message : '空间加载失败。'
+    error.value = cause instanceof Error ? cause.message : '服务方加载失败。'
   } finally {
     loading.value = false
   }
@@ -57,7 +57,7 @@ async function load() {
 
 async function createSpace() {
   if (!form.name.trim()) {
-    error.value = '请输入空间名称。'
+    error.value = '请输入服务方名称。'
     return
   }
   saving.value = true
@@ -102,37 +102,37 @@ onMounted(async () => {
   <main class="page">
     <section class="page-heading">
       <div>
-        <span class="eyebrow">空间管理</span>
-        <h1>空间管理</h1>
-        <p>每个空间的数据和运营设置彼此隔离。停用空间会保留历史数据，但不再接受新的预约。</p>
+        <span class="eyebrow">服务方管理</span>
+        <h1>服务方管理</h1>
+        <p>每个服务方的数据和运营设置彼此隔离。停用服务方会保留历史数据，但不再接受新的预约。</p>
       </div>
-      <button v-if="isSuperAdmin" class="button button--primary" @click="showCreate = true">+ 新建空间</button>
+      <button v-if="isSuperAdmin" class="button button--primary" @click="showCreate = true">+ 新建服务方</button>
     </section>
 
     <div v-if="error" class="alert alert--error">{{ error }}</div>
 
     <section class="metric-row">
-      <article class="metric-card"><span>空间总数</span><strong>{{ loading ? '—' : spaces.length }}</strong></article>
+      <article class="metric-card"><span>服务方总数</span><strong>{{ loading ? '—' : spaces.length }}</strong></article>
       <article class="metric-card"><span>运行中</span><strong>{{ loading ? '—' : activeCount }}</strong></article>
       <article class="metric-card"><span>已停用</span><strong>{{ loading ? '—' : spaces.length - activeCount }}</strong></article>
     </section>
 
     <section class="panel loading-surface" :aria-busy="loading">
-      <LoadingOverlay v-if="loading" label="正在加载空间…" />
+      <LoadingOverlay v-if="loading" label="正在加载服务方…" />
       <div class="panel-heading">
         <div>
-          <h2>全部空间</h2>
-          <p>进入空间后可继续配置用户、预约规则和邀请码。</p>
+          <h2>全部服务方</h2>
+          <p>进入服务方后可继续配置用户、预约规则和邀请码。</p>
         </div>
       </div>
 
       <div v-if="!loading && spaces.length === 0" class="empty-state">
-        <strong>{{ isSuperAdmin ? '还没有空间' : '还没有可访问空间' }}</strong>
-        <span>{{ isSuperAdmin ? '创建第一个空间后即可开始配置。' : '请联系超级用户为你的邮箱分配空间权限。' }}</span>
+        <strong>{{ isSuperAdmin ? '还没有服务方' : '还没有可访问服务方' }}</strong>
+        <span>{{ isSuperAdmin ? '创建第一个服务方后即可开始配置。' : '请联系超级用户为你的邮箱分配服务方权限。' }}</span>
       </div>
       <div v-if="loading || spaces.length > 0" class="table-wrap">
         <table>
-          <thead><tr><th>空间</th><th>时区</th><th>状态</th><th class="align-right">操作</th></tr></thead>
+          <thead><tr><th>服务方</th><th>时区</th><th>状态</th><th class="align-right">操作</th></tr></thead>
           <tbody>
             <tr v-for="space in spaces" :key="space.id">
               <td>
@@ -157,14 +157,14 @@ onMounted(async () => {
     <div v-if="showCreate && isSuperAdmin" class="modal-backdrop" @click.self="showCreate = false">
       <section class="modal" role="dialog" aria-modal="true" aria-labelledby="create-space-title">
         <div class="modal-heading">
-          <div><span class="eyebrow">空间</span><h2 id="create-space-title">新建空间</h2></div>
+          <div><span class="eyebrow">服务方</span><h2 id="create-space-title">新建服务方</h2></div>
           <button class="icon-button" aria-label="关闭" @click="showCreate = false">×</button>
         </div>
 
         <form class="form-stack" @submit.prevent="createSpace">
           <label class="field">
-            <span>空间名称</span>
-            <input v-model="form.name" autofocus placeholder="例如：示例预约空间" />
+            <span>服务方名称</span>
+            <input v-model="form.name" autofocus placeholder="例如：示例预约服务方" />
           </label>
           <label class="field">
             <span>时区</span>
@@ -190,7 +190,7 @@ onMounted(async () => {
           </div>
           <div class="modal-actions">
             <button type="button" class="button button--ghost" @click="showCreate = false">取消</button>
-            <button class="button button--primary" :disabled="saving">{{ saving ? '创建中…' : '创建空间' }}</button>
+            <button class="button button--primary" :disabled="saving">{{ saving ? '创建中…' : '创建服务方' }}</button>
           </div>
         </form>
       </section>
