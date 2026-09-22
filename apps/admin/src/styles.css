@@ -370,10 +370,11 @@ textarea:focus { border-color: var(--color-focus); box-shadow: var(--focus-ring)
   height: 36px;
   background: var(--color-avatar-bg);
 }
-.account-card > div {
+.account-card__identity {
   min-width: 0;
   display: grid;
   gap: var(--space-3);
+  flex: 1 1 auto;
 }
 .account-card strong {
   min-width: 0;
@@ -387,6 +388,22 @@ textarea:focus { border-color: var(--color-focus); box-shadow: var(--focus-ring)
 .account-card small {
   color: var(--color-sidebar-subtle);
   font-size: var(--font-size-11);
+}
+.account-logout {
+  flex: 0 0 auto;
+  border: 0;
+  padding: var(--space-4) var(--space-6);
+  background: transparent;
+  color: var(--color-sidebar-subtle);
+  font: inherit;
+  font-size: var(--font-size-11);
+  cursor: pointer;
+  border-radius: var(--radius-6);
+}
+.account-logout:hover,
+.account-logout:focus-visible {
+  background: var(--color-sidebar-hover);
+  color: var(--color-sidebar-text);
 }
 .main-frame { grid-column: 2; min-width: 0; }
 .page {
