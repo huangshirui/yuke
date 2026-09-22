@@ -58,7 +58,7 @@ function statusLabel(status: AdminBooking['status']) {
 }
 
 const sourceAdmin = computed(() =>
-  admins.value.find((item) => item.id === member.value?.invitedByAdminId)?.email ?? '已移除管理员'
+  admins.value.find((item) => item.id === member.value?.invitedByAdminId)?.email ?? '已移除用户'
 )
 const sourceInvite = computed(() => {
   const invite = invites.value.find((item) => item.id === member.value?.inviteCodeId)
@@ -84,7 +84,7 @@ async function load() {
     bookings.value = nextBookings
     memberNote.value = nextMember.adminNote ?? ''
   } catch (cause) {
-    error.value = cause instanceof Error ? cause.message : '用户详情加载失败。'
+    error.value = cause instanceof Error ? cause.message : '客户详情加载失败。'
   } finally {
     loading.value = false
   }
@@ -99,7 +99,7 @@ async function saveMemberNote() {
     const value = memberNote.value.trim() || null
     await api.updateMemberAdminNote(spaceId.value, member.value.membershipId, value)
     member.value.adminNote = value
-    notice.value = '用户内部备注已保存。'
+    notice.value = '客户内部备注已保存。'
   } catch (cause) {
     error.value = cause instanceof Error ? cause.message : '内部备注保存失败。'
   } finally {
@@ -140,8 +140,8 @@ onMounted(load)
   <main class="page user-detail-page">
     <section class="page-heading page-heading--compact">
       <div>
-        <button class="back-link" @click="router.push('/spaces/' + encodeURIComponent(spaceId) + '/users')">← 返回用户管理</button>
-        <h1>{{ member?.nickname || '用户详情' }}</h1>
+        <button class="back-link" @click="router.push('/spaces/' + encodeURIComponent(spaceId) + '/users')">← 返回客户管理</button>
+        <h1>{{ member?.nickname || '客户详情' }}</h1>
         <p v-if="member">{{ member.participantCount }} 个参与人 · {{ member.bookingCount }} 条预约记录</p>
       </div>
     </section>
@@ -149,7 +149,7 @@ onMounted(load)
     <div v-if="error" class="alert alert--error">{{ error }}</div>
     <div v-if="notice" class="alert alert--success">{{ notice }}</div>
     <section v-if="loading" class="detail-loading-shell loading-surface" aria-busy="true">
-      <LoadingOverlay label="正在加载用户详情…" />
+      <LoadingOverlay label="正在加载客户详情…" />
       <div class="detail-section-grid">
         <article class="panel detail-section">
           <div class="compact-panel-heading"><h2>加入信息</h2></div>
@@ -177,7 +177,7 @@ onMounted(load)
         <article class="panel detail-section">
           <div class="compact-panel-heading"><h2>加入信息</h2></div>
           <dl class="detail-list">
-            <div><dt>来源管理员</dt><dd>{{ sourceAdmin }}</dd></div>
+            <div><dt>来源用户</dt><dd>{{ sourceAdmin }}</dd></div>
             <div><dt>来源邀请码</dt><dd>{{ sourceInvite }}</dd></div>
             <div><dt>加入时间</dt><dd>{{ formatDate(member.joinedAt) }}</dd></div>
             <div><dt>状态</dt><dd>{{ member.status === 'active' ? '启用' : '已停用' }}</dd></div>
@@ -208,11 +208,11 @@ onMounted(load)
               </span>
             </div>
             <div class="participant-user-note">
-              <span>用户备注</span>
+              <span>客户备注</span>
               <p>{{ participant.userNote || '无' }}</p>
             </div>
             <label class="field participant-admin-note">
-              <span>管理员内部备注</span>
+              <span>内部备注</span>
               <textarea v-model="participant.adminNote" rows="2" placeholder="仅管理端可见"></textarea>
               <button class="button button--ghost" :disabled="saving" @click="saveParticipantNote(participant.id, participant.adminNote)">保存</button>
             </label>
@@ -242,7 +242,7 @@ onMounted(load)
                 <td>{{ booking.resource.name }}</td>
                 <td><span class="status-pill" :class="'booking-status--' + booking.status">{{ statusLabel(booking.status) }}</span></td>
               </tr>
-              <tr v-if="bookings.length === 0"><td colspan="4" class="empty-cell">这个用户还没有预约记录。</td></tr>
+              <tr v-if="bookings.length === 0"><td colspan="4" class="empty-cell">这个客户还没有预约记录。</td></tr>
             </tbody>
           </table>
         </div>

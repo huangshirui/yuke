@@ -74,8 +74,8 @@ test('booking list defaults to a seven-day-forward window and shows ownership co
   const source = view('BookingsView.vue')
 
   assert.match(source, /filters\.to = addDays\(today, 7\)/)
-  assert.match(source, /<th>用户<\/th>/)
-  assert.match(source, />管理员<\/th>/)
+  assert.match(source, /<th>客户<\/th>/)
+  assert.match(source, />来源用户<\/th>/)
   assert.match(source, /booking\.userNickname/)
   assert.match(source, /booking\.invitedByAdminEmail/)
   assert.match(source, /colspan="6"/)

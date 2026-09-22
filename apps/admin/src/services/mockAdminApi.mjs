@@ -52,7 +52,7 @@ const seed = {
     inv_demo_open: [
       {
         membershipId: 'mem_demo_01',
-        nickname: '示例用户 A',
+        nickname: '示例客户 A',
         joinedAt: '2026-09-18T03:20:00.000Z',
         participantCount: 2,
         invitedByAdminId: 'adm_demo_owner',
@@ -60,7 +60,7 @@ const seed = {
       },
       {
         membershipId: 'mem_demo_02',
-        nickname: '示例用户 B',
+        nickname: '示例客户 B',
         joinedAt: '2026-09-19T08:10:00.000Z',
         participantCount: 1,
         invitedByAdminId: 'adm_demo_owner',
@@ -70,7 +70,7 @@ const seed = {
     inv_demo_old: [
       {
         membershipId: 'mem_demo_03',
-        nickname: '示例用户 C',
+        nickname: '示例客户 C',
         joinedAt: '2026-09-10T01:00:00.000Z',
         participantCount: 1,
         invitedByAdminId: 'adm_demo_ops',
@@ -160,7 +160,7 @@ const seed = {
     sp_demo_alpha: [
       {
         membershipId: 'mem_demo_01',
-        nickname: '示例用户 A',
+        nickname: '示例客户 A',
         joinedAt: '2026-09-18T03:20:00.000Z',
         participantCount: 2,
         invitedByAdminId: 'adm_demo_owner',
@@ -189,7 +189,7 @@ const seed = {
       },
       {
         membershipId: 'mem_demo_02',
-        nickname: '示例用户 B',
+        nickname: '示例客户 B',
         joinedAt: '2026-09-19T08:10:00.000Z',
         participantCount: 1,
         invitedByAdminId: 'adm_demo_owner',
@@ -210,7 +210,7 @@ const seed = {
       },
       {
         membershipId: 'mem_demo_03',
-        nickname: '示例用户 C',
+        nickname: '示例客户 C',
         joinedAt: '2026-09-10T01:00:00.000Z',
         participantCount: 1,
         invitedByAdminId: 'adm_demo_ops',
@@ -324,7 +324,7 @@ export function createMockAdminApi(storage = globalThis.localStorage ?? memorySt
     )
 
     booking.userNickname = member.nickname
-    booking.invitedByAdminEmail = invitedByAdmin?.email || '未知管理员'
+    booking.invitedByAdminEmail = invitedByAdmin?.email || '未知用户'
     booking.resource = {
       id: resource.id,
       name: resource.name,
@@ -408,7 +408,7 @@ export function createMockAdminApi(storage = globalThis.localStorage ?? memorySt
     async addAdmin(spaceId, adminUserId) {
       requireSpace(spaceId)
       const id = adminUserId.trim()
-      if (!id) throw new Error('请输入管理员 ID。')
+      if (!id) throw new Error('请选择用户。')
       const list = state.admins[spaceId] ?? (state.admins[spaceId] = [])
       const current = list.find((item) => item.id === id)
       if (current) return clone(current)
@@ -422,7 +422,7 @@ export function createMockAdminApi(storage = globalThis.localStorage ?? memorySt
       requireSpace(spaceId)
       const email = String(emailInput || '').trim().toLowerCase()
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        throw new Error('请输入有效的管理员邮箱。')
+        throw new Error('请输入有效的用户邮箱。')
       }
       const list = state.admins[spaceId] ?? (state.admins[spaceId] = [])
       const current = list.find((item) => item.email.toLowerCase() === email)

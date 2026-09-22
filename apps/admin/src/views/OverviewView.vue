@@ -135,7 +135,7 @@ onMounted(load)
       <LoadingOverlay v-if="loading" label="正在加载运营概览…" />
       <section class="overview-metrics">
         <article class="overview-metric"><span>今日预约</span><strong>{{ todayBookings.length }}</strong><small>当前有效预约</small></article>
-        <article class="overview-metric"><span>注册用户</span><strong>{{ activeMembers.length }}</strong><small>当前空间用户</small></article>
+        <article class="overview-metric"><span>注册客户</span><strong>{{ activeMembers.length }}</strong><small>当前空间客户</small></article>
         <article class="overview-metric"><span>未来 7 天预约</span><strong>{{ weekBookings.length }}</strong><small>不含已取消</small></article>
         <article class="overview-metric"><span>可预约时段</span><strong>{{ activeSlots.length }}</strong><small>未来 7 天</small></article>
       </section>
@@ -180,7 +180,7 @@ onMounted(load)
           <div class="overview-card-heading"><h2>常用操作</h2></div>
           <div class="quick-actions">
             <button @click="router.push(spacePath(spaceId, 'reservations'))"><strong>新建开放时间</strong><small>设置可预约时段</small></button>
-            <button @click="router.push(spacePath(spaceId, 'users'))"><strong>邀请用户</strong><small>生成或管理邀请码</small></button>
+            <button @click="router.push(spacePath(spaceId, 'users'))"><strong>邀请客户</strong><small>生成或管理邀请码</small></button>
             <button @click="router.push(spacePath(spaceId, 'resources'))"><strong>添加预约对象</strong><small>维护预约资源</small></button>
             <button @click="router.push(spacePath(spaceId, 'settings'))"><strong>规则设置</strong><small>预约与取消规则</small></button>
           </div>
@@ -197,13 +197,13 @@ onMounted(load)
 
         <article class="panel overview-card overview-latest">
           <div class="overview-card-heading">
-            <h2>最新用户</h2>
+            <h2>最新客户</h2>
             <button class="link-button" @click="router.push(spacePath(spaceId, 'users'))">查看全部 →</button>
           </div>
-          <div v-if="!loading && latestMembers.length === 0" class="empty-state compact">还没有用户加入。</div>
+          <div v-if="!loading && latestMembers.length === 0" class="empty-state compact">还没有客户加入。</div>
           <div v-for="member in latestMembers" :key="member.membershipId" class="latest-user-row">
             <span class="user-avatar">{{ member.nickname.slice(0, 1) || 'U' }}</span>
-            <strong>{{ member.nickname || '未命名用户' }}</strong>
+            <strong>{{ member.nickname || '未命名客户' }}</strong>
             <small>{{ member.participantCount }} 个参与人</small>
           </div>
         </article>

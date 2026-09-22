@@ -402,7 +402,7 @@ onMounted(loadBase)
   <section class="booking-admin-page" :class="{ page: !props.embedded }">
     <section v-if="!props.embedded" class="page-heading">
       <div>
-        <span class="eyebrow">Bookings</span>
+        <span class="eyebrow">预约记录</span>
         <h1>预约管理</h1>
         <p>查看空间预约，按条件筛选，并处理预约调整、取消与完成。</p>
       </div>
@@ -462,8 +462,8 @@ onMounted(loadBase)
             <tr>
               <th>时间 / 预约对象</th>
               <th>参与人</th>
-              <th>用户</th>
-              <th title="该用户加入空间时的来源管理员">管理员</th>
+              <th>客户</th>
+              <th title="该客户加入空间时的来源用户">来源用户</th>
               <th>类型</th>
               <th>状态</th>
             </tr>
@@ -510,7 +510,7 @@ onMounted(loadBase)
       <section class="modal booking-detail-modal" role="dialog" aria-modal="true" aria-label="预约详情">
         <div class="modal-heading">
           <div>
-            <span class="eyebrow">Booking Detail</span>
+            <span class="eyebrow">预约详情</span>
             <h2>预约详情</h2>
             <p>{{ formatDateTime(selectedBooking.slot.startAt) }} · {{ selectedBooking.resource.name }}</p>
           </div>
@@ -570,7 +570,7 @@ onMounted(loadBase)
       <form class="modal booking-edit-modal" role="dialog" aria-modal="true" aria-label="修改预约" @submit.prevent="saveEdit">
         <div class="modal-heading">
           <div>
-            <span class="eyebrow">Edit Booking</span>
+            <span class="eyebrow">编辑预约</span>
             <h2>修改预约</h2>
           </div>
           <button type="button" class="icon-button" aria-label="关闭" @click="editOpen = false">×</button>
@@ -584,7 +584,7 @@ onMounted(loadBase)
                 {{ item.name }} · {{ item.birthMonth }}
               </option>
             </select>
-            <small>只能选择该预约原用户 Membership 下的启用参与人。</small>
+            <small>只能选择该预约客户名下的启用参与人。</small>
           </label>
 
           <label class="field">

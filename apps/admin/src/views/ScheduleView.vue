@@ -278,7 +278,7 @@ function slotVisualState(slot: AdminScheduleSlot) {
 
 function slotMainLabel(slot: AdminScheduleSlot) {
   if (!slot.booking) return '空'
-  return (slot.booking.userNickname || '未命名用户') + ' · ' +
+  return (slot.booking.userNickname || '未命名客户') + ' · ' +
     (slot.booking.participantName || '未命名参与人')
 }
 
@@ -321,7 +321,7 @@ async function openSlot(slot: AdminScheduleSlot) {
 
   if (slot.booking) {
     selectedBookingSlot.value = slot
-    selectedBookingUserNickname.value = slot.booking.userNickname || '未命名用户'
+    selectedBookingUserNickname.value = slot.booking.userNickname || '未命名客户'
     detailLoading.value = true
     try {
       selectedBooking.value = await api.getBooking(spaceId.value, slot.booking.id)
@@ -670,7 +670,7 @@ onMounted(loadBase)
         <section class="detail-drawer" role="dialog" aria-modal="true" aria-label="时段详情">
           <div class="panel-heading detail-heading">
             <div>
-              <span class="eyebrow">Slot Detail</span>
+              <span class="eyebrow">时段详情</span>
               <h2>时段详情</h2>
               <p>{{ selectedSlot.localDate }} · {{ slotLocalTime(selectedSlot.startAt) }}–{{ slotLocalTime(selectedSlot.endAt) }}</p>
             </div>
@@ -725,7 +725,7 @@ onMounted(loadBase)
           <LoadingOverlay v-if="detailLoading" label="正在加载预约详情…" />
           <div class="panel-heading detail-heading">
             <div>
-              <span class="eyebrow">Booking Detail</span>
+              <span class="eyebrow">预约详情</span>
               <h2>预约详情</h2>
               <p>{{ selectedBookingSlot.localDate }} · {{ slotLocalTime(selectedBookingSlot.startAt) }}–{{ slotLocalTime(selectedBookingSlot.endAt) }}</p>
             </div>
@@ -742,7 +742,7 @@ onMounted(loadBase)
             </div>
 
             <div class="detail-grid">
-              <div><span>用户</span><strong>{{ selectedBookingUserNickname }}</strong></div>
+              <div><span>客户</span><strong>{{ selectedBookingUserNickname }}</strong></div>
               <div><span>参与人</span><strong>{{ selectedBooking.participant.name }}</strong></div>
               <div><span>预约对象</span><strong>{{ selectedBooking.resource.name }}</strong></div>
               <div><span>时段类型</span><strong>{{ selectedBooking.slotType.name }}</strong></div>
@@ -781,7 +781,7 @@ onMounted(loadBase)
       <div v-if="formOpen" class="modal-backdrop" @click.self="formOpen = false">
         <section class="modal-card" role="dialog" aria-modal="true" aria-label="时段编辑">
           <div class="panel-heading">
-            <div><span class="eyebrow">Schedule</span><h2>{{ editingSlot ? '编辑时段' : '新建开放时段' }}</h2></div>
+            <div><span class="eyebrow">排期</span><h2>{{ editingSlot ? '编辑时段' : '新建开放时段' }}</h2></div>
             <button class="button button--ghost" @click="formOpen = false">关闭</button>
           </div>
 

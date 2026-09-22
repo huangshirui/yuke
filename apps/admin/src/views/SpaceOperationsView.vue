@@ -242,7 +242,7 @@ async function applyMemberFilters() {
   try {
     await loadMembers()
   } catch (cause) {
-    error.value = cause instanceof Error ? cause.message : '用户列表加载失败。'
+    error.value = cause instanceof Error ? cause.message : '客户列表加载失败。'
   } finally {
     sectionLoading.value = false
   }
@@ -260,7 +260,7 @@ async function openMember(member: AdminMemberSummary) {
     selectedMember.value = await api.getMember(spaceId.value, member.membershipId)
     memberNoteDraft.value = selectedMember.value.adminNote ?? ''
   } catch (cause) {
-    error.value = cause instanceof Error ? cause.message : '用户详情加载失败。'
+    error.value = cause instanceof Error ? cause.message : '客户详情加载失败。'
   }
 }
 
@@ -274,7 +274,7 @@ async function saveMemberNote() {
     selectedMember.value.adminNote = value
     const summary = members.value.find((item) => item.membershipId === selectedMember.value?.membershipId)
     if (summary) summary.adminNote = value
-    notice.value = '用户内部备注已保存。'
+    notice.value = '客户内部备注已保存。'
   } catch (cause) {
     error.value = cause instanceof Error ? cause.message : '内部备注保存失败。'
   } finally {
@@ -308,13 +308,13 @@ onMounted(load)
   <main class="page">
       <section class="page-heading">
         <div>
-          <h1>{{ section === 'resources' ? '预约对象' : section === 'slot-types' ? '时段类型' : '用户管理' }}</h1>
+          <h1>{{ section === 'resources' ? '预约对象' : section === 'slot-types' ? '时段类型' : '客户管理' }}</h1>
           <p>
             {{ section === 'resources'
               ? '维护当前空间可被预约的资源。'
               : section === 'slot-types'
                 ? '维护时段分类，用于小程序展示与后续统计。'
-                : '查看当前空间的用户与参与人。' }}
+                : '查看当前空间的客户与参与人。' }}
           </p>
         </div>
         <span v-if="space" class="page-context">{{ space.name }}</span>
@@ -327,7 +327,7 @@ onMounted(load)
         <LoadingOverlay v-if="loading || sectionLoading" label="正在加载预约对象…" />
         <div class="panel-heading">
           <div>
-            <span class="eyebrow">Resources</span>
+            <span class="eyebrow">预约对象</span>
             <h2>预约对象</h2>
             <p>预约对象停用后保留历史记录，但不能继续用于新时段和新预约。</p>
           </div>
@@ -342,7 +342,7 @@ onMounted(load)
         <div class="table-wrap">
           <table>
             <thead>
-              <tr><th>预约对象</th><th>备注</th><th>状态</th><th>ID</th><th class="align-right">操作</th></tr>
+              <tr><th>预约对象</th><th>备注</th><th>状态</th><th class="align-right">操作</th></tr>
             </thead>
             <tbody>
               <tr v-for="resource in resources" :key="resource.id">
@@ -353,7 +353,6 @@ onMounted(load)
                     {{ resource.status === 'active' ? '启用' : '已停用' }}
                   </span>
                 </td>
-                <td class="mono">{{ resource.id }}</td>
                 <td class="align-right">
                   <div class="actions">
                     <button class="button button--ghost" @click="openResourceForm(resource)">编辑</button>
@@ -369,7 +368,7 @@ onMounted(load)
                 </td>
               </tr>
               <tr v-if="!loading && !sectionLoading && resources.length === 0">
-                <td colspan="5" class="empty-cell">还没有预约对象。创建后才能配置可预约时段。</td>
+                <td colspan="4" class="empty-cell">还没有预约对象。创建后才能配置可预约时段。</td>
               </tr>
             </tbody>
           </table>
@@ -380,7 +379,7 @@ onMounted(load)
         <LoadingOverlay v-if="loading || sectionLoading" label="正在加载时段类型…" />
         <div class="panel-heading">
           <div>
-            <span class="eyebrow">Slot Types</span>
+            <span class="eyebrow">时段配置</span>
             <h2>时段类型</h2>
             <p>类型会展示在小程序预约时段中，也用于后续对账统计。已使用的类型只停用、不删除。</p>
           </div>
@@ -395,7 +394,7 @@ onMounted(load)
         <div class="table-wrap">
           <table>
             <thead>
-              <tr><th>类型名称</th><th>状态</th><th>ID</th><th class="align-right">操作</th></tr>
+              <tr><th>类型名称</th><th>状态</th><th class="align-right">操作</th></tr>
             </thead>
             <tbody>
               <tr v-for="slotType in slotTypes" :key="slotType.id">
@@ -405,7 +404,6 @@ onMounted(load)
                     {{ slotType.status === 'active' ? '启用' : '已停用' }}
                   </span>
                 </td>
-                <td class="mono">{{ slotType.id }}</td>
                 <td class="align-right">
                   <div class="actions">
                     <button class="button button--ghost" @click="openSlotTypeForm(slotType)">编辑</button>
@@ -421,7 +419,7 @@ onMounted(load)
                 </td>
               </tr>
               <tr v-if="!loading && !sectionLoading && slotTypes.length === 0">
-                <td colspan="4" class="empty-cell">还没有时段类型。至少创建一个启用类型后再配置时段。</td>
+                <td colspan="3" class="empty-cell">还没有时段类型。至少创建一个启用类型后再配置时段。</td>
               </tr>
             </tbody>
           </table>
@@ -429,20 +427,20 @@ onMounted(load)
       </section>
 
       <section v-else class="panel loading-surface" :aria-busy="loading || sectionLoading">
-        <LoadingOverlay v-if="loading || sectionLoading" label="正在加载用户…" />
+        <LoadingOverlay v-if="loading || sectionLoading" label="正在加载客户…" />
         <div class="panel-heading">
           <div>
-            <span class="eyebrow">Members</span>
-            <h2>用户与参与人</h2>
+            <span class="eyebrow">客户资料</span>
+            <h2>客户与参与人</h2>
             <p>查看加入来源和参与人资料；内部备注仅在管理端可见，不会展示到小程序。</p>
           </div>
         </div>
 
         <div class="filter-bar">
           <label class="field">
-            <span>来源管理员</span>
+            <span>来源用户</span>
             <select v-model="memberFilters.invitedByAdminId">
-              <option value="">全部管理员</option>
+              <option value="">全部用户</option>
               <option v-for="admin in admins" :key="admin.id" :value="admin.id">{{ admin.email }}</option>
             </select>
           </label>
@@ -462,13 +460,12 @@ onMounted(load)
         <div class="table-wrap">
           <table>
             <thead>
-              <tr><th>用户</th><th>参与人</th><th>邀请来源</th><th>加入时间</th><th class="align-right">操作</th></tr>
+              <tr><th>客户</th><th>参与人</th><th>邀请来源</th><th>加入时间</th><th class="align-right">操作</th></tr>
             </thead>
             <tbody>
               <tr v-for="member in members" :key="member.membershipId">
                 <td>
                   <strong>{{ member.nickname }}</strong>
-                  <div class="mono">{{ member.membershipId }}</div>
                 </td>
                 <td>{{ member.participantCount }} 个</td>
                 <td>
@@ -479,7 +476,7 @@ onMounted(load)
                 <td class="align-right"><button class="button button--ghost" @click="openMember(member)">查看详情</button></td>
               </tr>
               <tr v-if="!loading && !sectionLoading && members.length === 0">
-                <td colspan="5" class="empty-cell">当前筛选条件下没有用户。</td>
+                <td colspan="5" class="empty-cell">当前筛选条件下没有客户。</td>
               </tr>
             </tbody>
           </table>
@@ -488,28 +485,28 @@ onMounted(load)
         <aside v-if="selectedMember" class="source-panel member-detail-panel">
           <div class="source-panel__heading">
             <div>
-              <span class="eyebrow">Member Detail</span>
+              <span class="eyebrow">客户详情</span>
               <h3>{{ selectedMember.nickname }}</h3>
               <p class="muted">
                 {{ selectedMember.participantCount }} 个参与人 · {{ selectedMember.bookingCount }} 条预约记录
               </p>
             </div>
-            <button class="icon-button" aria-label="关闭用户详情" @click="selectedMember = null">×</button>
+            <button class="icon-button" aria-label="关闭客户详情" @click="selectedMember = null">×</button>
           </div>
 
           <div class="detail-meta">
-            <div><span>来源管理员</span><strong>{{ adminLabel(selectedMember.invitedByAdminId) }}</strong></div>
+            <div><span>来源用户</span><strong>{{ adminLabel(selectedMember.invitedByAdminId) }}</strong></div>
             <div><span>来源邀请码</span><strong>{{ inviteLabel(selectedMember.inviteCodeId) }}</strong></div>
             <div><span>加入时间</span><strong>{{ formatDate(selectedMember.joinedAt) }}</strong></div>
           </div>
 
           <div class="note-editor">
             <label class="field">
-              <span>用户内部备注</span>
+              <span>客户内部备注</span>
               <textarea v-model="memberNoteDraft" rows="3" placeholder="仅管理端可见"></textarea>
-              <small>此备注不会展示给小程序用户。</small>
+              <small>此备注不会展示给小程序客户。</small>
             </label>
-            <button class="button button--primary" :disabled="saving" @click="saveMemberNote">保存用户备注</button>
+            <button class="button button--primary" :disabled="saving" @click="saveMemberNote">保存客户备注</button>
           </div>
 
           <div class="participant-list">
@@ -517,7 +514,7 @@ onMounted(load)
               <div class="participant-card__heading">
                 <div>
                   <strong>{{ participant.name }}</strong>
-                  <small>{{ participant.birthMonth }} · <span class="mono">{{ participant.id }}</span></small>
+                  <small>{{ participant.birthMonth }}</small>
                 </div>
                 <span class="status-pill" :class="participant.status === 'active' ? 'status-pill--active' : 'status-pill--disabled'">
                   {{ participant.status === 'active' ? '启用' : '已停用' }}
@@ -526,11 +523,11 @@ onMounted(load)
 
               <div class="participant-notes">
                 <div>
-                  <span>用户备注</span>
+                  <span>客户备注</span>
                   <p>{{ participant.userNote || '无' }}</p>
                 </div>
                 <label class="field">
-                  <span>管理员内部备注</span>
+                  <span>内部备注</span>
                   <textarea v-model="participant.adminNote" rows="2" placeholder="仅管理端可见"></textarea>
                   <button
                     class="button button--ghost"
@@ -542,7 +539,7 @@ onMounted(load)
                 </label>
               </div>
             </article>
-            <div v-if="selectedMember.participants.length === 0" class="empty-state">这个用户还没有参与人。</div>
+            <div v-if="selectedMember.participants.length === 0" class="empty-state">这个客户还没有参与人。</div>
           </div>
         </aside>
       </section>
@@ -550,7 +547,7 @@ onMounted(load)
     <div v-if="showResourceForm" class="modal-backdrop" @click.self="showResourceForm = false">
       <form class="modal" role="dialog" aria-modal="true" aria-label="预约对象编辑" @submit.prevent="saveResource">
         <div class="modal-heading">
-          <div><span class="eyebrow">Resource</span><h2>{{ editingResource ? '编辑预约对象' : '新建预约对象' }}</h2></div>
+          <div><span class="eyebrow">预约对象</span><h2>{{ editingResource ? '编辑预约对象' : '新建预约对象' }}</h2></div>
           <button type="button" class="icon-button" aria-label="关闭" @click="showResourceForm = false">×</button>
         </div>
         <div class="form-stack">
@@ -573,7 +570,7 @@ onMounted(load)
     <div v-if="showSlotTypeForm" class="modal-backdrop" @click.self="showSlotTypeForm = false">
       <form class="modal" role="dialog" aria-modal="true" aria-label="时段类型编辑" @submit.prevent="saveSlotType">
         <div class="modal-heading">
-          <div><span class="eyebrow">Slot Type</span><h2>{{ editingSlotType ? '编辑时段类型' : '新建时段类型' }}</h2></div>
+          <div><span class="eyebrow">时段类型</span><h2>{{ editingSlotType ? '编辑时段类型' : '新建时段类型' }}</h2></div>
           <button type="button" class="icon-button" aria-label="关闭" @click="showSlotTypeForm = false">×</button>
         </div>
         <div class="form-stack">

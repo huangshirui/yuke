@@ -102,7 +102,7 @@ onMounted(async () => {
   <main class="page">
     <section class="page-heading">
       <div>
-        <span class="eyebrow">Spaces</span>
+        <span class="eyebrow">空间管理</span>
         <h1>空间管理</h1>
         <p>每个空间的数据和运营设置彼此隔离。停用空间会保留历史数据，但不再接受新的预约。</p>
       </div>
@@ -122,13 +122,13 @@ onMounted(async () => {
       <div class="panel-heading">
         <div>
           <h2>全部空间</h2>
-          <p>进入空间后可继续配置管理员、预约规则和邀请码。</p>
+          <p>进入空间后可继续配置用户、预约规则和邀请码。</p>
         </div>
       </div>
 
       <div v-if="!loading && spaces.length === 0" class="empty-state">
         <strong>{{ isSuperAdmin ? '还没有空间' : '还没有可访问空间' }}</strong>
-        <span>{{ isSuperAdmin ? '创建第一个空间后即可开始配置。' : '请联系超级管理员为你的邮箱分配空间权限。' }}</span>
+        <span>{{ isSuperAdmin ? '创建第一个空间后即可开始配置。' : '请联系超级用户为你的邮箱分配空间权限。' }}</span>
       </div>
       <div v-if="loading || spaces.length > 0" class="table-wrap">
         <table>
@@ -137,7 +137,6 @@ onMounted(async () => {
             <tr v-for="space in spaces" :key="space.id">
               <td>
                 <button class="link-button space-name" @click="router.push('/spaces/' + space.id + '/settings')">{{ space.name }}</button>
-                <small class="mono">{{ space.id }}</small>
               </td>
               <td>{{ space.timezone }}</td>
               <td>
@@ -158,7 +157,7 @@ onMounted(async () => {
     <div v-if="showCreate && isSuperAdmin" class="modal-backdrop" @click.self="showCreate = false">
       <section class="modal" role="dialog" aria-modal="true" aria-labelledby="create-space-title">
         <div class="modal-heading">
-          <div><span class="eyebrow">New Space</span><h2 id="create-space-title">新建空间</h2></div>
+          <div><span class="eyebrow">空间</span><h2 id="create-space-title">新建空间</h2></div>
           <button class="icon-button" aria-label="关闭" @click="showCreate = false">×</button>
         </div>
 
