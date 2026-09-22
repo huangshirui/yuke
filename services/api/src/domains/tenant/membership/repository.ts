@@ -12,6 +12,8 @@ type MembershipRow = {
   space_id: string
   user_id: string
   invited_by_admin_id: string
+  invited_by_admin_display_name: string | null
+  invited_by_admin_email: string
   invite_code_id: string
   status: 'active' | 'inactive'
   joined_at: number
@@ -29,6 +31,8 @@ function mapMembership(row: MembershipRow): SpaceMembershipSummary {
     id: row.id,
     spaceId: row.space_id,
     invitedByAdminId: row.invited_by_admin_id,
+    invitedByAdminDisplayName: row.invited_by_admin_display_name,
+    invitedByAdminEmail: row.invited_by_admin_email,
     inviteCodeId: row.invite_code_id,
     status: row.status,
     joinedAt: new Date(row.joined_at).toISOString()
@@ -260,11 +264,15 @@ export async function listAdminMembers(
              space_memberships.joined_at,
              COUNT(participants.id) AS participant_count,
              space_memberships.invited_by_admin_id,
+             invited_admins.display_name AS invited_by_admin_display_name,
+             invited_admins.email AS invited_by_admin_email,
              space_memberships.invite_code_id,
              space_memberships.status,
              space_memberships.admin_note
       FROM space_memberships
       JOIN users ON users.id = space_memberships.user_id
+      JOIN admin_users AS invited_admins
+        ON invited_admins.id = space_memberships.invited_by_admin_id
       LEFT JOIN participants
         ON participants.membership_id = space_memberships.id
        AND participants.space_id = space_memberships.space_id
@@ -290,11 +298,15 @@ export async function findAdminMember(
              space_memberships.joined_at,
              COUNT(DISTINCT participants.id) AS participant_count,
              space_memberships.invited_by_admin_id,
+             invited_admins.display_name AS invited_by_admin_display_name,
+             invited_admins.email AS invited_by_admin_email,
              space_memberships.invite_code_id,
              space_memberships.status,
              space_memberships.admin_note
       FROM space_memberships
       JOIN users ON users.id = space_memberships.user_id
+      JOIN admin_users AS invited_admins
+        ON invited_admins.id = space_memberships.invited_by_admin_id
       LEFT JOIN participants
         ON participants.membership_id = space_memberships.id
        AND participants.space_id = space_memberships.space_id
