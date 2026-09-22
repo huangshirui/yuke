@@ -1,10 +1,16 @@
 <view class="page">
   <view class="page-header">
-    <text class="page-title">{{editMode ? '编辑参与人' : '新增参与人'}}</text>
-    <text class="page-description">参与人信息仅用于当前空间中的预约。</text>
+    <text class="page-title">{{editMode ? '编辑预约人' : '新增预约人'}}</text>
+    <text class="page-description">预约人信息仅用于当前服务方中的预约。</text>
   </view>
 
-  <view wx:if="{{loading}}" class="card form-state">
+  <view wx:if="{{!hasSpace}}" class="card state-card">
+    <text class="state-title">还没有可用的服务方</text>
+    <text class="page-description">先加入或选择服务方，才能新增预约人。</text>
+    <button class="primary-button empty-action" bindtap="goToSpaces">选择服务方</button>
+  </view>
+
+  <view wx:elif="{{loading}}" class="card form-state">
     <text class="muted">正在加载…</text>
   </view>
 
@@ -15,7 +21,7 @@
         class="field-input"
         maxlength="64"
         value="{{name}}"
-        placeholder="请输入参与人名称"
+        placeholder="请输入预约人姓名"
         bindinput="onNameInput"
       />
     </view>
@@ -46,16 +52,17 @@
         placeholder="选填"
         bindinput="onNoteInput"
       />
-      <text class="field-helper">备注会跟随这个参与人保存在当前空间中。</text>
+      <text class="field-helper">备注会跟随这个预约人保存在当前服务方中。</text>
     </view>
   </view>
 
   <button
+    wx:if="{{hasSpace}}"
     class="primary-button submit-button"
     loading="{{submitting}}"
     disabled="{{submitting || loading}}"
     bindtap="submit"
-  >{{editMode ? '保存修改' : '新增参与人'}}</button>
+  >{{editMode ? '保存修改' : '新增预约人'}}</button>
 
   <view class="safe-bottom"></view>
 </view>

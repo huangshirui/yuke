@@ -14,7 +14,9 @@ function currentSpaceFromUser(user) {
 Page({
   data: {
     currentSpace: null,
+    hasSpace: false,
     participants: [],
+    activeCount: 0,
     loading: true,
     actionParticipantId: ''
   },
@@ -27,23 +29,31 @@ Page({
     const user = loadUser(wx)
     const currentSpace = currentSpaceFromUser(user)
     if (!currentSpace) {
-      wx.redirectTo({ url: '/pages/me/index?selectSpace=1' })
+      this.setData({ hasSpace: false, currentSpace: null, loading: false })
       return
     }
 
-    this.setData({ currentSpace, loading: true })
+    this.setData({ currentSpace, hasSpace: true, loading: true })
 
     try {
       const participants = await getApp().globalData.api.listParticipants(currentSpace.id)
-      this.setData({ participants: sortParticipants(participants) })
+      const sorted = sortParticipants(participants)
+      this.setData({
+        participants: sorted,
+        activeCount: sorted.filter((item) => item.status === 'active').length
+      })
     } catch (error) {
       wx.showToast({
-        title: error.message || '参与人加载失败',
+        title: error.message || '预约人加载失败',
         icon: 'none'
       })
     } finally {
       this.setData({ loading: false })
     }
+  },
+
+  goToSpaces() {
+    wx.navigateTo({ url: '/pages/spaces/index' })
   },
 
   addParticipant() {
@@ -67,7 +77,7 @@ Page({
     if (deactivate) {
       const confirmed = await new Promise((resolve) => {
         wx.showModal({
-          title: '停用参与人',
+          title: '停用预约人',
           content: '停用后仍保留历史记录，但不能再用于新预约。',
           confirmText: '停用',
           confirmColor: '#B43C3C',

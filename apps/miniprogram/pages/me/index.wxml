@@ -9,45 +9,24 @@
     <text class="chevron">›</text>
   </view>
 
-  <view class="space-section">
-    <text class="section-title">当前空间</text>
-    <view wx:if="{{currentSpace}}" class="card current-space">
-      <view>
-        <text class="space-name">{{currentSpace.name}}</text>
-        <text class="space-state">当前使用</text>
-      </view>
-    </view>
-    <view wx:else class="card empty-space">
-      <text class="space-name">请选择一个空间</text>
-      <text class="page-description">当前没有可使用的默认空间。</text>
-    </view>
-  </view>
-
-  <view class="space-section" wx:if="{{spaces.length > 1 || selectSpaceRequired}}">
-    <text class="section-title">切换空间</text>
-    <view class="card space-list">
-      <view
-        wx:for="{{spaces}}"
-        wx:key="id"
-        class="space-row {{item.id === currentSpaceId ? 'space-row--current' : ''}}"
-        data-space-id="{{item.id}}"
-        bindtap="switchSpace"
-      >
-        <view>
-          <text class="space-name">{{item.name}}</text>
-          <text wx:if="{{item.id === currentSpaceId}}" class="space-current-label">当前</text>
+  <view class="account-section">
+    <text class="section-title">预约设置</text>
+    <view class="list-surface account-list">
+      <view class="list-row account-row" bindtap="manageParticipants" role="button">
+        <view class="account-row__copy">
+          <text class="account-row__title">常用预约人</text>
+          <text class="caption">管理为家人或他人预约时使用的信息</text>
         </view>
-        <text wx:if="{{switchingSpaceId === item.id}}" class="caption">切换中…</text>
-        <text wx:elif="{{item.id !== currentSpaceId}}" class="chevron">›</text>
+        <text class="chevron">›</text>
+      </view>
+      <view class="list-row account-row" bindtap="manageSpaces" role="button">
+        <view class="account-row__copy">
+          <text class="account-row__title">服务方</text>
+          <text class="caption">{{currentSpace ? currentSpace.name : (spaces.length ? '请选择服务方' : '尚未加入服务方')}}</text>
+        </view>
+        <text class="chevron">›</text>
       </view>
     </view>
-  </view>
-
-  <view class="secondary-actions">
-    <button class="primary-button" bindtap="browseAvailability">发起预约</button>
-    <button class="secondary-button" bindtap="viewBookings">我的预约</button>
-    <button class="secondary-button" bindtap="manageParticipants">管理参与人</button>
-    <button class="secondary-button" bindtap="addSpace">加入其他空间</button>
   </view>
   <view class="safe-bottom"></view>
 </view>

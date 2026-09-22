@@ -7,11 +7,11 @@
   width: 104rpx;
   height: 104rpx;
   border-radius: 52rpx;
-  background: #e8f4f1;
+  background: var(--color-accent-soft);
 }
 
 .profile-avatar--empty {
-  color: #126e62;
+  color: var(--color-accent);
   font-size: 32rpx;
   font-weight: 600;
   line-height: 104rpx;
@@ -31,57 +31,42 @@
 }
 
 .chevron {
-  color: #98a2b3;
+  color: var(--color-subtle);
   font-size: 40rpx;
 }
 
-.space-section {
+.account-section {
   margin-top: 40rpx;
 }
 
-.current-space {
-  border-color: #b9dcd5;
-  background: #f7fbfa;
+.account-list {
+  overflow: hidden;
 }
 
-.space-name {
-  font-size: 28rpx;
-  font-weight: 600;
-}
-
-.space-state,
-.space-current-label {
-  display: inline-block;
-  margin-left: 12rpx;
-  color: #126e62;
-  font-size: 22rpx;
-}
-
-.empty-space .page-description {
-  margin-top: 8rpx;
-}
-
-.space-list {
-  padding-top: 4rpx;
-  padding-bottom: 4rpx;
-}
-
-.space-row {
+.account-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 96rpx;
-  border-bottom: 1rpx solid #e7eaf0;
+  box-sizing: border-box;
+  min-height: 112rpx;
+  padding: var(--space-2) var(--space-4);
+  border-bottom: 1rpx solid var(--color-line-soft);
 }
 
-.space-row:last-child {
+.account-row:last-child {
   border-bottom: 0;
 }
 
-.secondary-actions {
-  margin-top: 40rpx;
+.account-row__copy {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
 }
 
-.secondary-actions .secondary-button + .secondary-button {
-  margin-top: 20rpx;
+.account-row__title {
+  color: var(--color-ink);
+  font-size: var(--font-body);
+  font-weight: 600;
 }

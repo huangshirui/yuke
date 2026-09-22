@@ -9,13 +9,22 @@
 }
 
 .avatar-button {
+  display: block;
+  flex: 0 0 152rpx;
+  box-sizing: border-box;
   width: 152rpx;
+  min-width: 152rpx;
+  max-width: 152rpx;
   height: 152rpx;
+  min-height: 152rpx;
+  max-height: 152rpx;
+  margin: 0;
   padding: 0;
   border: 0;
-  border-radius: 76rpx;
-  background: #e8f4f1;
+  border-radius: var(--radius-round);
+  background: var(--color-accent-soft);
   overflow: hidden;
+  line-height: 1;
 }
 
 .avatar-button::after {
@@ -23,15 +32,17 @@
 }
 
 .avatar-image {
+  display: block;
   width: 152rpx;
   height: 152rpx;
+  border-radius: var(--radius-round);
 }
 
 .avatar-placeholder {
   width: 152rpx;
   height: 152rpx;
-  color: #126e62;
-  font-size: 24rpx;
+  color: var(--color-accent);
+  font-size: var(--font-caption);
   line-height: 152rpx;
   text-align: center;
 }

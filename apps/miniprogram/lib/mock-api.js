@@ -227,7 +227,11 @@ function createMockApi(storage) {
             spaceId,
             resourceId,
             slotTypeId: 'sty_synthetic_standard',
-            slotTypeName: index % 2 ? '沟通时段' : '标准时段',
+              resource: clone(resources.find((item) => item.id === resourceId)),
+              slotType: {
+                id: 'sty_synthetic_standard',
+                name: index % 2 ? '沟通时段' : '标准时段'
+              },
             seriesId: index % 3 === 0 ? 'series_synthetic' : null,
             startAt: `${date}T${String(hour).padStart(2, '0')}:00:00.000Z`,
             endAt: `${date}T${String(hour + 1).padStart(2, '0')}:00:00.000Z`,
@@ -241,7 +245,7 @@ function createMockApi(storage) {
         next.setUTCDate(next.getUTCDate() + 1)
         date = next.toISOString().slice(0, 10)
       }
-      return clone(result.filter((slot) => slot.bookable))
+        return clone(result)
     },
 
     async createBooking(spaceId, input) {

@@ -1,0 +1,112 @@
+<view class="page">
+  <view class="page-header page-header--action">
+    <view class="page-header__copy">
+      <text class="page-title">{{hasSpace ? currentSpace.name : '概览'}}</text>
+      <text class="page-description">{{todayLabel || '预约信息一览'}}</text>
+    </view>
+    <button wx:if="{{hasSpace}}" class="header-action" bindtap="startBooking">发起预约</button>
+  </view>
+
+  <view wx:if="{{!hasSpace}}" class="card state-card">
+    <text class="state-title">还没有可用的服务方</text>
+    <text class="page-description">先加入或选择服务方，才能看到概览数据。</text>
+    <button class="primary-button empty-action" bindtap="goToMe">去「我的」选择服务方</button>
+  </view>
+
+  <block wx:else>
+    <view class="stat-grid">
+      <view class="stat-card">
+        <text class="stat-value">{{stats.today}}</text>
+        <text class="stat-label">今日预约</text>
+      </view>
+      <view class="stat-card">
+        <text class="stat-value">{{stats.week}}</text>
+        <text class="stat-label">本周预约</text>
+      </view>
+      <view class="stat-card">
+        <text class="stat-value">{{stats.upcoming}}</text>
+        <text class="stat-label">待进行</text>
+      </view>
+      <view class="stat-card">
+        <text class="stat-value">{{stats.activeParticipants}}<text class="stat-sub">/{{stats.participants}}</text></text>
+        <text class="stat-label">可用预约人</text>
+      </view>
+    </view>
+
+    <view class="quick-actions">
+      <button class="quick-action" bindtap="goSchedule">查看日程</button>
+      <button class="quick-action" bindtap="goParticipants">管理预约人</button>
+    </view>
+
+    <view class="overview-section">
+      <view class="section-heading">
+        <text class="section-title">即将到来</text>
+        <button class="text-button" bindtap="goSchedule">全部 ›</button>
+      </view>
+
+      <view wx:if="{{loading}}" class="card state-card">
+        <text class="muted">正在加载概览…</text>
+      </view>
+
+      <view wx:elif="{{!upcoming.length}}" class="card state-card">
+        <text class="state-title">暂无待进行的预约</text>
+        <text class="page-description">现在可以发起一次新的预约。</text>
+        <button class="primary-button empty-action" bindtap="startBooking">发起预约</button>
+      </view>
+
+      <view wx:else class="list-surface booking-list">
+        <view
+          wx:for="{{upcoming}}"
+          wx:key="id"
+          class="list-row booking-card"
+          data-booking-id="{{item.id}}"
+          bindtap="openDetail"
+          role="button"
+        >
+          <view class="booking-card__main">
+            <view class="booking-card__title">
+              <text>{{item.displayStart}}–{{item.displayEnd}}</text>
+              <view class="status-badge status-badge--{{item.status}}">
+                <text class="status-badge__label">{{item.statusLabel}}</text>
+              </view>
+            </view>
+            <text class="booking-card__resource">{{item.resource.name}} · {{item.slotType.name}}</text>
+            <text class="caption">{{item.displayDate}} · 预约人：{{item.participant.name}}</text>
+          </view>
+          <text class="chevron">›</text>
+        </view>
+      </view>
+    </view>
+
+    <view wx:if="{{recent.length}}" class="overview-section">
+      <text class="section-title">最近记录</text>
+      <view class="list-surface booking-list">
+        <view
+          wx:for="{{recent}}"
+          wx:key="id"
+          class="list-row booking-card booking-card--muted"
+          data-booking-id="{{item.id}}"
+          bindtap="openDetail"
+          role="button"
+        >
+          <view class="booking-card__main">
+            <view class="booking-card__title">
+              <text>{{item.displayStart}}–{{item.displayEnd}}</text>
+              <view class="status-badge status-badge--{{item.status}}">
+                <text class="status-badge__label">{{item.statusLabel}}</text>
+              </view>
+            </view>
+            <text class="caption">{{item.displayDate}} · {{item.resource.name}} · {{item.participant.name}}</text>
+          </view>
+          <text class="chevron">›</text>
+        </view>
+      </view>
+    </view>
+
+    <view class="resource-hint card">
+      <text class="caption">当前服务方共有 {{stats.resources}} 个预约项目</text>
+    </view>
+  </block>
+
+  <view class="safe-bottom"></view>
+</view>

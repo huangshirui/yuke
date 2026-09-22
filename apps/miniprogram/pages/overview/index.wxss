@@ -1,0 +1,136 @@
+.stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2-5);
+}
+
+.stat-card {
+  padding: var(--space-3-5) var(--space-3);
+  border: 1rpx solid var(--color-line);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+}
+
+.stat-value {
+  display: block;
+  font-size: 48rpx;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--color-accent);
+}
+
+.stat-sub {
+  font-size: 26rpx;
+  font-weight: 500;
+  color: var(--color-subtle);
+}
+
+.stat-label {
+  display: block;
+  margin-top: var(--space-1);
+  color: var(--color-muted);
+  font-size: var(--font-caption);
+}
+
+.quick-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2-5);
+  margin-top: var(--space-3);
+}
+
+.quick-action {
+  min-height: 80rpx;
+  margin: 0;
+  border: 1rpx solid var(--color-line);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  color: var(--color-ink);
+  font-size: 26rpx;
+  font-weight: 600;
+  line-height: 78rpx;
+}
+
+.quick-action::after {
+  border: 0;
+}
+
+.overview-section {
+  margin-top: var(--space-5);
+}
+
+.section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.section-heading .section-title {
+  margin-bottom: 0;
+}
+
+.section-heading .text-button {
+  width: auto;
+}
+
+.overview-section .section-title {
+  display: block;
+  margin-bottom: var(--space-2-5);
+}
+
+.booking-card {
+  box-sizing: border-box;
+  width: 100%;
+  margin: 0;
+  padding: var(--space-3) var(--space-4);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  text-align: left;
+  border: 0;
+  border-bottom: 1rpx solid var(--color-line-soft);
+  border-radius: 0;
+  background: var(--color-surface);
+}
+
+.booking-card::after {
+  border: 0;
+}
+
+.booking-card--muted {
+  background: var(--color-surface);
+}
+
+.booking-card__main {
+  display: grid;
+  gap: 7rpx;
+  flex: 1;
+  min-width: 0;
+}
+
+.booking-card__title {
+  display: flex;
+  align-items: center;
+  gap: 12rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+}
+
+.booking-card__title > text:first-child,
+.booking-card__resource,
+.booking-card__main > .caption {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.booking-card__resource {
+  font-size: 25rpx;
+  color: var(--color-ink);
+}
+
+.resource-hint {
+  margin-top: var(--space-4);
+  padding: var(--space-3);
+  text-align: center;
+}

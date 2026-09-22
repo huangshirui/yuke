@@ -3,13 +3,35 @@
     "pages/index/index",
     "pages/profile/setup",
     "pages/invite/index",
-    "pages/me/index",
+    "pages/schedule/index",
+    "pages/schedule/detail",
+    "pages/overview/index",
+    "pages/spaces/index",
     "pages/participants/index",
     "pages/participants/edit",
     "pages/booking/index",
-    "pages/schedule/index",
-    "pages/schedule/detail"
+    "pages/me/index"
   ],
+  "tabBar": {
+    "color": "#8A94A6",
+    "selectedColor": "#126E62",
+    "backgroundColor": "#FFFFFF",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/schedule/index",
+        "text": "预约",
+        "iconPath": "assets/tabbar/schedule.png",
+        "selectedIconPath": "assets/tabbar/schedule-active.png"
+      },
+      {
+        "pagePath": "pages/me/index",
+        "text": "我的",
+        "iconPath": "assets/tabbar/me.png",
+        "selectedIconPath": "assets/tabbar/me-active.png"
+      }
+    ]
+  },
   "window": {
     "navigationBarTitleText": "Yu言在线",
     "navigationBarBackgroundColor": "#FFFFFF",
@@ -17,5 +39,6 @@
     "backgroundColor": "#F6F7F9",
     "backgroundTextStyle": "light"
   },
+  "lazyCodeLoading": "requiredComponents",
   "style": "v2"
 }

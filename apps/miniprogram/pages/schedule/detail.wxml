@@ -1,19 +1,24 @@
 <view class="page">
   <view class="page-header">
     <text class="page-title">预约详情</text>
-    <text class="page-description">{{currentSpace.name || '当前空间'}}</text>
+    <text class="page-description">{{currentSpace.name || '当前服务方'}}</text>
   </view>
 
-  <view wx:if="{{loading}}" class="card"><text class="muted">正在加载预约…</text></view>
+  <view wx:if="{{!hasSpace}}" class="card state-card">
+    <text class="state-title">还没有可用的服务方</text>
+    <text class="page-description">先加入或选择服务方，才能查看预约详情。</text>
+    <button class="primary-button empty-action" bindtap="goToSpaces">选择服务方</button>
+  </view>
+
+  <view wx:elif="{{loading}}" class="card"><text class="muted">正在加载预约…</text></view>
 
   <block wx:elif="{{booking}}">
     <view class="card detail-card">
       <view class="detail-heading">
-        <view>
-          <text class="detail-resource">{{booking.resource.name}}</text>
-          <text class="detail-type">{{booking.slotType.name}}</text>
+        <text class="detail-resource">{{booking.resource.name}}</text>
+        <view class="status-badge status-badge--{{booking.status}}">
+          <text class="status-badge__label">{{booking.statusLabel}}</text>
         </view>
-        <text class="status-badge status-badge--{{booking.status}}">{{booking.statusLabel}}</text>
       </view>
 
       <view class="detail-row">
@@ -22,19 +27,23 @@
         <text>{{booking.displayStart}}–{{booking.displayEnd}}</text>
       </view>
       <view class="detail-row">
-        <text class="detail-label">参与人</text>
+        <text class="detail-label">预约人</text>
         <text>{{booking.participant.name}}</text>
         <text class="caption">出生年月 {{booking.participant.birthMonth}}</text>
       </view>
       <view class="detail-row">
-        <text class="detail-label">预约编号</text>
-        <text class="detail-id">{{booking.id}}</text>
+        <text class="detail-label">创建时间</text>
+        <text>{{booking.displayCreatedAt}}</text>
+      </view>
+      <view class="detail-row">
+        <text class="detail-label">最后更新时间</text>
+        <text>{{booking.displayUpdatedAt}}</text>
       </view>
     </view>
 
     <button
       wx:if="{{booking.status === 'booked'}}"
-      class="cancel-button"
+      class="danger-button cancel-button"
       loading="{{cancelling}}"
       disabled="{{cancelling}}"
       bindtap="cancelBooking"

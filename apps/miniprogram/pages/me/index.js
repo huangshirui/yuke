@@ -1,4 +1,5 @@
 const { loadUser, saveUser } = require('../../lib/storage')
+const { markTab, TAB_ROUTES } = require('../../lib/onboarding')
 
 function deriveView(user) {
   const spaces = Array.isArray(user?.spaces)
@@ -13,19 +14,11 @@ Page({
     user: null,
     spaces: [],
     currentSpace: null,
-    currentSpaceId: '',
-    avatarDisplayUrl: '',
-    switchingSpaceId: '',
-    selectSpaceRequired: false
-  },
-
-  onLoad(options) {
-    this.setData({
-      selectSpaceRequired: options?.selectSpace === '1'
-    })
+    avatarDisplayUrl: ''
   },
 
   async onShow() {
+    markTab(wx, TAB_ROUTES.me)
     await this.refresh()
   },
 
@@ -47,7 +40,6 @@ Page({
         user,
         spaces: view.spaces,
         currentSpace: view.currentSpace,
-        currentSpaceId: view.currentSpace?.id || '',
         avatarDisplayUrl
       })
     } catch {
@@ -60,7 +52,6 @@ Page({
         user,
         spaces: view.spaces,
         currentSpace: view.currentSpace,
-        currentSpaceId: view.currentSpace?.id || '',
         avatarDisplayUrl: cachedAvatar
       })
     }
@@ -70,50 +61,11 @@ Page({
     wx.navigateTo({ url: '/pages/profile/setup?mode=edit' })
   },
 
-  browseAvailability() {
-    wx.navigateTo({ url: '/pages/booking/index' })
-  },
-
-  viewBookings() {
-    wx.navigateTo({ url: '/pages/schedule/index' })
-  },
-
   manageParticipants() {
     wx.navigateTo({ url: '/pages/participants/index' })
   },
 
-  addSpace() {
-    wx.navigateTo({ url: '/pages/invite/index?mode=add' })
-  },
-
-  async switchSpace(event) {
-    const spaceId = event.currentTarget.dataset.spaceId
-    if (!spaceId || spaceId === this.data.currentSpace?.id || this.data.switchingSpaceId) {
-      return
-    }
-
-    this.setData({ switchingSpaceId: spaceId })
-    try {
-      const api = getApp().globalData.api
-      await api.switchSpace(spaceId)
-      const user = await api.getMe()
-      saveUser(wx, user)
-      const view = deriveView(user)
-      this.setData({
-        user,
-        spaces: view.spaces,
-        currentSpace: view.currentSpace,
-        currentSpaceId: view.currentSpace?.id || '',
-        selectSpaceRequired: false
-      })
-      wx.showToast({ title: '已切换空间', icon: 'success' })
-    } catch (error) {
-      wx.showToast({
-        title: error.message || '切换失败，请重试',
-        icon: 'none'
-      })
-    } finally {
-      this.setData({ switchingSpaceId: '' })
-    }
+  manageSpaces() {
+    wx.navigateTo({ url: '/pages/spaces/index' })
   }
 })

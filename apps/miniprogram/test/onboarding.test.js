@@ -34,12 +34,13 @@ test('restores active current Space when available', () => {
     ]
   })
 
-  assert.equal(result.route, '/pages/me/index')
+  assert.equal(result.route, '/pages/schedule/index')
+  assert.equal(result.tab, 'schedule')
   assert.equal(result.reason, 'ready')
   assert.equal(result.currentSpace.id, 'sp_synthetic_a')
 })
 
-test('requires Space selection when memberships exist but current Space is unavailable', () => {
+test('automatically selects the only active service provider when none is current', () => {
   const result = resolveEntry({
     profileInitialized: true,
     currentSpaceId: 'sp_disabled',
@@ -49,8 +50,24 @@ test('requires Space selection when memberships exist but current Space is unava
     ]
   })
 
-  assert.equal(result.route, '/pages/me/index')
-  assert.equal(result.reason, 'space-selection-required')
+  assert.equal(result.route, '/pages/schedule/index')
+  assert.equal(result.tab, 'schedule')
+  assert.equal(result.reason, 'single-space-auto-selection-required')
   assert.equal(result.currentSpace, null)
   assert.equal(result.spaces.length, 1)
+})
+
+test('requires service provider selection when multiple memberships are active', () => {
+  const result = resolveEntry({
+    profileInitialized: true,
+    currentSpaceId: null,
+    spaces: [
+      { id: 'sp_a', name: 'Synthetic A', status: 'active' },
+      { id: 'sp_b', name: 'Synthetic B', status: 'active' }
+    ]
+  })
+
+  assert.equal(result.route, '/pages/spaces/index')
+  assert.equal(result.reason, 'space-selection-required')
+  assert.equal(result.spaces.length, 2)
 })

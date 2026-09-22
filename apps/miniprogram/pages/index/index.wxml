@@ -1,8 +1,10 @@
 <view class="page page--centered bootstrap-page">
   <view class="bootstrap-content">
-    <text class="brand-mark">Yu</text>
+    <view class="brand-mark">
+      <image class="brand-logo" src="/assets/logo/logo@3x.png" mode="aspectFit" />
+    </view>
     <text class="bootstrap-title">Yu言在线</text>
-    <text wx:if="{{loading}}" class="page-description">正在准备你的空间…</text>
+    <text wx:if="{{loading}}" class="page-description">正在准备预约服务…</text>
     <view wx:else>
       <text class="page-description">{{errorMessage}}</text>
       <button class="primary-button retry-button" bindtap="bootstrap">重试</button>

@@ -1,108 +1,218 @@
 <view class="page">
-  <view class="page-header schedule-header">
-    <view>
-      <text class="page-title">我的预约</text>
-      <text class="page-description">{{currentSpace.name || '当前空间'}} · 查看和管理自己的预约。</text>
-    </view>
-    <button class="text-button" bindtap="startBooking">发起预约</button>
+  <view wx:if="{{!hasSpace}}" class="empty-wrap">
+    <text class="state-title">还没有可用的服务方</text>
+    <text class="page-description">先加入或选择服务方，才能查看和创建预约。</text>
+    <button class="primary-button empty-action" bindtap="goToSpaces">选择服务方</button>
   </view>
-
-  <view class="view-switch">
-    <button
-      class="view-switch__item {{mode === 'calendar' ? 'view-switch__item--active' : ''}}"
-      data-mode="calendar"
-      bindtap="switchMode"
-    >日程</button>
-    <button
-      class="view-switch__item {{mode === 'three' ? 'view-switch__item--active' : ''}}"
-      data-mode="three"
-      bindtap="switchMode"
-    >三日</button>
-  </view>
-
-  <view wx:if="{{loading}}" class="card state-card">
-    <text class="muted">正在加载预约…</text>
-  </view>
-
-  <block wx:elif="{{mode === 'calendar'}}">
-    <view class="calendar-toolbar">
-      <button class="calendar-nav" data-delta="-1" bindtap="moveCalendar">‹</button>
-      <text class="calendar-range">{{rangeLabel}}</text>
-      <button class="calendar-nav" data-delta="1" bindtap="moveCalendar">›</button>
-      <button class="calendar-expand" bindtap="toggleMonth">{{expandedMonth ? '收起月' : '展开月'}}</button>
-    </view>
-
-    <view class="calendar-weekdays">
-      <text wx:for="{{weekdayLabels}}" wx:key="*this">周{{item}}</text>
-    </view>
-
-    <view class="calendar-grid {{expandedMonth ? 'calendar-grid--month' : ''}}">
-      <button
-        wx:for="{{calendarDays}}"
-        wx:key="date"
-        class="calendar-day {{item.selected ? 'calendar-day--selected' : ''}} {{item.otherMonth ? 'calendar-day--muted' : ''}}"
-        data-date="{{item.date}}"
-        bindtap="selectDate"
-      >
-        <text class="calendar-day__number">{{item.day}}</text>
-        <text wx:if="{{item.count}}" class="calendar-day__count">{{item.count}}</text>
-      </button>
-    </view>
-
-    <view class="selected-day">
-      <text class="section-title">{{selectedDate}}</text>
-      <view wx:if="{{!selectedBookings.length}}" class="card state-card">
-        <text class="muted">这一天没有预约。</text>
-      </view>
-      <button
-        wx:for="{{selectedBookings}}"
-        wx:key="id"
-        class="card booking-card"
-        data-booking-id="{{item.id}}"
-        bindtap="openDetail"
-      >
-        <view class="booking-card__main">
-          <view class="booking-card__title">
-            <text>{{item.displayStart}}–{{item.displayEnd}}</text>
-            <text class="status-badge status-badge--{{item.status}}">{{item.statusLabel}}</text>
-          </view>
-          <text class="booking-card__resource">{{item.resource.name}} · {{item.slotType.name}}</text>
-          <text class="caption">参与人：{{item.participant.name}}</text>
-        </view>
-        <text class="chevron">›</text>
-      </button>
-    </view>
-  </block>
 
   <block wx:else>
-    <view class="three-toolbar">
-      <button class="calendar-nav" data-delta="-1" bindtap="moveThree">‹</button>
-      <text class="calendar-range">{{rangeLabel}}</text>
-      <button class="calendar-nav" data-delta="1" bindtap="moveThree">›</button>
+    <view class="schedule-head" style="{{navigationStyle}}">
+      <text class="schedule-head__title">{{scheduleTitle}}</text>
+      <view class="schedule-head__actions">
+        <view
+          class="icon-btn"
+          data-mode="{{mode === 'calendar' ? 'three' : 'calendar'}}"
+          bindtap="switchMode"
+          role="button"
+          aria-label="{{mode === 'calendar' ? '切换到三日视图' : '切换到月历视图'}}"
+        >
+          <view wx:if="{{mode === 'calendar'}}" class="icon-glyph icon-glyph--three">
+            <view></view><view></view><view></view>
+          </view>
+          <view wx:else class="icon-glyph icon-glyph--month"></view>
+        </view>
+        <view class="icon-btn" bindtap="startBooking" role="button" aria-label="新增预约">
+          <view class="icon-glyph icon-glyph--plus">
+            <view class="icon-glyph__horizontal"></view>
+            <view class="icon-glyph__vertical"></view>
+          </view>
+        </view>
+      </view>
     </view>
 
-    <view class="three-grid">
-      <view wx:for="{{threeGroups}}" wx:key="date" class="three-day">
-        <text class="three-day__title">{{item.label}}</text>
-        <view wx:if="{{!item.bookings.length}}" class="three-empty">暂无预约</view>
-        <button
-          wx:for="{{item.bookings}}"
-          wx:for-item="booking"
-          wx:key="id"
-          class="booking-card booking-card--compact"
-          data-booking-id="{{booking.id}}"
-          bindtap="openDetail"
+    <block wx:if="{{mode === 'calendar'}}">
+      <view class="calendar-mode">
+      <view class="calendar-view">
+        <view class="weekdays">
+          <text
+            wx:for="{{weekdayLabels}}"
+            wx:key="*this"
+            class="weekdays__item {{index === 5 || index === 6 ? 'weekdays__item--rest' : ''}}"
+          >{{item}}</text>
+        </view>
+
+        <swiper
+          class="calendar-swiper"
+          current="{{calendarSwiperIndex}}"
+          circular
+          duration="280"
+          easing-function="easeOutCubic"
+          bindchange="onCalendarSwiperChange"
         >
-          <view class="booking-card__main">
-            <view class="booking-card__title">
-              <text>{{booking.displayStart}}–{{booking.displayEnd}}</text>
-              <text class="status-badge status-badge--{{booking.status}}">{{booking.statusLabel}}</text>
+          <swiper-item wx:for="{{calendarPanels}}" wx:for-item="panel" wx:key="key">
+            <view class="cal-grid">
+              <view
+                wx:for="{{panel.days}}"
+                wx:for-item="day"
+                wx:key="date"
+                class="cal-cell {{day.selected ? 'cal-cell--selected' : ''}} {{day.otherMonth ? 'cal-cell--muted' : ''}}"
+                data-date="{{day.date}}"
+                bindtap="selectDate"
+              >
+                <view class="cal-cell__day {{day.isToday ? 'cal-cell__day--today' : ''}}">
+                  <text>{{day.day}}</text>
+                </view>
+                <view wx:if="{{day.dot}}" class="cal-dot cal-dot--{{day.dot}}"></view>
+              </view>
             </view>
-            <text class="booking-card__resource">{{booking.resource.name}}</text>
-            <text class="caption">{{booking.participant.name}} · {{booking.slotType.name}}</text>
-          </view>
-        </button>
+          </swiper-item>
+        </swiper>
       </view>
+
+      <view wx:if="{{loading && !agendaSections.length}}" class="day-state">
+        <text class="muted">正在加载预约…</text>
+      </view>
+      <scroll-view
+        wx:else
+        class="agenda-scroll"
+        style="height: {{agendaViewportHeight}}px;"
+        scroll-y
+        scroll-with-animation
+        scroll-into-view="{{agendaScrollTarget}}"
+        bindscroll="onAgendaScroll"
+      >
+        <view
+          id="{{panel.id}}"
+          class="agenda-section"
+          wx:for="{{agendaSections}}"
+          wx:for-item="panel"
+          wx:key="date"
+          data-date="{{panel.date}}"
+        >
+            <view class="day-head">
+              <text class="day-head__title">{{panel.title}}</text>
+            </view>
+            <view wx:if="{{!panel.bookings.length}}" class="day-state">
+              <text class="muted">这一天没有预约</text>
+            </view>
+            <block wx:else>
+              <view
+                wx:for="{{panel.bookings}}"
+                wx:for-item="booking"
+                wx:key="id"
+                class="booking-row"
+                data-booking-id="{{booking.id}}"
+                bindtap="openDetail"
+                role="button"
+              >
+                <view class="booking-row__time">
+                  <text class="booking-row__start">{{booking.displayStart}}</text>
+                  <text class="booking-row__end">{{booking.displayEnd}}</text>
+                </view>
+                <view class="booking-row__body">
+                  <view class="booking-row__title">
+                    <text class="booking-row__resource">{{booking.resource.name}}</text>
+                    <view class="status-badge status-badge--{{booking.status}}">
+                      <text class="status-badge__label">{{booking.statusLabel}}</text>
+                    </view>
+                  </view>
+                  <text class="booking-row__meta">{{booking.participant.name}}</text>
+                </view>
+                <text class="chevron">›</text>
+              </view>
+            </block>
+        </view>
+        <view class="agenda-scroll__tail"></view>
+      </scroll-view>
+      </view>
+    </block>
+
+    <view wx:else class="three-view">
+      <view class="three-days">
+        <view class="three-days__gutter"></view>
+        <swiper
+          class="three-days__swiper"
+          current="{{threeSwiperIndex}}"
+          circular
+          disable-touch
+          duration="280"
+          easing-function="easeOutCubic"
+          bindtouchstart="onThreeSwipeStart"
+          bindtouchend="onThreeSwipeEnd"
+        >
+          <swiper-item wx:for="{{threePanels}}" wx:for-item="panel" wx:key="key">
+            <view class="three-days__columns">
+              <view
+                wx:for="{{panel.columns}}"
+                wx:for-item="col"
+                wx:key="date"
+                class="three-days__col {{col.isToday ? 'three-days__col--today' : ''}}"
+              >
+                <text class="three-days__day">{{col.day}}</text>
+                <text class="three-days__weekday">{{col.weekday}}</text>
+              </view>
+            </view>
+          </swiper-item>
+        </swiper>
+      </view>
+
+      <scroll-view class="timeline" scroll-y>
+        <view class="timeline__inner" style="height: {{timelineHeight}}px;">
+          <view class="timeline__hours">
+            <text
+              wx:for="{{timeTicks}}"
+              wx:for-item="tick"
+              wx:key="label"
+              class="timeline__hour"
+              style="top: {{tick.top}}px;"
+            >{{tick.label}}</text>
+          </view>
+
+          <swiper
+            class="timeline__swiper"
+            style="height: {{timelineHeight}}px;"
+            current="{{threeSwiperIndex}}"
+            circular
+            disable-touch
+            duration="280"
+            easing-function="easeOutCubic"
+            bindtouchstart="onThreeSwipeStart"
+            bindtouchend="onThreeSwipeEnd"
+          >
+            <swiper-item wx:for="{{threePanels}}" wx:for-item="panel" wx:key="key">
+              <view class="timeline__columns">
+                <view
+                  wx:for="{{panel.columns}}"
+                  wx:for-item="col"
+                  wx:key="date"
+                  class="timeline__col"
+                >
+                  <view
+                    wx:for="{{timeSlots}}"
+                    wx:for-item="time"
+                    wx:key="label"
+                    class="timeline__cell"
+                    style="height: {{hourRowHeight}}px;"
+                  ></view>
+                  <view
+                    wx:for="{{col.slots}}"
+                    wx:for-item="slot"
+                    wx:key="id"
+                    class="slot-block"
+                    style="top: {{slot.top}}px; height: {{slot.height}}px;"
+                    data-booking-id="{{slot.id}}"
+                    catchtap="openDetail"
+                  >
+                    <text class="slot-block__title">{{slot.displayStart}}</text>
+                    <text class="slot-block__meta">{{slot.resource.name}} · {{slot.participant.name}}</text>
+                  </view>
+                </view>
+              </view>
+            </swiper-item>
+          </swiper>
+        </view>
+        <view class="timeline__tail"></view>
+      </scroll-view>
     </view>
   </block>
 
