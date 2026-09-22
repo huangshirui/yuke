@@ -53,18 +53,20 @@ test('current admin identity and email-based space assignment stay stable', asyn
 
   assert.deepEqual(await api.getCurrentAdmin(), {
     id: 'adm_demo_super',
+    displayName: '示例超级用户',
     email: 'super-admin@example.invalid',
     platformRole: 'super_admin',
   })
 
-  const assigned = await api.assignAdminByEmail('sp_demo_alpha', 'New.Admin@Example.Invalid')
+  const assigned = await api.assignAdminByEmail('sp_demo_alpha', 'New.Admin@Example.Invalid', '新用户')
+  assert.equal(assigned.displayName, '新用户')
   assert.equal(assigned.email, 'new.admin@example.invalid')
   assert.equal(
     (await api.listAdmins('sp_demo_alpha')).filter((item) => item.email === assigned.email).length,
     1,
   )
 
-  const again = await api.assignAdminByEmail('sp_demo_alpha', 'new.admin@example.invalid')
+  const again = await api.assignAdminByEmail('sp_demo_alpha', 'new.admin@example.invalid', '新用户')
   assert.equal(again.id, assigned.id)
 
   await api.removeAdmin('sp_demo_alpha', assigned.id)
@@ -143,13 +145,14 @@ test('admin shell mock exposes current identity and assigns admins by email', as
   assert.equal(current.email, 'super-admin@example.invalid')
   assert.equal(current.platformRole, 'super_admin')
 
-  const assigned = await api.assignAdminByEmail('sp_demo_alpha', 'NEW-ADMIN@example.invalid')
+  const assigned = await api.assignAdminByEmail('sp_demo_alpha', 'NEW-ADMIN@example.invalid', '测试运营')
+  assert.equal(assigned.displayName, '测试运营')
   assert.equal(assigned.email, 'new-admin@example.invalid')
 
   const admins = await api.listAdmins('sp_demo_alpha')
   assert.ok(admins.some((item) => item.email === 'new-admin@example.invalid'))
 
-  const same = await api.assignAdminByEmail('sp_demo_alpha', 'new-admin@example.invalid')
+  const same = await api.assignAdminByEmail('sp_demo_alpha', 'new-admin@example.invalid', '测试运营')
   assert.equal(same.id, assigned.id)
 })
 
