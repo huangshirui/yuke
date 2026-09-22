@@ -102,7 +102,7 @@ onMounted(async () => {
   <main class="page">
     <section class="page-heading">
       <div>
-        <span class="eyebrow">Spaces</span>
+        <span class="eyebrow">空间管理</span>
         <h1>空间管理</h1>
         <p>每个空间的数据和运营设置彼此隔离。停用空间会保留历史数据，但不再接受新的预约。</p>
       </div>
@@ -157,7 +157,7 @@ onMounted(async () => {
     <div v-if="showCreate && isSuperAdmin" class="modal-backdrop" @click.self="showCreate = false">
       <section class="modal" role="dialog" aria-modal="true" aria-labelledby="create-space-title">
         <div class="modal-heading">
-          <div><span class="eyebrow">New Space</span><h2 id="create-space-title">新建空间</h2></div>
+          <div><span class="eyebrow">空间</span><h2 id="create-space-title">新建空间</h2></div>
           <button class="icon-button" aria-label="关闭" @click="showCreate = false">×</button>
         </div>
 
