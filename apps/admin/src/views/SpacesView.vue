@@ -122,13 +122,13 @@ onMounted(async () => {
       <div class="panel-heading">
         <div>
           <h2>全部空间</h2>
-          <p>进入空间后可继续配置管理员、预约规则和邀请码。</p>
+          <p>进入空间后可继续配置用户、预约规则和邀请码。</p>
         </div>
       </div>
 
       <div v-if="!loading && spaces.length === 0" class="empty-state">
         <strong>{{ isSuperAdmin ? '还没有空间' : '还没有可访问空间' }}</strong>
-        <span>{{ isSuperAdmin ? '创建第一个空间后即可开始配置。' : '请联系超级管理员为你的邮箱分配空间权限。' }}</span>
+        <span>{{ isSuperAdmin ? '创建第一个空间后即可开始配置。' : '请联系超级用户为你的邮箱分配空间权限。' }}</span>
       </div>
       <div v-if="loading || spaces.length > 0" class="table-wrap">
         <table>
