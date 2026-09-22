@@ -24,7 +24,7 @@ const currentSpace = computed(() =>
 )
 const isSuperAdmin = computed(() => admin.value?.platformRole === 'super_admin')
 const adminInitial = computed(() => (admin.value?.email || 'A').slice(0, 1).toUpperCase())
-const roleLabel = computed(() => isSuperAdmin.value ? 'Super Admin · 超级管理员' : 'Admin · 空间管理员')
+const roleLabel = computed(() => isSuperAdmin.value ? '超级用户' : '空间用户')
 
 function currentPath(section: string) {
   return currentSpace.value ? spacePath(currentSpace.value.id, section) : '/'
@@ -60,6 +60,10 @@ async function switchSpace(spaceId: string) {
   await router.push(spacePath(spaceId))
 }
 
+function logout() {
+  window.location.assign('/cdn-cgi/access/logout')
+}
+
 async function openSpaceManagement(create = false) {
   spaceMenuOpen.value = false
   await router.push(create ? { path: '/spaces', query: { create: '1' } } : '/spaces')
@@ -91,7 +95,7 @@ onMounted(loadShell)
         <span class="brand-logo-wrap"><img src="/yu-logo.png" alt="" class="brand-logo" /></span>
         <div>
           <strong>Yu言在线</strong>
-          <small>Admin Console</small>
+          <small>运营后台</small>
         </div>
       </div>
 
@@ -105,7 +109,7 @@ onMounted(loadShell)
             <AppIcon name="bookings" /><span>预约</span>
           </RouterLink>
           <RouterLink :to="currentPath('users')" class="nav-item">
-            <AppIcon name="users" /><span>用户管理</span>
+            <AppIcon name="users" /><span>客户管理</span>
           </RouterLink>
         </div>
 
@@ -125,7 +129,7 @@ onMounted(loadShell)
             <AppIcon name="settings" /><span>规则设置</span>
           </RouterLink>
           <RouterLink v-if="isSuperAdmin" :to="currentPath('admins')" class="nav-item">
-            <AppIcon name="admin" /><span>管理员管理</span>
+            <AppIcon name="admin" /><span>用户管理</span>
           </RouterLink>
         </div>
 
@@ -183,10 +187,11 @@ onMounted(loadShell)
 
         <div v-if="admin" class="account-card">
           <span class="avatar">{{ adminInitial }}</span>
-          <div>
+          <div class="account-card__identity">
             <strong>{{ admin.email }}</strong>
             <small>{{ roleLabel }}</small>
           </div>
+          <button class="account-logout" type="button" @click="logout">退出登录</button>
         </div>
       </div>
     </aside>
