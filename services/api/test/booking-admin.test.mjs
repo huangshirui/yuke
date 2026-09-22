@@ -146,7 +146,12 @@ describe('Admin Booking mutations and history', () => {
       adminToken
     )
     expect(list.status).toBe(200)
-    expect((await list.json()).data.map((item) => item.id)).toEqual([booking.id])
+    const listPayload = await list.json()
+    expect(listPayload.data.map((item) => item.id)).toEqual([booking.id])
+    expect(listPayload.data[0]).toMatchObject({
+      userNickname: `Synthetic User ${suffix}`,
+      invitedByAdminEmail: `${suffix}@example.invalid`
+    })
 
     const byMembership = await adminRequest(
       `/v1/admin/spaces/${ids.space}/bookings?membershipId=${ids.membership}`,
