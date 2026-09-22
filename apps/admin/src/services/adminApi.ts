@@ -32,7 +32,8 @@ export interface AdminApi {
   updateSettings(spaceId: string, input: UpdateSpaceSettingsInput): Promise<SpaceSettings>
   listAdmins(spaceId: string): Promise<AdminUserSummary[]>
   addAdmin(spaceId: string, adminUserId: string): Promise<AdminUserSummary>
-  assignAdminByEmail(spaceId: string, email: string): Promise<AdminUserSummary>
+  assignAdminByEmail(spaceId: string, email: string, displayName: string): Promise<AdminUserSummary>
+  updateAdminDisplayName(adminUserId: string, displayName: string): Promise<AdminUserSummary>
   removeAdmin(spaceId: string, adminUserId: string): Promise<void>
   listInvites(spaceId: string): Promise<InviteSummary[]>
   createInvite(spaceId: string, input: CreateInviteInput): Promise<InviteSummary>
@@ -147,12 +148,18 @@ class HttpAdminApi implements AdminApi {
       method: 'POST', body: JSON.stringify({ adminUserId }),
     })
   }
-  async assignAdminByEmail(spaceId: string, email: string) {
+  async assignAdminByEmail(spaceId: string, email: string, displayName: string) {
     const admin = await this.request<{ id: string }>('/admin/admin-users', {
       method: 'POST',
-      body: JSON.stringify({ email }),
+      body: JSON.stringify({ email, displayName }),
     })
     return this.addAdmin(spaceId, admin.id)
+  }
+  updateAdminDisplayName(adminUserId: string, displayName: string) {
+    return this.request<AdminUserSummary>(
+      '/admin/admin-users/' + encodeURIComponent(adminUserId),
+      { method: 'PATCH', body: JSON.stringify({ displayName }) },
+    )
   }
   async removeAdmin(spaceId: string, adminUserId: string) {
     await this.request<unknown>(
