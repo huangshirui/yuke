@@ -402,7 +402,7 @@ textarea:focus { border-color: var(--color-focus); box-shadow: var(--focus-ring)
 }
 .account-logout:hover,
 .account-logout:focus-visible {
-  background: var(--color-sidebar-hover);
+  background: var(--color-sidebar-control);
   color: var(--color-sidebar-text);
 }
 .main-frame { grid-column: 2; min-width: 0; }
