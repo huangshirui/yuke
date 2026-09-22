@@ -22,7 +22,10 @@ const loading = ref(true)
 const saving = ref(false)
 const error = ref('')
 const notice = ref('')
+const adminDisplayName = ref('')
 const adminEmail = ref('')
+const editingAdmin = ref<AdminUserSummary | null>(null)
+const editingAdminDisplayName = ref('')
 const showInviteForm = ref(false)
 const inviteForm = reactive({ label: '', expiresAt: defaultExpiry() })
 
@@ -128,19 +131,53 @@ async function toggleSpaceStatus() {
 
 async function addAdmin() {
   clearMessages()
+  const displayName = adminDisplayName.value.trim()
   const email = adminEmail.value.trim().toLowerCase()
+  if (!displayName) {
+    error.value = '请输入用户名称。'
+    return
+  }
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     error.value = '请输入有效的用户邮箱。'
     return
   }
   saving.value = true
   try {
-    await api.assignAdminByEmail(spaceId.value, email)
+    await api.assignAdminByEmail(spaceId.value, email, displayName)
     admins.value = await api.listAdmins(spaceId.value)
+    adminDisplayName.value = ''
     adminEmail.value = ''
     notice.value = '用户已添加，可访问当前空间。'
   } catch (cause) {
     error.value = cause instanceof Error ? cause.message : '用户添加失败。'
+  } finally {
+    saving.value = false
+  }
+}
+
+function editAdminName(admin: AdminUserSummary) {
+  clearMessages()
+  editingAdmin.value = admin
+  editingAdminDisplayName.value = admin.displayName || ''
+}
+
+async function saveAdminName() {
+  if (!editingAdmin.value) return
+  const displayName = editingAdminDisplayName.value.trim()
+  if (!displayName) {
+    error.value = '请输入用户名称。'
+    return
+  }
+  saving.value = true
+  clearMessages()
+  try {
+    await api.updateAdminDisplayName(editingAdmin.value.id, displayName)
+    admins.value = await api.listAdmins(spaceId.value)
+    editingAdmin.value = null
+    editingAdminDisplayName.value = ''
+    notice.value = '用户名称已更新。'
+  } catch (cause) {
+    error.value = cause instanceof Error ? cause.message : '用户名称更新失败。'
   } finally {
     saving.value = false
   }
@@ -278,34 +315,63 @@ onMounted(load)
           <div>
             <span class="eyebrow">访问权限</span>
             <h2>空间用户</h2>
-            <p>通过邮箱管理可访问当前空间的用户。</p>
+            <p>使用名称识别用户，邮箱用于登录与账号匹配。</p>
           </div>
         </div>
 
         <div class="inline-form admin-user-form">
           <label class="field field--grow">
-            <span>用户邮箱</span>
+            <span>用户名称</span>
+            <input v-model="adminDisplayName" autocomplete="off" placeholder="例如：运营小王" />
+          </label>
+          <label class="field field--grow">
+            <span>登录邮箱</span>
             <input v-model="adminEmail" type="email" autocomplete="off" placeholder="例如：operator@example.invalid" @keyup.enter="addAdmin" />
           </label>
-          <small class="admin-user-form__help">输入邮箱即可添加；尚未登录过的邮箱也可以提前获得当前空间权限。</small>
+          <small class="admin-user-form__help">名称用于后台主要展示；邮箱用于登录匹配。尚未登录过的邮箱也可以提前获得当前空间权限。</small>
           <button class="button button--primary" :disabled="saving" @click="addAdmin">添加用户</button>
         </div>
 
         <div class="table-wrap">
           <table>
-            <thead><tr><th>邮箱</th><th>身份</th><th>状态</th><th class="align-right">操作</th></tr></thead>
+            <thead><tr><th>用户</th><th>身份</th><th>状态</th><th class="align-right">操作</th></tr></thead>
             <tbody>
               <tr v-for="admin in admins" :key="admin.id">
-                <td><strong>{{ admin.email }}</strong></td>
+                <td>
+                  <strong>{{ admin.displayName || admin.email }}</strong>
+                  <small v-if="admin.displayName" class="muted identity-email">{{ admin.email }}</small>
+                </td>
                 <td>{{ admin.platformRole === 'super_admin' ? '超级用户' : '空间用户' }}</td>
                 <td>{{ admin.status === 'active' ? '启用' : '停用' }}</td>
-                <td class="align-right"><button class="button button--danger-ghost" :disabled="saving" @click="removeAdmin(admin)">移除</button></td>
+                <td class="align-right user-actions">
+                  <button class="button button--ghost" :disabled="saving" @click="editAdminName(admin)">修改名称</button>
+                  <button class="button button--danger-ghost" :disabled="saving" @click="removeAdmin(admin)">移除</button>
+                </td>
               </tr>
               <tr v-if="!loading && admins.length === 0"><td colspan="4" class="empty-cell">当前没有空间用户。</td></tr>
             </tbody>
           </table>
         </div>
       </section>
+
+      <div v-if="editingAdmin" class="modal-backdrop" @click.self="editingAdmin = null">
+        <form class="modal user-name-modal" role="dialog" aria-modal="true" aria-label="修改用户名称" @submit.prevent="saveAdminName">
+          <div class="modal-heading">
+            <div><h2>修改用户名称</h2><p>{{ editingAdmin.email }}</p></div>
+            <button type="button" class="icon-button" aria-label="关闭修改用户名称" @click="editingAdmin = null">×</button>
+          </div>
+          <div class="form-stack">
+            <label class="field">
+              <span>用户名称</span>
+              <input v-model="editingAdminDisplayName" autocomplete="off" />
+            </label>
+            <div class="modal-actions">
+              <button type="button" class="button button--ghost" @click="editingAdmin = null">取消</button>
+              <button class="button button--primary" :disabled="saving">{{ saving ? '保存中…' : '保存名称' }}</button>
+            </div>
+          </div>
+        </form>
+      </div>
 
       <section v-if="section === 'invites'" class="panel loading-surface" :aria-busy="loading">
         <LoadingOverlay v-if="loading" label="正在加载邀请码…" />
