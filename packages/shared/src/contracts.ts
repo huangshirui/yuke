@@ -183,6 +183,8 @@ export type BookingReconciliation = {
 
 export type AdminBookingDetail = BookingDetail & {
   membershipId: Id
+  userNickname: string
+  invitedByAdminEmail: string
   completion: BookingCompletion | null
   reconciliation: BookingReconciliation | null
 }
