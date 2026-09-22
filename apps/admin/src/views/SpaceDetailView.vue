@@ -130,7 +130,7 @@ async function addAdmin() {
   clearMessages()
   const email = adminEmail.value.trim().toLowerCase()
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    error.value = '请输入有效的管理员邮箱。'
+    error.value = '请输入有效的用户邮箱。'
     return
   }
   saving.value = true
@@ -138,9 +138,9 @@ async function addAdmin() {
     await api.assignAdminByEmail(spaceId.value, email)
     admins.value = await api.listAdmins(spaceId.value)
     adminEmail.value = ''
-    notice.value = '管理员已分配。首次登录时会自动绑定对应的 Cloudflare Access 身份。'
+    notice.value = '用户已添加，可访问当前空间。'
   } catch (cause) {
-    error.value = cause instanceof Error ? cause.message : '管理员分配失败。'
+    error.value = cause instanceof Error ? cause.message : '用户添加失败。'
   } finally {
     saving.value = false
   }
@@ -152,7 +152,7 @@ async function removeAdmin(admin: AdminUserSummary) {
   try {
     await api.removeAdmin(spaceId.value, admin.id)
     admins.value = await api.listAdmins(spaceId.value)
-    notice.value = '管理员权限已移除。'
+    notice.value = '用户权限已移除。'
   } catch (cause) {
     error.value = cause instanceof Error ? cause.message : '移除失败。'
   } finally {
@@ -193,7 +193,7 @@ async function revokeInvite(invite: InviteSummary) {
     if (selectedInvite.value?.id === invite.id) {
       selectedInvite.value = invites.value.find((item) => item.id === invite.id) ?? null
     }
-    notice.value = '邀请码已撤销；已加入的用户不受影响。'
+    notice.value = '邀请码已撤销；已加入的客户不受影响。'
   } catch (cause) {
     error.value = cause instanceof Error ? cause.message : '撤销失败。'
   } finally {
@@ -207,7 +207,7 @@ async function showMembers(invite: InviteSummary) {
   try {
     inviteMembers.value = await api.listInviteMembers(spaceId.value, invite.id)
   } catch (cause) {
-    error.value = cause instanceof Error ? cause.message : '来源用户加载失败。'
+    error.value = cause instanceof Error ? cause.message : '来源客户加载失败。'
   }
 }
 
@@ -229,12 +229,12 @@ onMounted(load)
   <main class="page">
       <section class="page-heading">
         <div>
-          <h1>{{ section === 'admins' ? '管理员管理' : section === 'invites' ? '邀请用户' : '规则设置' }}</h1>
+          <h1>{{ section === 'admins' ? '用户管理' : section === 'invites' ? '邀请客户' : '规则设置' }}</h1>
           <p>
             {{ section === 'admins'
-              ? '管理可访问当前空间的管理员。'
+              ? '管理可访问当前空间的用户。'
               : section === 'invites'
-                ? '管理用户加入当前空间的邀请入口。'
+                ? '管理客户加入当前空间的邀请入口。'
                 : '配置当前空间的预约与取消规则。' }}
           </p>
         </div>
@@ -248,7 +248,7 @@ onMounted(load)
         <LoadingOverlay v-if="loading" label="正在加载规则…" />
         <div class="panel-heading">
           <div>
-            <span class="eyebrow">Space Settings</span>
+            <span class="eyebrow">预约规则</span>
             <h2>预约规则</h2>
             <p>两个截止时间使用同一套固定选项，但互相独立。</p>
           </div>
@@ -266,43 +266,42 @@ onMounted(load)
             <select v-model="settings.cancellationCutoffMinutes">
               <option v-for="option in cutoffOptions" :key="'cancel-' + String(option.value)" :value="option.value">{{ option.label }}</option>
             </select>
-            <small>用户超过截止时间后不能自行取消，管理员仍可处理。</small>
+            <small>客户超过截止时间后不能自行取消，有权限的用户仍可处理。</small>
           </label>
           <div><button class="button button--primary" :disabled="saving">{{ saving ? '保存中…' : '保存规则' }}</button></div>
         </form>
       </section>
 
       <section v-if="section === 'admins'" class="panel loading-surface" :aria-busy="loading">
-        <LoadingOverlay v-if="loading" label="正在加载管理员…" />
+        <LoadingOverlay v-if="loading" label="正在加载用户…" />
         <div class="panel-heading">
           <div>
-            <span class="eyebrow">Access</span>
-            <h2>空间管理员</h2>
-            <p>管理员身份由 Cloudflare Access 认证；这里仅维护对当前空间的授权关系。</p>
+            <span class="eyebrow">访问权限</span>
+            <h2>空间用户</h2>
+            <p>通过邮箱管理可访问当前空间的用户。</p>
           </div>
         </div>
 
         <div class="inline-form">
           <label class="field field--grow">
-            <span>管理员邮箱</span>
-            <input v-model="adminEmail" type="email" autocomplete="off" placeholder="例如：admin@example.invalid" @keyup.enter="addAdmin" />
-            <small>输入邮箱即可分配。若该邮箱尚未预置，系统会先创建待绑定 AdminUser，再授权当前空间。</small>
+            <span>用户邮箱</span>
+            <input v-model="adminEmail" type="email" autocomplete="off" placeholder="例如：operator@example.invalid" @keyup.enter="addAdmin" />
+            <small>输入邮箱即可添加；尚未登录过的邮箱也可以提前获得当前空间权限。</small>
           </label>
-          <button class="button button--primary" :disabled="saving" @click="addAdmin">分配管理员</button>
+          <button class="button button--primary" :disabled="saving" @click="addAdmin">添加用户</button>
         </div>
 
         <div class="table-wrap">
           <table>
-            <thead><tr><th>邮箱</th><th>身份</th><th>状态</th><th>ID</th><th class="align-right">操作</th></tr></thead>
+            <thead><tr><th>邮箱</th><th>身份</th><th>状态</th><th class="align-right">操作</th></tr></thead>
             <tbody>
               <tr v-for="admin in admins" :key="admin.id">
                 <td><strong>{{ admin.email }}</strong></td>
-                <td>{{ admin.platformRole === 'super_admin' ? '超级管理员' : '空间管理员' }}</td>
+                <td>{{ admin.platformRole === 'super_admin' ? '超级用户' : '空间用户' }}</td>
                 <td>{{ admin.status === 'active' ? '启用' : '停用' }}</td>
-                <td class="mono">{{ admin.id }}</td>
                 <td class="align-right"><button class="button button--danger-ghost" :disabled="saving" @click="removeAdmin(admin)">移除</button></td>
               </tr>
-              <tr v-if="!loading && admins.length === 0"><td colspan="5" class="empty-cell">当前没有空间管理员。</td></tr>
+              <tr v-if="!loading && admins.length === 0"><td colspan="4" class="empty-cell">当前没有空间用户。</td></tr>
             </tbody>
           </table>
         </div>
@@ -312,9 +311,9 @@ onMounted(load)
         <LoadingOverlay v-if="loading" label="正在加载邀请码…" />
         <div class="panel-heading">
           <div>
-            <span class="eyebrow">Invitations</span>
+            <span class="eyebrow">邀请设置</span>
             <h2>邀请码</h2>
-            <p>邀请码只限制有效期、不限制使用人数；每个加入关系都会记录来源管理员与来源邀请码。</p>
+            <p>邀请码只限制有效期、不限制使用人数；每个加入关系都会记录来源用户与来源邀请码。</p>
           </div>
           <button class="button button--primary" @click="showInviteForm = !showInviteForm">{{ showInviteForm ? '收起' : '+ 新建邀请码' }}</button>
         </div>
@@ -359,14 +358,13 @@ onMounted(load)
 
         <aside v-if="selectedInvite" class="source-panel">
           <div class="source-panel__heading">
-            <div><span class="eyebrow">Invite Source</span><h3>{{ selectedInvite.label || selectedInvite.code }} 的来源用户</h3></div>
+            <div><span class="eyebrow">邀请来源</span><h3>{{ selectedInvite.label || selectedInvite.code }} 的来源客户</h3></div>
             <button class="icon-button" aria-label="关闭" @click="selectedInvite = null">×</button>
           </div>
-          <div v-if="inviteMembers.length === 0" class="empty-state">还没有用户通过这个邀请码加入。</div>
+          <div v-if="inviteMembers.length === 0" class="empty-state">还没有客户通过这个邀请码加入。</div>
           <div v-else class="member-list">
             <article v-for="member in inviteMembers" :key="member.membershipId" class="member-card">
               <div><strong>{{ member.nickname }}</strong><small>{{ member.participantCount }} 个参与人 · {{ formatDate(member.joinedAt) }} 加入</small></div>
-              <code>{{ member.membershipId }}</code>
             </article>
           </div>
         </aside>
