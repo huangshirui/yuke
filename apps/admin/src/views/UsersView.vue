@@ -204,7 +204,7 @@ onMounted(load)
     <section class="page-heading page-heading--compact">
       <div>
         <h1>客户管理</h1>
-        <p>查看客户与参与人、追踪邀请来源，并管理邀请入口。</p>
+        <p>查看客户与预约人、追踪邀请来源，并管理邀请入口。</p>
       </div>
       <button class="button button--primary" @click="startInvite">+ 邀请客户</button>
     </section>
@@ -243,7 +243,7 @@ onMounted(load)
       <div class="table-wrap">
         <table>
           <thead>
-            <tr><th>客户</th><th>参与人</th><th>邀请来源</th><th>加入时间</th></tr>
+            <tr><th>客户</th><th>预约人</th><th>邀请来源</th><th>加入时间</th></tr>
           </thead>
           <tbody>
             <tr
@@ -343,7 +343,7 @@ onMounted(load)
           >
             <div>
               <strong>{{ member.nickname || '未命名客户' }}</strong>
-              <small>{{ member.participantCount }} 个参与人 · {{ formatDate(member.joinedAt) }} 加入</small>
+              <small>{{ member.participantCount }} 个预约人 · {{ formatDate(member.joinedAt) }} 加入</small>
             </div>
             <span class="row-chevron">›</span>
           </button>
