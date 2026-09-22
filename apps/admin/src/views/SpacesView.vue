@@ -137,7 +137,6 @@ onMounted(async () => {
             <tr v-for="space in spaces" :key="space.id">
               <td>
                 <button class="link-button space-name" @click="router.push('/spaces/' + space.id + '/settings')">{{ space.name }}</button>
-                <small class="mono">{{ space.id }}</small>
               </td>
               <td>{{ space.timezone }}</td>
               <td>
