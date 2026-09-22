@@ -150,6 +150,7 @@ describe('Admin Booking mutations and history', () => {
     expect(listPayload.data.map((item) => item.id)).toEqual([booking.id])
     expect(listPayload.data[0]).toMatchObject({
       userNickname: `Synthetic User ${suffix}`,
+      invitedByAdminDisplayName: `Synthetic Operator ${suffix}`,
       invitedByAdminEmail: `${suffix}@example.invalid`
     })
 
