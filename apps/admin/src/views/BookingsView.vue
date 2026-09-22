@@ -462,8 +462,8 @@ onMounted(loadBase)
             <tr>
               <th>时间 / 预约对象</th>
               <th>参与人</th>
-              <th>用户</th>
-              <th title="该用户加入空间时的来源管理员">管理员</th>
+              <th>客户</th>
+              <th title="该客户加入空间时的来源用户">来源用户</th>
               <th>类型</th>
               <th>状态</th>
             </tr>
@@ -584,7 +584,7 @@ onMounted(loadBase)
                 {{ item.name }} · {{ item.birthMonth }}
               </option>
             </select>
-            <small>只能选择该预约原用户 Membership 下的启用参与人。</small>
+            <small>只能选择该预约客户名下的启用参与人。</small>
           </label>
 
           <label class="field">
