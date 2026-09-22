@@ -190,7 +190,7 @@ onMounted(load)
           <div class="overview-card-heading"><h2>待处理事项</h2></div>
           <div class="task-list">
             <div><strong>{{ todayBookings.length }}</strong><span>个今日有效预约需要关注</span></div>
-            <div><strong>{{ activeSlots.length }}</strong><span>个未来 7 天开放时段可预约</span></div>
+            <div><strong>{{ activeSlots.length }}</strong><span>个未来 7 天时段可预约</span></div>
             <div><strong>{{ resources.filter((item) => item.status === 'active').length }}</strong><span>个预约项目正在启用</span></div>
           </div>
         </article>
