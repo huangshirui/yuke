@@ -68,6 +68,7 @@ type BookingRow = {
 type BookingDetailRow = BookingRow & {
   membership_id: string
   user_nickname: string
+  invited_by_admin_display_name: string | null
   invited_by_admin_email: string
   completed_at: number | null
   completion_source: BookingCompletionSource | null
@@ -147,6 +148,7 @@ function mapAdminBookingDetail(row: BookingDetailRow): AdminBookingDetail {
     ...mapBookingDetail(row),
     membershipId: row.membership_id,
     userNickname: row.user_nickname,
+    invitedByAdminDisplayName: row.invited_by_admin_display_name,
     invitedByAdminEmail: row.invited_by_admin_email,
     completion:
       row.status === 'completed' && row.completed_at !== null
@@ -179,6 +181,7 @@ const BOOKING_DETAIL_SELECT = `
          bookings.slot_id,
          bookings.membership_id,
          users.nickname AS user_nickname,
+         invited_admins.display_name AS invited_by_admin_display_name,
          invited_admins.email AS invited_by_admin_email,
          bookings.participant_id,
          bookings.status,
