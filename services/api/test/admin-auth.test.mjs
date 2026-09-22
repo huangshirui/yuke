@@ -148,6 +148,7 @@ describe('Admin principal mapping and RBAC', () => {
       id: adminId,
       accessSubject: subject,
       email,
+      displayName: null,
       platformRole: 'super_admin'
     })
   })
