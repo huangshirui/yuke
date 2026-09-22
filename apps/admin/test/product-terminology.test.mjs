@@ -35,3 +35,13 @@ test('operational pages do not render internal ids', () => {
     assert.doesNotMatch(page, /class="mono"[^>]*>\{\{\s*[^}]*\b(?:id|Id)\b[^}]*\}\}/, path)
   }
 })
+
+
+test('unauthorized admin login uses a friendly auto-logout gate', () => {
+  const app = source('src/App.vue')
+  assert.match(app, /此账号没有后台访问权限/)
+  assert.match(app, /正在自动退出/)
+  assert.match(app, /SPACE_ACCESS_DENIED/)
+  assert.match(app, /location\.replace\('\/cdn-cgi\/access\/logout'\)/)
+  assert.doesNotMatch(app, />Admin access is not assigned</)
+})

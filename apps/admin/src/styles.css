@@ -78,6 +78,45 @@ tbody tr:last-child td { border-bottom: 0; }
 .alert--error { color: var(--color-error-text); background: var(--color-error-bg); border-color: var(--color-error-border); }
 .alert--success { color: var(--color-success-text); background: var(--color-success-bg); border-color: var(--color-success-border); }
 
+.access-gate {
+  min-height: 100vh;
+  padding: var(--space-24);
+  display: grid;
+  place-items: center;
+  background: var(--color-surface-muted);
+}
+.access-gate__card {
+  width: min(460px, 100%);
+  padding: var(--space-28);
+  border: var(--border-width) solid var(--color-border);
+  border-radius: var(--radius-16);
+  background: var(--color-white);
+  box-shadow: var(--shadow-panel);
+  text-align: center;
+  display: grid;
+  justify-items: center;
+  gap: var(--space-12);
+}
+.access-gate__logo {
+  width: 52px;
+  height: 52px;
+  flex-basis: 52px;
+}
+.access-gate__card h1 {
+  margin: 0;
+  font-size: var(--font-size-22);
+  color: var(--color-text-primary);
+}
+.access-gate__card p {
+  margin: 0;
+  max-width: 380px;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+.access-gate__card .button {
+  margin-top: var(--space-4);
+}
+
 .tabbar { display: flex; gap: var(--space-4); margin: 0 0 var(--space-14); padding: var(--space-4); background: var(--color-tab-bg); border-radius: var(--radius-12); width: fit-content; }
 .tabbar button { border: 0; background: transparent; color: var(--color-text-secondary); min-height: 36px; padding: 0 var(--space-15); border-radius: var(--radius-9); font-weight: 700; }
 .tabbar button.active { background: var(--color-white); color: var(--color-text-primary); box-shadow: var(--shadow-tab); }
