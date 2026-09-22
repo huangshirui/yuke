@@ -24,7 +24,10 @@ const currentSpace = computed(() =>
   null
 )
 const isSuperAdmin = computed(() => admin.value?.platformRole === 'super_admin')
-const adminInitial = computed(() => (admin.value?.email || 'A').slice(0, 1).toUpperCase())
+const adminDisplayName = computed(() =>
+  admin.value?.displayName?.trim() || admin.value?.email || '用户'
+)
+const adminInitial = computed(() => adminDisplayName.value.slice(0, 1).toUpperCase())
 const spaceInitial = computed(() => {
   const name = currentSpace.value?.name.trim()
   return name ? name.slice(0, 1).toUpperCase() : 'Y'
@@ -205,8 +208,8 @@ onMounted(loadShell)
         <div v-if="admin" class="account-card">
           <span class="avatar">{{ adminInitial }}</span>
           <div class="account-card__identity">
-            <strong>{{ admin.email }}</strong>
-            <small>{{ roleLabel }}</small>
+            <strong>{{ adminDisplayName }}</strong>
+            <small>{{ admin.email }} · {{ roleLabel }}</small>
           </div>
           <button class="account-logout" type="button" @click="logout">退出登录</button>
         </div>
