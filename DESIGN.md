@@ -45,11 +45,15 @@ Yu言在线是一个通用预约工具。设计首先服务于**清晰、效率�
 | Slot | 可预约时段 / 时段 | Slot |
 | Slot Type | 时段类型 | Slot Type |
 | Booking | 预约 | Booking |
-| User | 用户 | User |
-| Space Admin | 空间管理员 | Space Admin |
+| Customer (Mini Program User) | 客户 | Customer |
+| Web Admin User | 用户 | User |
+| Space Admin | 空间用户 | Space User |
+| Super Admin | 超级用户 | Super User |
 | Invite Code | 邀请码 | Invite Code |
 
 小程序审核相关页面不要使用“家长 / 学生 / 老师”等行业角色词作为核心业务术语。
+
+Web Admin 对外术语固定为：后台登录账号一律称“用户”，微信小程序侧账号一律称“客户”。页面不得暴露认证供应商名、内部类型名（如 `AdminUser`）或 `adm*` / `mem*` / `spc*` 等内部技术 ID。
 
 ---
 
@@ -149,7 +153,7 @@ sans-serif
 - Sidebar：约 248px；
 - 不保留固定全局 Topbar，页面主体直接从 Page heading 开始；
 - 主导航始终表达当前 Space 的运营功能；
-- Space Switcher 与当前管理员身份位于 Sidebar 底部；
+- Space Switcher 与当前用户身份位于 Sidebar 底部；
 - Space Switcher 主控件只显示空间名称，不显示图标、ID 或时区；
 - 默认入口恢复上次可访问 Space 并进入“概览”；
 - /spaces 仅作为 Super Admin 的低频空间管理入口；
@@ -209,7 +213,7 @@ sans-serif
 - 最重要实体放第一列。
 - 状态使用文字 Badge。
 - 操作放最右。
-- 内部 ID 可显示为次级信息或 monospace，不应抢占主视觉。
+- 内部 ID 默认不在运营界面展示；只有明确的诊断/支持场景才允许显示，并且不能作为业务识别信息。
 - 空状态必须解释下一步，而不是只显示“暂无数据”。
 
 ### Forms
@@ -466,8 +470,8 @@ Web 与小程序共享**品牌、术语、状态语义和交互原则**，不强
 截至 2026-09-21：
 
 - Web Admin 采用 Current Space 驱动的运营控制台 Shell。
-- 导航分为运营、资源配置、空间设置、数据；运营区收敛为“概览 / 预约 / 用户管理”，“预约”内部提供“日历 / 列表”两种视图；“对账”保留入口并标记即将开放。
-- Space Switcher 与管理员身份统一下沉至侧边栏底部。
+- 导航分为运营、资源配置、空间设置、数据；运营区收敛为“概览 / 预约 / 客户管理”，“预约”内部提供“日历 / 列表”两种视图；空间设置中的后台账号统一称“用户”，使用“用户管理”；“对账”保留入口并标记即将开放。
+- Space Switcher 与当前用户身份统一下沉至侧边栏底部。
 - Web Admin 同时具备桌面与移动端响应式基线。
 - Space / Settings / Admin / Invite 页面成为首批基准实现。
 - 小程序轻量原生工具风格已冻结，并与现有深墨绿品牌体系对齐。
