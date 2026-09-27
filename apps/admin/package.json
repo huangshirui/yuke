@@ -19,6 +19,6 @@
     "@vitejs/plugin-vue": "latest",
     "typescript": "latest",
     "vite": "latest",
-    "wrangler": "4.135.0"
+    "wrangler": "4.139.0"
   }
 }
